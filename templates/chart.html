@@ -1,0 +1,49 @@
+<!-- templates/chart.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BTCNUSDT Chart</title>
+    <style>
+        #chart-img {
+            width: 600px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+<h2>설정</h2>
+<textarea id="settings-json" rows="10" cols="80">
+
+    </textarea><br/>
+<button onclick="saveSettings()">💾 저장</button>
+<button onclick="loadSettings()">📂 불러오기</button>
+
+<script>
+    function saveSettings() {
+        const jsonText = document.getElementById("settings-json").value;
+        fetch("/save-settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: jsonText
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message));
+    }
+
+    function loadSettings() {
+        fetch("/load-settings")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("settings-json").value = JSON.stringify(data, null, 4);
+        });
+    }
+
+    // 페이지가 로드되면 자동으로 설정을 불러오기
+    window.addEventListener("DOMContentLoaded", () => {
+        loadSettings();
+    });
+</script>
+
+</body>
+</html>

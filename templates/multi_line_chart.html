@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-Line Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 반응형 스타일 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* PC에서 너무 커지지 않게 제한 */
+            margin: auto;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+    </style>
+</head>
+<body>
+<h2 style="text-align:center;">중첩 선그래프 예제</h2>
+
+<div class="chart-container">
+    <canvas id="myChart"></canvas>
+</div>
+
+<script>
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.labels|tojson }},
+            datasets: [
+                {% for d in chart_data.datasets %}
+                {
+                    label: "{{ d.label }}",
+                    data: {{ d.data }},
+                    fill: false,
+                    borderColor: '{{ ['red', 'blue', 'green'][loop.index0] }}',
+                    tension: 0.1
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+</script>
+</body>
+</html>

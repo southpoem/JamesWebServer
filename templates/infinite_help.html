@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>매매 전략 버전별 요약</title>
+    <style>
+        body {
+          background-color: #121212;
+          color: #ffffff;
+          font-family: Arial, sans-serif;
+          padding: 20px;
+        }
+
+        h2 {
+          text-align: center;
+          margin-bottom: 30px;
+          color: #B388FF;
+        }
+
+        .card {
+          background-color: #1e1e1e;
+          border: 1px solid #333;
+          border-radius: 10px;
+          padding: 20px;
+          margin-bottom: 20px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .card h3 {
+          margin-top: 0;
+          color: #B388FF;
+        }
+
+        .card p {
+          margin: 8px 0;
+          line-height: 1.5;
+          white-space: pre-line;
+          font-size: 12px; /* 원하는 크기로 조정 (예: 12px, 14px, 16px 등) */
+
+        }
+    </style>
+</head>
+<body>
+<h2>매매 전략 버전별 요약</h2>
+
+<div class="card">
+    <h3>
+        <a href="https://cafe.naver.com/infinitebuying/59826"
+           target="_blank"
+           style="color: #B388FF; text-decoration: none;">
+            V3.0 (20분할, 수익률 강화)
+        </a>
+    </h3>
+    <p>
+        - 대상: TQQQ/SOXL
+        - 전반전 (진행률 < 50%)
+        매수: V2.2와 동일
+        매도: TQQQ +15%, SOXL +20%에 75% AFTER지정가
+        분할매도2: [⭐%]에 25% LOC매도
+        - 후반전 (진행률 ≥ 50%)
+        매수: V2.2와 동일
+        큰수LOC 매수: [⭐%] vs [현재가+15%] → 작은값에 1회치
+        매도 및 분할매도2 동일
+    </p>
+</div>
+
+<div class="card">
+
+    <h3><a href="https://cafe.naver.com/infinitebuying/52930"
+           target="_blank"
+           style="color: #B388FF; text-decoration: none;">
+        V2.2 (기본 전략)
+    </a></h3>
+    <p>
+        - 전반전 (진행률 < 50%)
+        평단LOC 매수: [평단] vs [현재가+15%] → 작은값 0.5회치
+        큰수LOC 매수: [⭐%] vs [현재가+15%] → 작은값 0.5회치
+        매도: 평단 +10%에 75% AFTER지정가
+        분할매도2: [⭐%]에 25% LOC매도
+        - 후반전 (진행률 ≥ 50%)
+        큰수LOC 매수 1회치 / 매도 동일
+    </p>
+</div>
+
+<div class="card">
+    <h3><a href="https://cafe.naver.com/infinitebuying/21554"
+           target="_blank"
+           style="color: #B388FF; text-decoration: none;">
+        V2.1 (기본 방식, 구버전)
+    </a></h3>
+    <p>
+        - 전반전 (진행률 < 50%)
+        평단LOC / 큰수LOC 각각 0.5회치
+        매도: 평단+10% 75% AFTER
+        분할매도1: +5% 25% LOC
+        - 후반전 (진행률 ≥ 50%)
+        평단LOC 1회치
+        매도: +10% 50% AFTER
+        분할매도1: +5% 25% AFTER
+        분할매도2: +0% 25% LOC
+    </p>
+</div>
+
+<div class="card">
+    <h3><a href="https://cafe.naver.com/infinitebuying/7398"
+           target="_blank"
+           style="color: #B388FF; text-decoration: none;">
+        V2.0
+    </a></h3>
+
+    <p>
+        - 매수는 V2.1과 동일
+        - 전반전: +10%에 전체 AFTER
+        - 후반전: +10%에 50% AFTER, +5%에 50% AFTER
+    </p>
+</div>
+
+<div class="card">
+    <h3><a href="https://cafe.naver.com/infinitebuying/1975"
+           target="_blank"
+           style="color: #B388FF; text-decoration: none;">
+        V1.0
+    </a></h3>
+    <p>
+        - 매도: 평단 +10%에 전체 AFTER 지정가 매도
+    </p>
+</div>
+
+<div class="card">
+    <a href="https://fragilememor.gitbook.io/genie-rpa/detail"
+       target="_blank"
+       style="color: #B388FF; text-decoration: none;">
+        지니님 RPA 소개 페이지
+    </a></div>
+</body>
+</html>

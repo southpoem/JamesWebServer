@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>설정 입력 - 다크모드</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .card {
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background-color: #1e1e1e;
+      box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      box-sizing: border-box;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+
+    input[type="checkbox"] {
+      transform: scale(1.2);
+      margin-right: 8px;
+    }
+
+    button {
+      background-color: #B388FF; /* 연보라색 */
+      border: none;
+      padding: 15px 30px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 8px;
+      margin: 20px auto 0;
+      display: block;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #9b6bff;
+    }
+
+    @media (min-width: 768px) {
+      .card {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <h2>설정 입력</h2>
+  <div id="settings-container"></div>
+  <br />
+  <button onclick="saveSettings()">💾 저장</button>
+
+  <script>
+    const rowCount = 4;
+    const container = document.getElementById("settings-container");
+
+    function applyStyle(div, isPublic) {
+      div.style.backgroundColor = isPublic ? "#505050" : "#1e1e1e";
+      div.style.color = isPublic ? "#000" : "#fff";
+
+      const inputs = div.querySelectorAll("input[type='text'], select");
+      inputs.forEach(el => {
+        el.style.backgroundColor = isPublic ? "#2a2a2a" : "#2a2a2a";
+        el.style.color = "#fff";
+        el.style.border = "1px solid #555";
+      });
+    }
+
+    function createCard(index, data = {}) {
+      const div = document.createElement("div");
+      div.className = "card";
+
+      const mode = data.mode || "public";
+      const auto = data.auto ? "checked" : "";
+
+      div.innerHTML = `
+        <label>모드 선택</label>
+        <select name="mode_${index}">
+          <option value="public"${mode === "public" ? " selected" : ""}>public</option>
+          <option value="private"${mode === "private" ? " selected" : ""}>private</option>
+        </select>
+
+        <label><input type="checkbox" name="auto_${index}" ${auto}>자동화</label>
+
+        <label>종목</label>
+        <input type="text" name="ticker_${index}" value="${data.ticker || ""}">
+
+        <label>가용금($)</label>
+        <input type="text" name="capital_${index}" value="${data.capital || ""}">
+
+        <label>분할횟수</label>
+        <input type="text" name="split_${index}" value="${data.split || ""}">
+
+        <label>목표 수익률(%)</label>
+        <input type="text" name="target_${index}" value="${data.target || ""}">
+      `;
+
+      container.appendChild(div);
+
+      const modeSelect = div.querySelector(`select[name=mode_${index}]`);
+      applyStyle(div, modeSelect.value === "public");
+
+      modeSelect.addEventListener("change", () => {
+        applyStyle(div, modeSelect.value === "public");
+      });
+    }
+
+    function loadSettings() {
+      fetch("/infinite_load_settings")
+        .then(res => res.json())
+        .then(data => {
+          container.innerHTML = "";
+          let i = 0;
+          for (const [key, value] of Object.entries(data)) {
+            createCard(i++, value);
+          }
+          while (i < rowCount) createCard(i++);
+        });
+    }
+
+    function saveSettings() {
+      const settings = {};
+      for (let i = 0; i < rowCount; i++) {
+        const ticker = document.querySelector(`[name=ticker_${i}]`).value;
+        if (!ticker) continue;
+        const mode = document.querySelector(`[name=mode_${i}]`).value;
+        const auto = document.querySelector(`[name=auto_${i}]`).checked;
+        const capital = document.querySelector(`[name=capital_${i}]`).value;
+        const split = document.querySelector(`[name=split_${i}]`).value;
+        const target = document.querySelector(`[name=target_${i}]`).value;
+
+        const key = `${mode}_${ticker}`;
+        settings[key] = { mode, auto, ticker, capital, split, target };
+      }
+
+      fetch("/infinite_save_settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings)
+      }).then(res => res.json())
+        .then(data => alert(data.message));
+    }
+
+    window.onload = loadSettings;
+  </script>
+</body>
+</html>

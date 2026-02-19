@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>James World</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* (여기는 기존 스타일 그대로) */
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            padding-top: 50px;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+        form {
+            width: 100%;
+            max-width: 400px;
+            margin: 10px 0;
+        }
+        button {
+            width: 100%;
+            background-color: #BB86FC;
+            border: none;
+            padding: 15px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 8px;
+        }
+        button:hover {
+            background-color: #3700B3;
+        }
+        a {
+            margin-top: 30px;
+            color: #03DAC6;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .settings-box {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<h1>James World</h1>
+<!-- Settings 정보 보여주기 -->
+<div class="settings-box">
+    <h3>Settings Info</h3>
+    {% if settings %}
+    <ul>
+        {% for key, value in settings.items() %}
+        <li><strong>{{ key }}</strong>: {{ value }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No settings available.</p>
+    {% endif %}
+</div>
+<form action="/run_change_base_usdt" method="post">
+    <button type="submit">환율 정보 변경</button>
+</form>
+
+<form action="/infinite" method="post" class="action-form">
+    <button type="submit" class="action-button">무한 매수</button>
+</form>
+
+<a href="/logout">Logout</a>
+
+
+</body>
+</html>

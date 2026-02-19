@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=dev-width, initial-scale=1.0">
+    <title>Honey World</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #000;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Page Interface with Picture</h1>
+
+    <!-- Picture -->
+    <div>
+        <img id="picture" src="/refresh-picture" alt="Loading image...">
+        <button id="picture_refresh_button">Picture Refresh Button</button>
+    </div>
+
+    <!-- Input Fields -->
+    <div>
+        <label>Input A (Start): </label>
+        <input type="text" id="input_a">
+        <label>Input B (End): </label>
+        <input type="text" id="input_b">
+    </div>
+
+    <!-- Buttons -->
+    <div>
+        <button id="request_button">Request Button</button>
+        <button id="refresh_button">Manual Refresh Button</button>
+    </div>
+
+    <!-- Table -->
+    <h2>Order Table</h2>
+    <table id="order_table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 데이터가 여기에 동적으로 추가됨 -->
+        </tbody>
+    </table>
+
+    <script>
+        // Request Button 이벤트
+        document.getElementById('request_button').addEventListener('click', () => {
+            const inputA = document.getElementById('input_a').value;
+            const inputB = document.getElementById('input_b').value;
+
+            fetch('/request-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ input_a: inputA, input_b: inputB }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        // Manual Refresh Button 이벤트
+        document.getElementById('refresh_button').addEventListener('click', () => {
+            fetch('/refresh-table')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#order_table tbody');
+                    tableBody.innerHTML = ''; // 기존 테이블 비우기
+                    data.forEach((order, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${order.type}</td>
+                            <td>${order.amount}</td>
+                            <td>${order.price}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        // Picture Refresh Button 이벤트
+        document.getElementById('picture_refresh_button').addEventListener('click', () => {
+            const picture = document.getElementById('picture');
+            picture.src = '/refresh-picture?' + new Date().getTime(); // 캐시 방지
+        });
+    </script>
+</body>
+</html>

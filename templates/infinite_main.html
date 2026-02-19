@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>무한매수법 계좌</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      border: 1px solid #444;
+      padding: 6px 8px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    th {
+      background-color: #333;
+    }
+
+    tr:nth-child(even) {
+      background-color: #1e1e1e;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+    }
+
+    .button-group {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .action-button {
+      width: 220px;
+      padding: 12px 24px;
+      background-color: #B388FF;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .action-button:hover {
+      background-color: #9b6bff;
+    }
+
+    .action-form {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+  <h2 style="margin: 0;">{{ latest_date }}</h2>
+  <form action="/run_infinite_account" method="post" style="margin: 0;">
+    <button type="submit" style="
+      background-color: #B388FF;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+    ">
+      계좌업데이트
+    </button>
+  </form>
+</div>
+
+
+
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>종목</th>
+          <th>회차</th>
+          <th>개수</th>
+          <th>평단가(수익률)</th>
+          <th>현재가</th>
+          <th>총매입금액$</th>
+          <th>총투자금액$(목표수익율)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ table_rows | safe }}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ✅ 버튼 3개를 통일된 크기로 정렬 -->
+  <div class="button-group">
+    <form action="/infinite_settings" method="get" class="action-form">
+      <button type="submit" class="action-button">설정</button>
+    </form>
+
+    <form action="/run_infinite_buying" method="post" class="action-form">
+      <button type="submit" class="action-button">무한매수 실행</button>
+    </form>
+
+    <form action="/infinite_help" method="get" class="action-form">
+      <button type="submit" class="action-button">전략 설명</button>
+    </form>
+  </div>
+</body>
+</html>
