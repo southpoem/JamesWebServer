@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import math
 import os
+
 print("\n" + "="*50)
 print("🔍 [디버깅] 경로 확인 시작")
 print("="*50)
@@ -276,10 +277,40 @@ class MarketObserver:
         except:
             return 0.0
 
+    # =========================================================
+    # ★ [신규 추가] 빗썸 다이렉트 15분봉 수집 함수
+    # =========================================================
+    def fetch_bithumb_15m_direct(self, symbol):
+        try:
+            sym = symbol.replace('/', '_')
+            url = f"https://api.bithumb.com/public/candlestick/{sym}/15m"
+            res = requests.get(url, timeout=3)
+            if res.status_code == 200:
+                data = res.json()
+                if data.get('status') == '0000':
+                    ohlcv = []
+                    for row in data['data'][-100:]:
+                        # 빗썸 API는 KST(한국시간)이므로 바이낸스(UTC)와 합치기 위해 9시간(32,400,000ms)을 빼줌
+                        corrected_time = int(row[0]) - 32400000
+                        # 빗썸 응답 순서: [시간, 시가, 종가, 고가, 저가, 거래량]
+                        ohlcv.append([
+                            corrected_time,    # Time
+                            float(row[1]),     # Open
+                            float(row[3]),     # High
+                            float(row[4]),     # Low
+                            float(row[2]),     # Close
+                            float(row[5])      # Volume
+                        ])
+                    return ohlcv
+        except Exception as e:
+            print(f"Bithumb Direct Fetch Error ({symbol}): {e}")
+        return []
+
     def get_chart_and_kimp_data(self):
         try:
-            usdt = self.bithumb.fetch_ohlcv('USDT/KRW', '15m', limit=100)
-            btc_kr = self.bithumb.fetch_ohlcv('BTC/KRW', '15m', limit=100)
+            # ★ 기존 CCXT 호출을 다이렉트 함수 호출로 변경!
+            usdt = self.fetch_bithumb_15m_direct('USDT/KRW')
+            btc_kr = self.fetch_bithumb_15m_direct('BTC/KRW')
 
             btc_us = self.binance.fetch_ohlcv('BTC/USDT', '15m', limit=100)
             usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
@@ -337,21 +368,35 @@ class MarketObserver:
             ex_rate = self.cached_macro['usd_krw']
             theo_usdt = 1.0 * ex_rate
 
-            p_up = self.upbit.fetch_ticker('USDT/KRW')['last']
-            p_bit = self.bithumb.fetch_ticker('USDT/KRW')['last']
+            # =========================================================
+            # ★ [핵심 최적화] 빗썸 실시간 시세 다이렉트 API (단 1번 호출로 끝냄)
+            # =========================================================
+            res = requests.get("https://api.bithumb.com/public/ticker/ALL_KRW", timeout=3)
+            bithumb_data = res.json()
 
-            p_btc_kr_bit = self.bithumb.fetch_ticker('BTC/KRW')['last']
+            if bithumb_data.get('status') == '0000':
+                b_data = bithumb_data['data']
+                p_bit = float(b_data['USDT']['closing_price'])
+                p_btc_kr_bit = float(b_data['BTC']['closing_price'])
+                p_eth_kr_bit = float(b_data['ETH']['closing_price'])
+                p_xrp_kr_bit = float(b_data['XRP']['closing_price'])
+            else:
+                raise Exception("빗썸 실시간 다이렉트 API 응답 오류")
+
+            # =========================================================
+            # 업비트와 바이낸스는 문제없이 잘 되므로 기존 CCXT 유지
+            # =========================================================
+            p_up = self.upbit.fetch_ticker('USDT/KRW')['last']
             p_btc_kr_up = self.upbit.fetch_ticker('BTC/KRW')['last']
             p_btc_gl = self.binance.fetch_ticker('BTC/USDT')['last']
 
-            p_eth_kr_bit = self.bithumb.fetch_ticker('ETH/KRW')['last']
             p_eth_kr_up = self.upbit.fetch_ticker('ETH/KRW')['last']
             p_eth_gl = self.binance.fetch_ticker('ETH/USDT')['last']
 
-            p_xrp_kr_bit = self.bithumb.fetch_ticker('XRP/KRW')['last']
             p_xrp_kr_up = self.upbit.fetch_ticker('XRP/KRW')['last']
             p_xrp_gl = self.binance.fetch_ticker('XRP/USDT')['last']
 
+            # 김프 계산 로직 (기존과 동일)
             kimp_btc_bit = round(((p_btc_kr_bit / (p_btc_gl * ex_rate)) - 1) * 100, 2)
             kimp_btc_up = round(((p_btc_kr_up / (p_btc_gl * ex_rate)) - 1) * 100, 2)
 
@@ -386,9 +431,8 @@ class MarketObserver:
             print(f"Realtime Data Error: {e}")
             return None
 
-
 def run_bot():
-    print("=== 🤖 봇 시작 (Dual Exchange Rate Added) ===")
+    print("=== 🤖 봇 시작 (Dual Exchange Rate Added + Bithumb Direct 15m) ===")
     observer = MarketObserver()
     last_chart_update = 0
 
