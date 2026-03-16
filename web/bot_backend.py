@@ -1,6 +1,5 @@
 import asyncio
 import sys
-
 import ccxt
 import yfinance as yf
 import FinanceDataReader as fdr
@@ -12,57 +11,24 @@ import pandas as pd
 import math
 import os
 
-print("\n" + "="*50)
+print("\n" + "=" * 50)
 print("🔍 [디버깅] 경로 확인 시작")
-print("="*50)
+print("=" * 50)
 
-# 1. 현재 실행 중인 파일의 위치
 current_file_path = os.path.abspath(__file__)
-print(f"1. 현재 파일 위치:\n   👉 {current_file_path}")
-
-# 2. 현재 파일의 폴더 (web 폴더 예상)
 current_dir = os.path.dirname(current_file_path)
-print(f"2. 현재 파일의 폴더:\n   👉 {current_dir}")
-
-# 3. 프로젝트 루트 폴더 (한 단계 위)
 project_root = os.path.dirname(current_dir)
-print(f"3. 프로젝트 루트(최상위) 폴더:\n   👉 {project_root}")
 
-# 4. sys.path에 루트 추가 전 확인
-print(f"4. sys.path 추가 전 개수: {len(sys.path)}")
-
-# 5. 경로 추가 실행
 if project_root not in sys.path:
     sys.path.append(project_root)
-    print(f"5. ✅ sys.path에 루트 폴더 추가 완료!")
-else:
-    print(f"5. ℹ️ 이미 sys.path에 루트 폴더가 있습니다.")
-
-# 6. 실제 파일이 있는지 물리적으로 확인 (가장 중요!)
-target_file = os.path.join(project_root, 'mybot', 'TelegramMessenger.py')
-is_exist = os.path.exists(target_file)
-
-print(f"6. 불러오려는 파일 확인:")
-print(f"   대상 경로: {target_file}")
-if is_exist:
-    print("   결과: ✅ 파일이 실제로 존재합니다!")
-else:
-    print("   결과: ❌ 파일이 없습니다! (폴더명이나 파일명을 확인하세요)")
-
-print("="*50 + "\n")
-
-# ---------------------------------------------------------
-# 아래부터 기존 import 코드를 작성하세요
-# ---------------------------------------------------------
 
 try:
-    # 폴더명(mybot)과 파일명(TelegramMessenger)이 맞는지 확인
     import mybot.TelegramMessenger as tm
+
     print("🎉 모듈 import 성공! (tm으로 사용 가능)")
 except ImportError as e:
-    print(f"🔥 모듈 import 실패 에러: {e}")
-    # 여기서 멈추게 하려면 sys.exit() 사용
     sys.exit()
+
 try:
     import key_config
 except ImportError:
@@ -73,13 +39,16 @@ class MarketObserver:
     def __init__(self):
         self.last_reported_price = 0
         self.last_reported_int = 0
+
         if key_config:
             self.upbit = ccxt.upbit({'apiKey': key_config.UPBIT_ACCESS, 'secret': key_config.UPBIT_SECRET})
             self.bithumb = ccxt.bithumb({'apiKey': key_config.BITHUMB_ACCESS, 'secret': key_config.BITHUMB_SECRET})
         else:
             self.upbit = ccxt.upbit()
             self.bithumb = ccxt.bithumb()
+
         self.binance = ccxt.binance()
+        self.bithumb_pub = ccxt.bithumb()
 
         self.cached_macro = {
             "usd_krw": 1460.0, "usd_krw_g": 1460.0, "usd_krw_y": 1460.0,
@@ -92,54 +61,35 @@ class MarketObserver:
         self.last_index_update = 0
         self.init_prev_closes()
 
-        # [신규 추가] 5분 변동성 체크를 위한 버퍼 및 변수
-        self.forex_buffer = []  # [(timestamp, price), ...] 형태
-        self.last_alert_time = 0  # 알림 도배 방지용
+        self.forex_buffer = []
+        self.last_alert_time = 0
 
     def check_volatility(self, current_price):
-        # 1. 초기값 설정 (봇 켜고 첫 데이터)
         if self.last_reported_price == 0:
             self.last_reported_price = current_price
             print(f"🏁 [감시 시작] 기준 환율: {current_price:.2f}원")
             return
 
-        # 2. 조건 확인
-        # 조건 A: 정수 앞자리가 바뀌었는가? (예: 1441.x -> 1442.x)
         is_int_changed = int(current_price) != int(self.last_reported_price)
-
-        # 조건 B: 변동폭이 0.5 이상인가?
         diff = current_price - self.last_reported_price
         is_diff_enough = abs(diff) >= 0.5
 
-        # 3. [두 조건 모두 만족(AND)] 시 알림 발송
         if is_int_changed and is_diff_enough:
-
-            # 아이콘 및 방향 설정
             if diff > 0:
-                emoji = "📈"  # 상승
-                direction = "상승"
-                sign = "+"
+                emoji, direction, sign = "📈", "상승", "+"
             else:
-                emoji = "📉"  # 하락
-                direction = "하락"
-                sign = ""
+                emoji, direction, sign = "📉", "하락", ""
 
-            # 메시지 작성
             msg = f"{emoji} 환율 {direction} ({sign}{diff:.2f}원): {self.last_reported_price:.2f}원 -> {current_price:.2f}원"
-
             print(f"\n🔔 {msg}")
 
-            # 텔레그램 전송
             try:
-                # 텔레그램 모듈이 로드되었을 때만 전송
                 if 'mybot.TelegramMessenger' in sys.modules:
                     asyncio.run(tm.send_dollar_message(msg))
             except Exception as e:
-                print(f"❌ 텔레그램 전송 에러: {e}")
+                pass
 
-            # [중요] 기준값 업데이트 (알림을 보냈을 때만 갱신)
             self.last_reported_price = current_price
-
 
     def get_naver_index(self, market_code):
         try:
@@ -164,54 +114,51 @@ class MarketObserver:
             return None
 
     def update_indices_realtime(self):
+        headers = {"User-Agent": "Mozilla/5.0"}
+
+        # 1. KOSPI & KOSDAQ (국내 증시 - 네이버 모바일 API)
+        dom_symbols = {"kospi": "KOSPI", "kosdaq": "KOSDAQ"}
+        dom_url = "https://m.stock.naver.com/api/index/{}/price?pageSize=1&page=1"
+
+        for key, symbol in dom_symbols.items():
+            try:
+                res = requests.get(dom_url.format(symbol), headers=headers, timeout=3)
+                if res.status_code == 200:
+                    data = res.json()
+                    if len(data) > 0:
+                        recent = data[0]
+                        self.cached_macro[key] = float(recent.get("closePrice", "0").replace(",", ""))
+                        self.cached_macro[f"{key}_rate"] = float(recent.get("fluctuationsRatio", "0"))
+            except Exception as e:
+                print(f"국내지수 에러: {e}")
+
+        # 2. S&P 500 & NASDAQ (해외 증시 - 네이버 글로벌 API / ★ 선물 대신 본장 현물 지수 적용)
+        ovs_symbols = {"sp500_f": ".INX", "nasdaq_f": ".IXIC"}  # 프론트엔드 호환을 위해 키값(sp500_f)은 그대로 유지
+        ovs_url = "https://api.stock.naver.com/index/{}/basic"
+
+        for key, symbol in ovs_symbols.items():
+            try:
+                res = requests.get(ovs_url.format(symbol), headers=headers, timeout=3)
+                if res.status_code == 200:
+                    data = res.json()
+                    self.cached_macro[key] = float(data.get("closePrice", "0").replace(",", ""))
+                    self.cached_macro[f"{key}_rate"] = float(data.get("fluctuationsRatio", "0"))
+            except Exception as e:
+                print(f"해외지수 에러: {e}")
+
+        # 3. 달러 인덱스 (DXY) - 야후 파이낸스
         try:
-            k_pi = self.get_naver_index("KOSPI")
-            k_dq = self.get_naver_index("KOSDAQ")
-            if k_pi:
-                self.cached_macro["kospi"] = round(k_pi, 2)
-                if self.prev_closes["kospi"] > 0:
-                    self.cached_macro["kospi_rate"] = round(
-                        ((k_pi - self.prev_closes["kospi"]) / self.prev_closes["kospi"]) * 100, 2)
-            if k_dq:
-                self.cached_macro["kosdaq"] = round(k_dq, 2)
-                if self.prev_closes["kosdaq"] > 0:
-                    self.cached_macro["kosdaq_rate"] = round(
-                        ((k_dq - self.prev_closes["kosdaq"]) / self.prev_closes["kosdaq"]) * 100, 2)
-        except:
-            pass
-        try:
-            usa = yf.download(["ES=F", "NQ=F", "DX-Y.NYB"], period="1d", interval="1m", progress=False)
+            usa = yf.download("DX-Y.NYB", period="1d", interval="1m", progress=False)
             if not usa.empty:
-                closes = usa['Close'].iloc[-1]
-                try:
-                    val = float(closes["ES=F"])
-                    if not math.isnan(val):
-                        self.cached_macro["sp500_f"] = round(val, 2)
-                        if self.prev_closes["sp500_f"] > 0:
-                            self.cached_macro["sp500_f_rate"] = round(
-                                ((val - self.prev_closes["sp500_f"]) / self.prev_closes["sp500_f"]) * 100, 2)
-                except:
-                    pass
-                try:
-                    val = float(closes["NQ=F"])
-                    if not math.isnan(val):
-                        self.cached_macro["nasdaq_f"] = round(val, 2)
-                        if self.prev_closes["nasdaq_f"] > 0:
-                            self.cached_macro["nasdaq_f_rate"] = round(
-                                ((val - self.prev_closes["nasdaq_f"]) / self.prev_closes["nasdaq_f"]) * 100, 2)
-                except:
-                    pass
-                try:
-                    val = float(closes["DX-Y.NYB"])
-                    if not math.isnan(val):
-                        self.cached_macro["dxy"] = round(val, 2)
-                except:
-                    pass
-        except:
+                if isinstance(usa.columns, pd.MultiIndex):
+                    usa.columns = usa.columns.get_level_values(0)
+                val = float(usa['Close'].iloc[-1])
+                if not math.isnan(val):
+                    self.cached_macro["dxy"] = round(val, 2)
+        except Exception as e:
             pass
 
     def update_macro_data(self):
-        # 1. Google Finance Fetch
         try:
             usd_g = self.get_google_price("USD-KRW")
             if usd_g:
@@ -219,27 +166,21 @@ class MarketObserver:
         except:
             pass
 
-        # 2. Yahoo Finance Fetch (KRW=X) - [수정됨: 변동성 체크 연결]
         try:
             yf_ticker = yf.Ticker("KRW=X")
             hist = yf_ticker.history(period="1d", interval="1m")
             if not hist.empty:
                 usd_y = float(hist['Close'].iloc[-1])
                 self.cached_macro["usd_krw_y"] = round(usd_y, 2)
-
-                # [신규] 여기서 야후 가격으로 변동성 체크 함수 호출
                 self.check_volatility(usd_y)
-
         except:
             pass
 
-        # 3. Main Reference (Google preferred, else Yahoo)
         if self.cached_macro.get("usd_krw_g", 0) > 0:
             self.cached_macro["usd_krw"] = self.cached_macro["usd_krw_g"]
         else:
             self.cached_macro["usd_krw"] = self.cached_macro["usd_krw_y"]
 
-        # JPY (Google)
         try:
             jpy = self.get_google_price("JPY-KRW")
             if jpy:
@@ -277,9 +218,6 @@ class MarketObserver:
         except:
             return 0.0
 
-    # =========================================================
-    # ★ [신규 추가] 빗썸 다이렉트 15분봉 수집 함수
-    # =========================================================
     def fetch_bithumb_15m_direct(self, symbol):
         try:
             sym = symbol.replace('/', '_')
@@ -290,16 +228,14 @@ class MarketObserver:
                 if data.get('status') == '0000':
                     ohlcv = []
                     for row in data['data'][-100:]:
-                        # 빗썸 API는 KST(한국시간)이므로 바이낸스(UTC)와 합치기 위해 9시간(32,400,000ms)을 빼줌
-                        corrected_time = int(row[0]) - 32400000
-                        # 빗썸 응답 순서: [시간, 시가, 종가, 고가, 저가, 거래량]
+                        # ★ 9시간 더하기/빼기 꼼수 원상복구! 순수하게 빗썸 타임스탬프 그대로 사용
                         ohlcv.append([
-                            corrected_time,    # Time
-                            float(row[1]),     # Open
-                            float(row[3]),     # High
-                            float(row[4]),     # Low
-                            float(row[2]),     # Close
-                            float(row[5])      # Volume
+                            int(row[0]),  # Time
+                            float(row[1]),  # Open
+                            float(row[3]),  # High
+                            float(row[4]),  # Low
+                            float(row[2]),  # Close
+                            float(row[5])  # Volume
                         ])
                     return ohlcv
         except Exception as e:
@@ -308,27 +244,47 @@ class MarketObserver:
 
     def get_chart_and_kimp_data(self):
         try:
-            # ★ 기존 CCXT 호출을 다이렉트 함수 호출로 변경!
             usdt = self.fetch_bithumb_15m_direct('USDT/KRW')
             btc_kr = self.fetch_bithumb_15m_direct('BTC/KRW')
 
+            # ★ 바이낸스와 업비트도 시간 조작 없이 순수 데이터만 추출
             btc_us = self.binance.fetch_ohlcv('BTC/USDT', '15m', limit=100)
             usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
 
+            # ★ 야후 환율도 시간 조작 없이 순수 데이터 추출
+            usd_krw_chart_data = []
+            try:
+                usd_df = yf.download("KRW=X", period="7d", interval="15m", progress=False)
+                if not usd_df.empty:
+                    if isinstance(usd_df.columns, pd.MultiIndex):
+                        usd_df.columns = usd_df.columns.get_level_values(0)
+                    for dt, row in usd_df.tail(100).iterrows():
+                        usd_krw_chart_data.append([
+                            int(dt.timestamp() * 1000),
+                            float(row['Open']), float(row['High']),
+                            float(row['Low']), float(row['Close']), 0
+                        ])
+            except Exception as e:
+                pass
+
+            # 정상적으로 통일된 시간(Epoch)끼리 결합하여 올바른 현재 김프 계산!
             kimp_15m_series = []
             if btc_kr and btc_us:
-                df_kr = pd.DataFrame(btc_kr, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
-                df_us = pd.DataFrame(btc_us, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
+                df_kr = pd.DataFrame(btc_kr, columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values(
+                    'time')
+                df_us = pd.DataFrame(btc_us, columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values(
+                    'time')
 
-                df_merge = pd.merge(df_kr, df_us, on='time', suffixes=('_kr', '_us'))
+                df_merge = pd.merge_asof(df_kr, df_us, on='time', suffixes=('_kr', '_us'), direction='backward')
                 ex_rate = self.cached_macro['usd_krw']
 
                 df_merge['kimp'] = ((df_merge['close_kr'] / (df_merge['close_us'] * ex_rate)) - 1) * 100
-                kimp_15m_series = df_merge[['time', 'kimp']].to_dict('records')
+                kimp_15m_series = df_merge[['time', 'kimp']].dropna().to_dict('records')
 
             return {
                 "usdt": usdt,
                 "btc": btc_kr,
+                "usd_krw_chart": usd_krw_chart_data,
                 "kimp_15m": kimp_15m_series,
                 "rsi_usdt": self.calculate_rsi(usdt),
                 "rsi_btc": self.calculate_rsi(btc_kr),
@@ -336,7 +292,8 @@ class MarketObserver:
             }
         except Exception as e:
             print(f"Chart Data Error: {e}")
-            return {"usdt": [], "btc": [], "kimp_15m": [], "rsi_usdt": 0, "rsi_btc": 0, "rsi_usdt_up": 0}
+            return {"usdt": [], "btc": [], "usd_krw_chart": [], "kimp_15m": [], "rsi_usdt": 0, "rsi_btc": 0,
+                    "rsi_usdt_up": 0}
 
     def get_balance(self):
         try:
@@ -368,9 +325,6 @@ class MarketObserver:
             ex_rate = self.cached_macro['usd_krw']
             theo_usdt = 1.0 * ex_rate
 
-            # =========================================================
-            # ★ [핵심 최적화] 빗썸 실시간 시세 다이렉트 API (단 1번 호출로 끝냄)
-            # =========================================================
             res = requests.get("https://api.bithumb.com/public/ticker/ALL_KRW", timeout=3)
             bithumb_data = res.json()
 
@@ -383,9 +337,6 @@ class MarketObserver:
             else:
                 raise Exception("빗썸 실시간 다이렉트 API 응답 오류")
 
-            # =========================================================
-            # 업비트와 바이낸스는 문제없이 잘 되므로 기존 CCXT 유지
-            # =========================================================
             p_up = self.upbit.fetch_ticker('USDT/KRW')['last']
             p_btc_kr_up = self.upbit.fetch_ticker('BTC/KRW')['last']
             p_btc_gl = self.binance.fetch_ticker('BTC/USDT')['last']
@@ -396,7 +347,6 @@ class MarketObserver:
             p_xrp_kr_up = self.upbit.fetch_ticker('XRP/KRW')['last']
             p_xrp_gl = self.binance.fetch_ticker('XRP/USDT')['last']
 
-            # 김프 계산 로직 (기존과 동일)
             kimp_btc_bit = round(((p_btc_kr_bit / (p_btc_gl * ex_rate)) - 1) * 100, 2)
             kimp_btc_up = round(((p_btc_kr_up / (p_btc_gl * ex_rate)) - 1) * 100, 2)
 
@@ -431,8 +381,9 @@ class MarketObserver:
             print(f"Realtime Data Error: {e}")
             return None
 
+
 def run_bot():
-    print("=== 🤖 봇 시작 (Dual Exchange Rate Added + Bithumb Direct 15m) ===")
+    print("=== 🤖 봇 시작 (시간 동기화 버그 픽스 완료) ===")
     observer = MarketObserver()
     last_chart_update = 0
 
@@ -458,9 +409,9 @@ def run_bot():
                 last_chart_update = curr
 
                 observer.latest_rsi = {
-                    "rsi_usdt": chart_data['rsi_usdt'],
-                    "rsi_usdt_up": chart_data['rsi_usdt_up'],
-                    "rsi_btc": chart_data['rsi_btc']
+                    "rsi_usdt": chart_data.get('rsi_usdt', 0),
+                    "rsi_usdt_up": chart_data.get('rsi_usdt_up', 0),
+                    "rsi_btc": chart_data.get('rsi_btc', 0)
                 }
 
             status_data = observer.get_realtime_status()
@@ -476,6 +427,7 @@ def run_bot():
                 print(f"[{status_data['timestamp']}] Data Updated..")
 
             time.sleep(1)
+
         except Exception as e:
             print(f"Loop Error: {e}")
             time.sleep(1)
