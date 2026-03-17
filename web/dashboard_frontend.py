@@ -75,6 +75,7 @@ def format_price(val):
     except:
         return str(val)
 
+
 def load_json(file_name):
     if not os.path.exists(file_name): return None
     try:
@@ -83,9 +84,11 @@ def load_json(file_name):
     except:
         return None
 
+
 def get_color_style(rate):
     color = "#FF5252" if rate > 0 else ("#448AFF" if rate < 0 else "gray")
     return f"color: {color}; font-weight: bold;"
+
 
 def get_rsi_style(val):
     if val is None: return "color: gray;"
@@ -116,6 +119,18 @@ def show_realtime_tables():
     macro = data.get('market', {}).get('macro', {})
     up = data.get('market', {}).get('upbit', {})
     bit = data.get('market', {}).get('bithumb', {})
+
+    # =========================================================
+    # ★ [웹페이지 탭 제목 실시간 업데이트] (ex: 1,475 (-1.06%) USDT/KRW)
+    # =========================================================
+    if bit.get('price'):
+        title_price = format_price(bit.get('price'))
+        title_kimp = f"{bit.get('kimp', 0):+.2f}%"  # 부호 포함 (+, -)
+        new_title = f"{title_price} ({title_kimp}) USDT"
+        # 스트림릿 내장 components를 활용한 JS 인젝션
+        st.components.v1.html(f"<script>window.parent.document.title = '{new_title}';</script>", height=0, width=0)
+    # =========================================================
+
     btc = data.get('market', {}).get('btc', {})
     eth = data.get('market', {}).get('eth', {})
     xrp = data.get('market', {}).get('xrp', {})
@@ -127,8 +142,10 @@ def show_realtime_tables():
     v_nas = macro.get('nasdaq_f', 0)
 
     def safe_int_format(val):
-        try: return f"{int(val):,}"
-        except: return str(val)
+        try:
+            return f"{int(val):,}"
+        except:
+            return str(val)
 
     st.markdown(f"""
     <style>
@@ -155,16 +172,14 @@ def show_realtime_tables():
     jpy_100 = macro.get('jpy_krw', 0) * 100
     jpy_str = f"{jpy_100:,.2f}" if jpy_100 > 0 else "-"
 
-    # ★ 1. 구글과 야후를 한 줄로 합치기
-    # "기준시간" 칸 자리에 "야후: 1,484.59" 처럼 들어가게 됩니다.
-    ex_rows_html = f"""
-        <tr style='background-color: {theme['th_bg']}; opacity: 0.9;'>
-            <td><b>구글</b></td>
-            <td style='color:#00E676; font-weight:bold;'>{usd_g:,.2f}</td>
-            <td style='color:#00E676; font-weight:bold;'>{jpy_str}</td>
-            <td style='color:#00E676; font-weight:bold;'>야후: {usd_y:,.2f}</td>
-        </tr>
-        """
+    # 마크다운 코드블록 인식 방지를 위해 들여쓰기 없이 한 줄씩 문자열 연결
+    ex_rows_html = "<tr>"
+    ex_rows_html += f"<td><b>구글</b></td>"
+    ex_rows_html += f"<td style='color:#00E676; font-weight:bold;'>{usd_g:,.2f}</td>"
+    ex_rows_html += f"<td style='color:#00E676; font-weight:bold;'>{jpy_str}</td>"
+    ex_rows_html += f"<td style='color:#00E676; font-weight:bold;'>야후: {usd_y:,.2f}</td>"
+    ex_rows_html += "</tr>"
+
     ex_rates = load_json("exchange_rates.json")
     if ex_rates:
         for key, bank_data in ex_rates.items():
@@ -173,9 +188,17 @@ def show_realtime_tables():
             ut = bank_data.get('update_time', '-')
             usd_v, jpy_v = "-", "-"
             for r in bank_data.get('rates', []):
-                if r['currency'] == 'USD': usd_v = f"{r['base_rate']:,.2f}"
-                elif r['currency'] == 'JPY': jpy_v = f"{r['base_rate']:,.2f}"
-            ex_rows_html += f"<tr><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
+                if r['currency'] == 'USD':
+                    usd_v = f"{r['base_rate']:,.2f}"
+                elif r['currency'] == 'JPY':
+                    jpy_v = f"{r['base_rate']:,.2f}"
+
+            # ★ 하나은행 하이라이트
+            if "하나" in bn:
+                highlight_style = "color: #FF9800; font-weight: bold; background-color: rgba(255, 152, 0, 0.1);"
+                ex_rows_html += f"<tr style='{highlight_style}'><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
+            else:
+                ex_rows_html += f"<tr><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
 
     st.markdown(f"""
     <style>
@@ -184,7 +207,7 @@ def show_realtime_tables():
         table.bank-table td {{ border: 1px solid {theme['border_color']}; padding: 4px; text-align: center; }}
     </style>
     <table class='bank-table'>
-        <thead><tr><th>구분/은행</th><th>USD</th><th>JPY (100엔)</th><th>기준시간</th></tr></thead>
+        <thead><tr><th>은행명</th><th>USD (달러)</th><th>JPY (100엔)</th><th>업데이트 시간</th></tr></thead>
         <tbody>{ex_rows_html}</tbody>
     </table>
     """, unsafe_allow_html=True)
@@ -196,8 +219,10 @@ def show_realtime_tables():
         rh = f"<span style='{get_rsi_style(rsi)}'>{rsi}</span>" if rsi else "-"
         return f"<tr><td style='text-align:center; font-weight:bold;'>{tk}</td><td style='text-align:right;'>{uh}</td><td style='text-align:right;'>{bh}</td><td style='text-align:center;'>{rh}</td></tr>"
 
-    r_u = mk_row("USDT", up.get('price'), up.get('kimp'), bit.get('price'), bit.get('kimp'), rsi_info.get('rsi_usdt', 0))
-    r_b = mk_row("BTC", btc.get('upbit_price'), btc.get('upbit_kimp'), btc.get('price_kr'), btc.get('kimp'), rsi_info.get('rsi_btc', 0))
+    r_u = mk_row("USDT", up.get('price'), up.get('kimp'), bit.get('price'), bit.get('kimp'),
+                 rsi_info.get('rsi_usdt', 0))
+    r_b = mk_row("BTC", btc.get('upbit_price'), btc.get('upbit_kimp'), btc.get('price_kr'), btc.get('kimp'),
+                 rsi_info.get('rsi_btc', 0))
     r_e = mk_row("ETH", eth.get('upbit_price'), eth.get('upbit_kimp'), eth.get('price_kr'), eth.get('kimp'), None)
     r_x = mk_row("XRP", xrp.get('upbit_price'), xrp.get('upbit_kimp'), xrp.get('price_kr'), xrp.get('kimp'), None)
 
@@ -232,14 +257,11 @@ def show_static_charts():
         df_kimp = pd.DataFrame(kimp_data)
         df_usd = pd.DataFrame(usd_chart_data, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
 
-        # 시간대 변환 (+9시간)
+        # 시간대 변환
         for df in [df_usdt, df_btc, df_kimp, df_usd]:
             if not df.empty and 'time' in df.columns:
-                df['time'] = pd.to_datetime(df['time'], unit='ms') + pd.Timedelta(hours=9)
+                df['time'] = pd.to_datetime(df['time'], unit='ms')
 
-        # =========================================================
-        # ★ [핵심] 주말/시차 X축 완벽 동기화 로직
-        # =========================================================
         if not df_usd.empty and not df_usdt.empty:
             df_usd = df_usd.sort_values('time')
             df_usdt = df_usdt.sort_values('time')
@@ -251,7 +273,8 @@ def show_static_charts():
                 direction='backward'
             )
 
-            df_usd_aligned['close'] = df_usd_aligned['close'].fillna(df_usd['close'].iloc[-1] if not df_usd.empty else 0)
+            df_usd_aligned['close'] = df_usd_aligned['close'].fillna(
+                df_usd['close'].iloc[-1] if not df_usd.empty else 0)
             df_usd = df_usd_aligned
 
         cm = dict(l=40, r=40, t=10, b=10)
@@ -265,35 +288,30 @@ def show_static_charts():
         if not df_usdt.empty and not df_btc.empty:
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-            # Trace 1: Bithumb USDT
-            fig.add_trace(go.Scatter(x=df_usdt['time'], y=df_usdt['close'], name="USDT", line=dict(color='#2962FF', width=2)), secondary_y=False)
+            fig.add_trace(
+                go.Scatter(x=df_usdt['time'], y=df_usdt['close'], name="USDT", line=dict(color='#2962FF', width=2)),
+                secondary_y=False)
 
-            # Trace 2: 야후 원/달러 환율
             if not df_usd.empty:
-                fig.add_trace(go.Scatter(x=df_usd['time'], y=df_usd['close'], name="USD/KRW", line=dict(color='#00E676', width=2, dash='dot')), secondary_y=False)
+                fig.add_trace(go.Scatter(x=df_usd['time'], y=df_usd['close'], name="USD/KRW",
+                                         line=dict(color='#00E676', width=2, dash='dot')), secondary_y=False)
 
-            # Trace 3: Bithumb BTC
-            fig.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.5, line=dict(color='#FF6D00', width=1.5)), secondary_y=True)
+            fig.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.5,
+                                     line=dict(color='#FF6D00', width=1.5)), secondary_y=True)
 
-            # ★ 폰트 색상을 "white"로 강제 지정
-            # ★ 전체 기본 폰트 색상을 하얀색으로 지정
             fig.update_layout(height=230, margin=cm, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                               font=dict(color="white"), legend=cl)
 
-            # ★ 왼쪽 Y축 (KRW): 하얀색 강제 적용 + 눈금 2배 세밀하게 (nticks=10)
             fig.update_yaxes(title_text="KRW", secondary_y=False, showgrid=True, gridcolor=theme['grid_color'],
                              fixedrange=True, tickfont=dict(color="white"), title_font=dict(color="white"), nticks=10)
 
-            # ★ 오른쪽 Y축 (BTC): 숨김 처리 해제(showticklabels=True) + 하얀색 강제 적용 + 눈금 세밀하게 (nticks=10)
             fig.update_yaxes(title_text="BTC", secondary_y=True, showgrid=False, fixedrange=True,
                              showticklabels=True, tickfont=dict(color="white"), title_font=dict(color="white"),
                              nticks=6)
 
-            # ★ X축 (시간): tickfont에 하얀색 강제 적용
             fig.update_xaxes(fixedrange=True, gridcolor=theme['grid_color'], tickformat='%m-%d %H:%M',
                              tickfont=dict(color="white"))
 
-            # theme=None 은 빼고 그대로 출력 (차트 찌그러짐 방지)
             st.plotly_chart(fig, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
         else:
             st.info("시세 데이터 로딩 중...")
@@ -304,33 +322,29 @@ def show_static_charts():
         st.markdown("**🌊 BTC 김프 추세 vs 가격**")
         if not df_kimp.empty and not df_btc.empty:
             fig_k = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_k.add_trace(go.Scatter(x=df_kimp['time'], y=df_kimp['kimp'], name='Kimp', line=dict(color='#00E676', width=2)), secondary_y=False)
+            fig_k.add_trace(
+                go.Scatter(x=df_kimp['time'], y=df_kimp['kimp'], name='Kimp', line=dict(color='#00E676', width=2)),
+                secondary_y=False)
 
-            # Bithumb BTC
-            fig_k.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.4, line=dict(color='#FF6D00', width=1)), secondary_y=True)
+            fig_k.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.4,
+                                       line=dict(color='#FF6D00', width=1)), secondary_y=True)
 
-            # ★ 전체 기본 폰트 색상을 하얀색으로 지정
             fig_k.update_layout(height=130, margin=cm, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                                 font=dict(color="white"), legend=cl)
 
-            # ★ 왼쪽 Y축 (KIMP): 하얀색 강제 적용 + 눈금 2배 세밀하게 (nticks=10)
             fig_k.update_yaxes(title_text="KIMP (%)", secondary_y=False, showgrid=True, gridcolor=theme['grid_color'],
                                fixedrange=True, tickfont=dict(color="white"), title_font=dict(color="white"), nticks=5)
 
-            # 0% 기준선 (그대로 유지)
             fig_k.add_hline(y=0, line_color="rgba(255,255,255,0.3)" if is_dark else "rgba(0,0,0,0.3)",
                             secondary_y=False)
 
-            # ★ 오른쪽 Y축 (BTC): 숨김 해제(showticklabels=True) + 하얀색 강제 적용 + 눈금 2배 세밀하게 (nticks=10)
             fig_k.update_yaxes(title_text="BTC", secondary_y=True, showgrid=False, fixedrange=True,
                                showticklabels=True, tickfont=dict(color="white"), title_font=dict(color="white"),
                                nticks=6)
 
-            # ★ X축 (시간): tickfont에 하얀색 강제 적용
             fig_k.update_xaxes(fixedrange=True, tickformat='%H:%M', gridcolor=theme['grid_color'],
                                tickfont=dict(color="white"))
 
-            # 출력
             st.plotly_chart(fig_k, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
 
