@@ -112,7 +112,6 @@ def show_realtime_tables():
     rsi_info = data.get('rsi', {})
     rsi_usdt_up = rsi_info.get('rsi_usdt_up', 0)
 
-    # 매수 신호
     if rsi_usdt_up <= 30:
         st.markdown(f"<div class='buy-signal'>🚨 BUY SIGNAL (RSI {rsi_usdt_up} <= 30)</div>", unsafe_allow_html=True)
 
@@ -120,16 +119,11 @@ def show_realtime_tables():
     up = data.get('market', {}).get('upbit', {})
     bit = data.get('market', {}).get('bithumb', {})
 
-    # =========================================================
-    # ★ [웹페이지 탭 제목 실시간 업데이트] (ex: 1,475 (-1.06%) USDT/KRW)
-    # =========================================================
     if bit.get('price'):
         title_price = format_price(bit.get('price'))
-        title_kimp = f"{bit.get('kimp', 0):+.2f}%"  # 부호 포함 (+, -)
-        new_title = f"{title_price} ({title_kimp}) USDT"
-        # 스트림릿 내장 components를 활용한 JS 인젝션
+        title_kimp = f"{bit.get('kimp', 0):+.2f}%"
+        new_title = f"{title_price} ({title_kimp}) USDT/KRW"
         st.components.v1.html(f"<script>window.parent.document.title = '{new_title}';</script>", height=0, width=0)
-    # =========================================================
 
     btc = data.get('market', {}).get('btc', {})
     eth = data.get('market', {}).get('eth', {})
@@ -168,18 +162,44 @@ def show_realtime_tables():
     """, unsafe_allow_html=True)
 
     # --- [2] 환율 테이블 ---
-    usd_g, usd_y = macro.get('usd_krw_g', 0), macro.get('usd_krw_y', 0)
-    jpy_100 = macro.get('jpy_krw', 0) * 100
-    jpy_str = f"{jpy_100:,.2f}" if jpy_100 > 0 else "-"
+    usd_g = macro.get('usd_krw_g', 0)
+    usd_y = macro.get('usd_krw_y', 0)
+    dxy = macro.get('dxy', 0)
+    base_usd = macro.get('usd_krw', 0)
 
-    # 마크다운 코드블록 인식 방지를 위해 들여쓰기 없이 한 줄씩 문자열 연결
-    ex_rows_html = "<tr>"
-    ex_rows_html += f"<td><b>구글</b></td>"
-    ex_rows_html += f"<td style='color:#00E676; font-weight:bold;'>{usd_g:,.2f}</td>"
-    ex_rows_html += f"<td style='color:#00E676; font-weight:bold;'>{jpy_str}</td>"
-    ex_rows_html += f"<td style='color:#00E676; font-weight:bold;'>야후: {usd_y:,.2f}</td>"
-    ex_rows_html += "</tr>"
+    highlight_bg = "background-color: rgba(255, 152, 0, 0.1);"
+    highlight_color = "#FF9800"
 
+    g_bg, g_color = "", "white"
+    y_bg, y_color = "", "white"
+
+    if usd_g > 0 and usd_g == base_usd:
+        g_bg, g_color = highlight_bg, highlight_color
+    elif usd_y > 0 and usd_y == base_usd:
+        y_bg, y_color = highlight_bg, highlight_color
+
+    summary_html = f"""
+    <table style='width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 0.9rem;'>
+        <tr style='background-color: {theme['th_bg']}; opacity: 0.9;'>
+            <td style='text-align: center; border: 1px solid {theme['border_color']}; padding: 6px;'>
+                <span style='font-size:0.9em; color:white; font-weight:bold;'>DXY: </span>
+                <span style='color:white; font-weight:bold;'>{dxy:,.2f}</span>
+            </td>
+            <td style='text-align: center; border: 1px solid {theme['border_color']}; padding: 6px; {g_bg}'>
+                <span style='color:{g_color}; font-weight:bold;'>{usd_g:,.2f}</span> 
+                <span style='font-size:0.85em; color:{g_color}; font-weight:bold;'>(구글)</span>
+            </td>
+            <td style='text-align: center; border: 1px solid {theme['border_color']}; padding: 6px; {y_bg}'>
+                <span style='color:{y_color}; font-weight:bold;'>{usd_y:,.2f}</span> 
+                <span style='font-size:0.85em; color:{y_color}; font-weight:bold;'>(야후)</span>
+            </td>
+        </tr>
+    </table>
+    """
+    st.markdown(summary_html, unsafe_allow_html=True)
+
+    hana_html = ""
+    other_html = ""
     ex_rates = load_json("exchange_rates.json")
     if ex_rates:
         for key, bank_data in ex_rates.items():
@@ -193,12 +213,13 @@ def show_realtime_tables():
                 elif r['currency'] == 'JPY':
                     jpy_v = f"{r['base_rate']:,.2f}"
 
-            # ★ 하나은행 하이라이트
             if "하나" in bn:
                 highlight_style = "color: #FF9800; font-weight: bold; background-color: rgba(255, 152, 0, 0.1);"
-                ex_rows_html += f"<tr style='{highlight_style}'><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
+                hana_html += f"<tr style='{highlight_style}'><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
             else:
-                ex_rows_html += f"<tr><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
+                other_html += f"<tr><td>{bn}</td><td>{usd_v}</td><td>{jpy_v}</td><td>{ut}</td></tr>"
+
+    ex_rows_html = hana_html + other_html
 
     st.markdown(f"""
     <style>
@@ -257,7 +278,6 @@ def show_static_charts():
         df_kimp = pd.DataFrame(kimp_data)
         df_usd = pd.DataFrame(usd_chart_data, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
 
-        # 시간대 변환
         for df in [df_usdt, df_btc, df_kimp, df_usd]:
             if not df.empty and 'time' in df.columns:
                 df['time'] = pd.to_datetime(df['time'], unit='ms')
@@ -280,9 +300,6 @@ def show_static_charts():
         cm = dict(l=40, r=40, t=10, b=10)
         cl = dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", font=dict(color="white"), x=1)
 
-        # ---------------------------------------------------------
-        # 1. USDT vs BTC vs 환율 차트
-        # ---------------------------------------------------------
         st.markdown("**📈 빗썸 테더 프리미엄 비교 (USDT vs 환율 vs BTC)**")
 
         if not df_usdt.empty and not df_btc.empty:
@@ -316,9 +333,6 @@ def show_static_charts():
         else:
             st.info("시세 데이터 로딩 중...")
 
-        # ---------------------------------------------------------
-        # 2. 김프 차트
-        # ---------------------------------------------------------
         st.markdown("**🌊 BTC 김프 추세 vs 가격**")
         if not df_kimp.empty and not df_btc.empty:
             fig_k = make_subplots(specs=[[{"secondary_y": True}]])
@@ -348,8 +362,5 @@ def show_static_charts():
             st.plotly_chart(fig_k, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
 
-# =========================================================
-# 화면 렌더링 실행
-# =========================================================
 show_realtime_tables()
 show_static_charts()
