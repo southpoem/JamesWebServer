@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import math
 import os
+import re
 
 print("\n" + "=" * 50)
 print("🔍 [디버깅] 경로 확인 시작")
@@ -51,15 +52,14 @@ class MarketObserver:
         self.bithumb_pub = ccxt.bithumb()
 
         self.cached_macro = {
-            "usd_krw": 1460.0, "usd_krw_g": 1460.0, "usd_krw_y": 1460.0,
-            "jpy_krw": 9.12, "dxy": 100.0,
+            "usd_krw": 1460.0, "usd_krw_g": 1460.0, "usd_krw_y": 1460.0, "usd_krw_m": 1460.0,
+            "jpy_krw": 9.12, "dxy": 100.0, "dxy_m": 100.0,
             "kospi": 0.0, "kospi_rate": 0.0, "kosdaq": 0.0, "kosdaq_rate": 0.0,
             "sp500_f": 0.0, "sp500_f_rate": 0.0, "nasdaq_f": 0.0, "nasdaq_f_rate": 0.0,
             "source": "Init"
         }
         self.prev_closes = {"kospi": 0, "kosdaq": 0, "sp500_f": 0, "nasdaq_f": 0}
         self.last_index_update = 0
-        self.init_prev_closes()
 
         self.forex_buffer = []
         self.last_alert_time = 0
@@ -113,10 +113,36 @@ class MarketObserver:
         except:
             return None
 
+    def get_marketwatch_price(self, url):
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            res = requests.get(url, headers=headers, timeout=3)
+            soup = BeautifulSoup(res.text, 'html.parser')
+
+            meta_price = soup.find('meta', attrs={'name': 'price'})
+            if meta_price and meta_price.get('content'):
+                text_val = meta_price['content'].replace(',', '')
+                match = re.search(r"[-+]?\d*\.\d+|\d+", text_val)
+                if match:
+                    return float(match.group())
+
+            price_h2 = soup.find('h2', {'class': 'intraday__price'})
+            if price_h2:
+                el = price_h2.find('bg-quote')
+                if el:
+                    text_val = el.text.strip().replace(',', '')
+                    match = re.search(r"[-+]?\d*\.\d+|\d+", text_val)
+                    if match:
+                        return float(match.group())
+        except Exception as e:
+            pass
+        return None
+
     def update_indices_realtime(self):
         headers = {"User-Agent": "Mozilla/5.0"}
 
-        # 1. KOSPI & KOSDAQ (국내 증시 - 네이버 모바일 API)
         dom_symbols = {"kospi": "KOSPI", "kosdaq": "KOSDAQ"}
         dom_url = "https://m.stock.naver.com/api/index/{}/price?pageSize=1&page=1"
 
@@ -130,10 +156,9 @@ class MarketObserver:
                         self.cached_macro[key] = float(recent.get("closePrice", "0").replace(",", ""))
                         self.cached_macro[f"{key}_rate"] = float(recent.get("fluctuationsRatio", "0"))
             except Exception as e:
-                print(f"국내지수 에러: {e}")
+                pass
 
-        # 2. S&P 500 & NASDAQ (해외 증시 - 네이버 글로벌 API / ★ 선물 대신 본장 현물 지수 적용)
-        ovs_symbols = {"sp500_f": ".INX", "nasdaq_f": ".IXIC"}  # 프론트엔드 호환을 위해 키값(sp500_f)은 그대로 유지
+        ovs_symbols = {"sp500_f": ".INX", "nasdaq_f": ".IXIC"}
         ovs_url = "https://api.stock.naver.com/index/{}/basic"
 
         for key, symbol in ovs_symbols.items():
@@ -144,9 +169,8 @@ class MarketObserver:
                     self.cached_macro[key] = float(data.get("closePrice", "0").replace(",", ""))
                     self.cached_macro[f"{key}_rate"] = float(data.get("fluctuationsRatio", "0"))
             except Exception as e:
-                print(f"해외지수 에러: {e}")
+                pass
 
-        # 3. 달러 인덱스 (DXY) - 야후 파이낸스
         try:
             usa = yf.download("DX-Y.NYB", period="1d", interval="1m", progress=False)
             if not usa.empty:
@@ -155,6 +179,13 @@ class MarketObserver:
                 val = float(usa['Close'].iloc[-1])
                 if not math.isnan(val):
                     self.cached_macro["dxy"] = round(val, 2)
+        except Exception as e:
+            pass
+
+        try:
+            dxy_m = self.get_marketwatch_price("https://www.marketwatch.com/investing/index/dxy")
+            if dxy_m:
+                self.cached_macro["dxy_m"] = round(dxy_m, 2)
         except Exception as e:
             pass
 
@@ -192,19 +223,6 @@ class MarketObserver:
             self.update_indices_realtime()
             self.last_index_update = time.time()
 
-    def init_prev_closes(self):
-        try:
-            ks = fdr.DataReader('KS11', data_source='naver')
-            if len(ks) >= 2: self.prev_closes["kospi"] = float(ks['Close'].iloc[-2])
-            usa = yf.download(["ES=F", "NQ=F"], period="5d", interval="1d", progress=False)
-            if not usa.empty:
-                closes = usa['Close']
-                if len(closes) >= 2:
-                    self.prev_closes["sp500_f"] = float(closes["ES=F"].iloc[-2])
-                    self.prev_closes["nasdaq_f"] = float(closes["NQ=F"].iloc[-2])
-        except:
-            pass
-
     def calculate_rsi(self, ohlcv, period=14):
         try:
             if not ohlcv: return 0.0
@@ -228,9 +246,8 @@ class MarketObserver:
                 if data.get('status') == '0000':
                     ohlcv = []
                     for row in data['data'][-100:]:
-                        # ★ 9시간 더하기/빼기 꼼수 원상복구! 순수하게 빗썸 타임스탬프 그대로 사용
                         ohlcv.append([
-                            int(row[0]),  # Time
+                            int(row[0]),  # Time (UTC Epoch)
                             float(row[1]),  # Open
                             float(row[3]),  # High
                             float(row[4]),  # Low
@@ -247,11 +264,10 @@ class MarketObserver:
             usdt = self.fetch_bithumb_15m_direct('USDT/KRW')
             btc_kr = self.fetch_bithumb_15m_direct('BTC/KRW')
 
-            # ★ 바이낸스와 업비트도 시간 조작 없이 순수 데이터만 추출
             btc_us = self.binance.fetch_ohlcv('BTC/USDT', '15m', limit=100)
             usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
 
-            # ★ 야후 환율도 시간 조작 없이 순수 데이터 추출
+            # ★ KST 변환 꼼수 제거 (순수 UTC 로 통일)
             usd_krw_chart_data = []
             try:
                 usd_df = yf.download("KRW=X", period="7d", interval="15m", progress=False)
@@ -267,7 +283,22 @@ class MarketObserver:
             except Exception as e:
                 pass
 
-            # 정상적으로 통일된 시간(Epoch)끼리 결합하여 올바른 현재 김프 계산!
+            # ★ KST 변환 꼼수 제거 (순수 UTC 로 통일)
+            dxy_chart_data = []
+            try:
+                dxy_df = yf.download("DX-Y.NYB", period="7d", interval="15m", progress=False)
+                if not dxy_df.empty:
+                    if isinstance(dxy_df.columns, pd.MultiIndex):
+                        dxy_df.columns = dxy_df.columns.get_level_values(0)
+                    for dt, row in dxy_df.tail(100).iterrows():
+                        dxy_chart_data.append([
+                            int(dt.timestamp() * 1000),
+                            float(row['Open']), float(row['High']),
+                            float(row['Low']), float(row['Close']), 0
+                        ])
+            except Exception as e:
+                pass
+
             kimp_15m_series = []
             if btc_kr and btc_us:
                 df_kr = pd.DataFrame(btc_kr, columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values(
@@ -285,6 +316,7 @@ class MarketObserver:
                 "usdt": usdt,
                 "btc": btc_kr,
                 "usd_krw_chart": usd_krw_chart_data,
+                "dxy_chart": dxy_chart_data,
                 "kimp_15m": kimp_15m_series,
                 "rsi_usdt": self.calculate_rsi(usdt),
                 "rsi_btc": self.calculate_rsi(btc_kr),
@@ -292,7 +324,8 @@ class MarketObserver:
             }
         except Exception as e:
             print(f"Chart Data Error: {e}")
-            return {"usdt": [], "btc": [], "usd_krw_chart": [], "kimp_15m": [], "rsi_usdt": 0, "rsi_btc": 0,
+            return {"usdt": [], "btc": [], "usd_krw_chart": [], "dxy_chart": [], "kimp_15m": [], "rsi_usdt": 0,
+                    "rsi_btc": 0,
                     "rsi_usdt_up": 0}
 
     def get_balance(self):
@@ -383,7 +416,7 @@ class MarketObserver:
 
 
 def run_bot():
-    print("=== 🤖 봇 시작 (시간 동기화 버그 픽스 완료) ===")
+    print("=== 🤖 봇 시작 (차트 KST 시간대 버그 패치 완료) ===")
     observer = MarketObserver()
     last_chart_update = 0
 

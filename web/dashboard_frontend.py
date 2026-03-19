@@ -39,6 +39,10 @@ else:
 # === CSS 스타일 최적화 ===
 st.markdown(f"""
     <style>
+        /* 멀티 페이지용 기본 사이드바 메뉴 완벽 숨김 */
+        section[data-testid="stSidebar"] {{ display: none !important; }}
+        button[kind="header"] {{ display: none !important; }}
+
         header, footer, #MainMenu {{visibility: hidden;}}
         .stApp {{ background-color: {theme['bg_color']}; color: {theme['text_color']}; }}
         html, body, [class*="css"] {{ font-size: 14px; color: {theme['text_color']}; }}
@@ -278,9 +282,10 @@ def show_static_charts():
         df_kimp = pd.DataFrame(kimp_data)
         df_usd = pd.DataFrame(usd_chart_data, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
 
+        # 시간대 변환 (일괄 한국시간 KST +9시간 적용)
         for df in [df_usdt, df_btc, df_kimp, df_usd]:
             if not df.empty and 'time' in df.columns:
-                df['time'] = pd.to_datetime(df['time'], unit='ms')
+                df['time'] = pd.to_datetime(df['time'], unit='ms') + pd.Timedelta(hours=9)
 
         if not df_usd.empty and not df_usdt.empty:
             df_usd = df_usd.sort_values('time')
@@ -300,31 +305,38 @@ def show_static_charts():
         cm = dict(l=40, r=40, t=10, b=10)
         cl = dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", font=dict(color="white"), x=1)
 
+        # ---------------------------------------------------------
+        # 1. USDT vs 환율 vs BTC 차트 (축 방향 변경)
+        # ---------------------------------------------------------
         st.markdown("**📈 빗썸 테더 프리미엄 비교 (USDT vs 환율 vs BTC)**")
 
         if not df_usdt.empty and not df_btc.empty:
             fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+            # ★ BTC를 기본 축(왼쪽)으로 고정
+            fig.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.5,
+                                     line=dict(color='#FF6D00', width=1.5)), secondary_y=False)
+
+            # ★ USDT와 USD/KRW를 보조 축(오른쪽)으로 이동
             fig.add_trace(
                 go.Scatter(x=df_usdt['time'], y=df_usdt['close'], name="USDT", line=dict(color='#2962FF', width=2)),
-                secondary_y=False)
+                secondary_y=True)
 
             if not df_usd.empty:
                 fig.add_trace(go.Scatter(x=df_usd['time'], y=df_usd['close'], name="USD/KRW",
-                                         line=dict(color='#00E676', width=2, dash='dot')), secondary_y=False)
-
-            fig.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.5,
-                                     line=dict(color='#FF6D00', width=1.5)), secondary_y=True)
+                                         line=dict(color='#00E676', width=2, dash='dot')), secondary_y=True)
 
             fig.update_layout(height=230, margin=cm, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                               font=dict(color="white"), legend=cl)
 
-            fig.update_yaxes(title_text="KRW", secondary_y=False, showgrid=True, gridcolor=theme['grid_color'],
-                             fixedrange=True, tickfont=dict(color="white"), title_font=dict(color="white"), nticks=10)
-
-            fig.update_yaxes(title_text="BTC", secondary_y=True, showgrid=False, fixedrange=True,
+            # 왼쪽 Y축 (BTC)
+            fig.update_yaxes(title_text="BTC", secondary_y=False, showgrid=False, fixedrange=True,
                              showticklabels=True, tickfont=dict(color="white"), title_font=dict(color="white"),
                              nticks=6)
+
+            # 오른쪽 Y축 (KRW) - 그리드라인 유지
+            fig.update_yaxes(title_text="KRW", secondary_y=True, showgrid=True, gridcolor=theme['grid_color'],
+                             fixedrange=True, tickfont=dict(color="white"), title_font=dict(color="white"), nticks=10)
 
             fig.update_xaxes(fixedrange=True, gridcolor=theme['grid_color'], tickformat='%m-%d %H:%M',
                              tickfont=dict(color="white"))
@@ -333,28 +345,37 @@ def show_static_charts():
         else:
             st.info("시세 데이터 로딩 중...")
 
+        # ---------------------------------------------------------
+        # 2. 김프 차트 (축 방향 변경)
+        # ---------------------------------------------------------
         st.markdown("**🌊 BTC 김프 추세 vs 가격**")
         if not df_kimp.empty and not df_btc.empty:
             fig_k = make_subplots(specs=[[{"secondary_y": True}]])
+
+            # ★ BTC를 똑같이 기본 축(왼쪽)으로 고정
+            fig_k.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.4,
+                                       line=dict(color='#FF6D00', width=1)), secondary_y=False)
+
+            # ★ 김프(%)를 보조 축(오른쪽)으로 이동
             fig_k.add_trace(
                 go.Scatter(x=df_kimp['time'], y=df_kimp['kimp'], name='Kimp', line=dict(color='#00E676', width=2)),
-                secondary_y=False)
-
-            fig_k.add_trace(go.Scatter(x=df_btc['time'], y=df_btc['close'], name="BTC", opacity=0.4,
-                                       line=dict(color='#FF6D00', width=1)), secondary_y=True)
+                secondary_y=True)
 
             fig_k.update_layout(height=130, margin=cm, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                                 font=dict(color="white"), legend=cl)
 
-            fig_k.update_yaxes(title_text="KIMP (%)", secondary_y=False, showgrid=True, gridcolor=theme['grid_color'],
-                               fixedrange=True, tickfont=dict(color="white"), title_font=dict(color="white"), nticks=5)
-
-            fig_k.add_hline(y=0, line_color="rgba(255,255,255,0.3)" if is_dark else "rgba(0,0,0,0.3)",
-                            secondary_y=False)
-
-            fig_k.update_yaxes(title_text="BTC", secondary_y=True, showgrid=False, fixedrange=True,
+            # 왼쪽 Y축 (BTC)
+            fig_k.update_yaxes(title_text="BTC", secondary_y=False, showgrid=False, fixedrange=True,
                                showticklabels=True, tickfont=dict(color="white"), title_font=dict(color="white"),
                                nticks=6)
+
+            # 오른쪽 Y축 (KIMP %)
+            fig_k.update_yaxes(title_text="KIMP (%)", secondary_y=True, showgrid=True, gridcolor=theme['grid_color'],
+                               fixedrange=True, tickfont=dict(color="white"), title_font=dict(color="white"), nticks=5)
+
+            # 0% 기준선 (오른쪽 축 기준으로 설정)
+            fig_k.add_hline(y=0, line_color="rgba(255,255,255,0.3)" if is_dark else "rgba(0,0,0,0.3)",
+                            secondary_y=True)
 
             fig_k.update_xaxes(fixedrange=True, tickformat='%H:%M', gridcolor=theme['grid_color'],
                                tickfont=dict(color="white"))
@@ -362,5 +383,8 @@ def show_static_charts():
             st.plotly_chart(fig_k, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
 
+# =========================================================
+# 화면 렌더링 실행
+# =========================================================
 show_realtime_tables()
 show_static_charts()
