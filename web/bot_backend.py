@@ -60,9 +60,14 @@ class MarketObserver:
         }
         self.prev_closes = {"kospi": 0, "kosdaq": 0, "sp500_f": 0, "nasdaq_f": 0}
         self.last_index_update = 0
-
         self.forex_buffer = []
         self.last_alert_time = 0
+
+        # ★ [추가] 은행 고시 알림 상태 관리 (하나, 국민)
+        self.bank_alert_state = {
+            "하나": {"last_time": None, "count": 0, "date": None},
+            "국민": {"last_time": None, "count": 0, "date": None}
+        }
 
     def check_volatility(self, current_price):
         if self.last_reported_price == 0:
@@ -90,6 +95,67 @@ class MarketObserver:
                 pass
 
             self.last_reported_price = current_price
+
+    # ★ [추가] 은행별 환율 고시 업데이트 감시 기능
+    def check_bank_updates(self):
+        try:
+            if not os.path.exists("exchange_rates.json"):
+                return
+
+            with open("exchange_rates.json", "r", encoding="utf-8") as f:
+                ex_data = json.load(f)
+
+            for key, data in ex_data.items():
+                if not isinstance(data, dict):
+                    continue
+
+                bank_name = data.get("bank_name", "")
+                update_time = data.get("update_time", "")
+
+                # 하나은행 또는 국민은행만 타겟팅
+                target_bank = None
+                if "하나" in bank_name:
+                    target_bank = "하나"
+                elif "국민" in bank_name:
+                    target_bank = "국민"
+
+                if target_bank and update_time:
+                    # update_time 예: "2026.03.21 01:50" -> 날짜만 분리
+                    current_date = update_time.split(" ")[0] if " " in update_time else update_time
+                    state = self.bank_alert_state[target_bank]
+
+                    # 날짜가 바뀌었으면 알림 카운트 초기화 (매일 1~3회 알림을 위해)
+                    if state["date"] != current_date:
+                        state["date"] = current_date
+                        state["count"] = 0
+
+                    # 고시 시간이 갱신되었을 때
+                    if state["last_time"] != update_time:
+                        is_first_run = (state["last_time"] is None)
+                        state["last_time"] = update_time
+
+                        # 봇 처음 켜졌을 때는 알림 생략 (기존 데이터로 알림 가는 것 방지)
+                        if not is_first_run:
+                            state["count"] += 1
+
+                            # 1 ~ 3회차까지만 텔레그램 발송
+                            if state["count"] <= 3:
+                                usd_rate = "-"
+                                for r in data.get("rates", []):
+                                    if r.get("currency") == "USD":
+                                        usd_rate = f"{r.get('base_rate'):,.2f}"
+                                        break
+
+                                msg = f"🏦 [{bank_name}] 환율 고시 업데이트 ({state['count']}회차)\n⏰ 시간: {update_time}\n💵 USD: {usd_rate}원"
+                                print(f"🔔 {msg}")
+                                try:
+                                    if 'mybot.TelegramMessenger' in sys.modules:
+                                        asyncio.run(tm.send_dollar_message(msg))
+                                except Exception as e:
+                                    pass
+        except Exception as e:
+            # json 파일 읽기 도중 발생할 수 있는 충돌 예외 처리
+            pass
 
     def get_naver_index(self, market_code):
         try:
@@ -142,7 +208,6 @@ class MarketObserver:
 
     def update_indices_realtime(self):
         headers = {"User-Agent": "Mozilla/5.0"}
-
         dom_symbols = {"kospi": "KOSPI", "kosdaq": "KOSDAQ"}
         dom_url = "https://m.stock.naver.com/api/index/{}/price?pageSize=1&page=1"
 
@@ -203,7 +268,7 @@ class MarketObserver:
             if not hist.empty:
                 usd_y = float(hist['Close'].iloc[-1])
                 self.cached_macro["usd_krw_y"] = round(usd_y, 2)
-                self.check_volatility(usd_y)
+                # self.check_volatility(usd_y)
         except:
             pass
 
@@ -247,12 +312,8 @@ class MarketObserver:
                     ohlcv = []
                     for row in data['data'][-100:]:
                         ohlcv.append([
-                            int(row[0]),  # Time (UTC Epoch)
-                            float(row[1]),  # Open
-                            float(row[3]),  # High
-                            float(row[4]),  # Low
-                            float(row[2]),  # Close
-                            float(row[5])  # Volume
+                            int(row[0]) + 32400000,
+                            float(row[1]), float(row[3]), float(row[4]), float(row[2]), float(row[5])
                         ])
                     return ohlcv
         except Exception as e:
@@ -265,25 +326,32 @@ class MarketObserver:
             btc_kr = self.fetch_bithumb_15m_direct('BTC/KRW')
 
             btc_us = self.binance.fetch_ohlcv('BTC/USDT', '15m', limit=100)
-            usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
+            for row in btc_us: row[0] += 32400000
 
-            # ★ KST 변환 꼼수 제거 (순수 UTC 로 통일)
+            usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
+            for row in usdt_up: row[0] += 32400000
+
             usd_krw_chart_data = []
             try:
                 usd_df = yf.download("KRW=X", period="7d", interval="15m", progress=False)
                 if not usd_df.empty:
                     if isinstance(usd_df.columns, pd.MultiIndex):
                         usd_df.columns = usd_df.columns.get_level_values(0)
+
+                    yf_latest = float(usd_df['Close'].iloc[-1])
+                    real_usd = self.cached_macro['usd_krw']
+                    offset = real_usd - yf_latest
+
                     for dt, row in usd_df.tail(100).iterrows():
+                        kst_ms = int(dt.timestamp() * 1000) + 32400000
                         usd_krw_chart_data.append([
-                            int(dt.timestamp() * 1000),
-                            float(row['Open']), float(row['High']),
-                            float(row['Low']), float(row['Close']), 0
+                            kst_ms,
+                            float(row['Open']) + offset, float(row['High']) + offset,
+                            float(row['Low']) + offset, float(row['Close']) + offset, 0
                         ])
             except Exception as e:
                 pass
 
-            # ★ KST 변환 꼼수 제거 (순수 UTC 로 통일)
             dxy_chart_data = []
             try:
                 dxy_df = yf.download("DX-Y.NYB", period="7d", interval="15m", progress=False)
@@ -291,10 +359,9 @@ class MarketObserver:
                     if isinstance(dxy_df.columns, pd.MultiIndex):
                         dxy_df.columns = dxy_df.columns.get_level_values(0)
                     for dt, row in dxy_df.tail(100).iterrows():
+                        kst_ms = int(dt.timestamp() * 1000) + 32400000
                         dxy_chart_data.append([
-                            int(dt.timestamp() * 1000),
-                            float(row['Open']), float(row['High']),
-                            float(row['Low']), float(row['Close']), 0
+                            kst_ms, float(row['Open']), float(row['High']), float(row['Low']), float(row['Close']), 0
                         ])
             except Exception as e:
                 pass
@@ -305,12 +372,30 @@ class MarketObserver:
                     'time')
                 df_us = pd.DataFrame(btc_us, columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values(
                     'time')
+                df_usd = pd.DataFrame(usd_krw_chart_data,
+                                      columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values('time')
 
                 df_merge = pd.merge_asof(df_kr, df_us, on='time', suffixes=('_kr', '_us'), direction='backward')
-                ex_rate = self.cached_macro['usd_krw']
 
-                df_merge['kimp'] = ((df_merge['close_kr'] / (df_merge['close_us'] * ex_rate)) - 1) * 100
+                if not df_usd.empty:
+                    df_merge = pd.merge_asof(df_merge, df_usd[['time', 'close']], on='time', direction='backward')
+                    df_merge.rename(columns={'close': 'ex_rate'}, inplace=True)
+                    df_merge['ex_rate'] = df_merge['ex_rate'].ffill().bfill().fillna(self.cached_macro['usd_krw'])
+                else:
+                    df_merge['ex_rate'] = self.cached_macro['usd_krw']
+
+                df_merge['kimp'] = ((df_merge['close_kr'] / (df_merge['close_us'] * df_merge['ex_rate'])) - 1) * 100
                 kimp_15m_series = df_merge[['time', 'kimp']].dropna().to_dict('records')
+
+                try:
+                    p_btc_kr = float(
+                        requests.get("https://api.bithumb.com/public/ticker/BTC_KRW", timeout=3).json()['data'][
+                            'closing_price'])
+                    p_btc_gl = self.binance.fetch_ticker('BTC/USDT')['last']
+                    rt_kimp = ((p_btc_kr / (p_btc_gl * self.cached_macro['usd_krw'])) - 1) * 100
+                    kimp_15m_series.append({'time': int(time.time() * 1000) + 32400000, 'kimp': rt_kimp})
+                except Exception as e:
+                    pass
 
             return {
                 "usdt": usdt,
@@ -416,7 +501,7 @@ class MarketObserver:
 
 
 def run_bot():
-    print("=== 🤖 봇 시작 (차트 KST 시간대 버그 패치 완료) ===")
+    print("=== 🤖 봇 시작 (은행 고시 알림 기능 탑재 완료) ===")
     observer = MarketObserver()
     last_chart_update = 0
 
@@ -433,6 +518,8 @@ def run_bot():
                     with open("command.json", 'w') as f: json.dump({}, f)
 
             observer.update_macro_data()
+            # ★ 환율 매크로 데이터를 업데이트한 후 은행 고시 업데이트도 검사
+            observer.check_bank_updates()
 
             curr = time.time()
             if curr - last_chart_update > 15:
