@@ -60,15 +60,9 @@ class MarketObserver:
         }
         self.prev_closes = {"kospi": 0, "kosdaq": 0, "sp500_f": 0, "nasdaq_f": 0}
         self.last_index_update = 0
+
         self.forex_buffer = []
         self.last_alert_time = 0
-
-        self.latest_rsi = {"rsi_usdt": 0, "rsi_usdt_up": 0, "rsi_btc": 0}
-
-        self.bank_alert_state = {
-            "하나": {"last_time": None},
-            "국민": {"last_time": None}
-        }
 
     def check_volatility(self, current_price):
         if self.last_reported_price == 0:
@@ -96,114 +90,6 @@ class MarketObserver:
                 pass
 
             self.last_reported_price = current_price
-
-    # ★ [수정] 모닝 브리핑 포맷으로 텔레그램 메시지 구성
-    def check_bank_updates(self):
-        try:
-            if not os.path.exists("exchange_rates.json"):
-                return
-
-            with open("exchange_rates.json", "r", encoding="utf-8") as f:
-                ex_data = json.load(f)
-
-            # 은행별 데이터 추출 헬퍼 함수
-            def get_b_info(b_name):
-                for k, v in ex_data.items():
-                    if isinstance(v, dict) and b_name in v.get("bank_name", ""):
-                        u, j = 0, 0
-                        for r in v.get("rates", []):
-                            if r.get("currency") == "USD": u = r.get("base_rate", 0)
-                            if r.get("currency") == "JPY": j = r.get("base_rate", 0)
-                        return u, j, v.get("update_time", "")
-                return 0, 0, ""
-
-            for key, data in ex_data.items():
-                if not isinstance(data, dict):
-                    continue
-
-                bank_name = data.get("bank_name", "")
-                update_time = data.get("update_time", "")
-
-                target_bank = None
-                if "하나" in bank_name:
-                    target_bank = "하나"
-                elif "국민" in bank_name:
-                    target_bank = "국민"
-
-                if target_bank and update_time:
-                    state = self.bank_alert_state[target_bank]
-
-                    if state["last_time"] != update_time:
-                        is_first_run = (state["last_time"] is None)
-                        state["last_time"] = update_time
-
-                        if not is_first_run:
-                            time_str = update_time.split(" ")[1] if " " in update_time else ""
-
-                            # 아침 7시 ~ 9시 사이 고시 알림
-                            if time_str and "07:00" <= time_str <= "09:00":
-                                # 1. 트리거된 은행 가격
-                                usd_rate = "-"
-                                for r in data.get("rates", []):
-                                    if r.get("currency") == "USD":
-                                        usd_rate = f"{r.get('base_rate'):,.2f}"
-                                        break
-
-                                # 2. 하나 - 국민 가격 차이 계산
-                                hana_u, _, _ = get_b_info("하나")
-                                kook_u, _, _ = get_b_info("국민")
-                                gap_str = f"{(hana_u - kook_u):+.2f}원" if (hana_u and kook_u) else "데이터 없음"
-
-                                # 3. 메시지 조립 시작
-                                msg = f"🔔 [{bank_name}] 아침 고시 업데이트\n"
-                                msg += f"⏰ {update_time}\n"
-                                msg += f"💵 고시환율: {usd_rate}원\n\n"
-
-                                msg += f"⚖️ [하나-국민 갭]: {gap_str}\n\n"
-
-                                msg += f"📊 [글로벌 환율]\n"
-                                msg += f"구글: {self.cached_macro.get('usd_krw_g', 0):,.2f}원 | 야후: {self.cached_macro.get('usd_krw_y', 0):,.2f}원\n\n"
-
-                                msg += f"🏦 [은행별 고시환율 (USD / JPY)]\n"
-                                for b in ["하나", "국민", "우리", "신한"]:
-                                    bu, bj, bt = get_b_info(b)
-                                    msg += f"- {b}: {bu:,.2f} / {bj:,.2f} ({bt[-5:]})\n"
-                                msg += "\n"
-
-                                # 4. 실시간 코인 & 김프 상태 조립
-                                coin_data = self.get_realtime_status()
-                                if coin_data and 'market' in coin_data:
-                                    m = coin_data['market']
-                                    up_u, up_u_k = m['upbit']['price'], m['upbit']['kimp']
-                                    bi_u, bi_u_k = m['bithumb']['price'], m['bithumb']['kimp']
-
-                                    up_b, up_b_k = m['btc']['upbit_price'], m['btc']['upbit_kimp']
-                                    bi_b, bi_b_k = m['btc']['price_kr'], m['btc']['kimp']
-
-                                    up_e, up_e_k = m['eth']['upbit_price'], m['eth']['upbit_kimp']
-                                    bi_e, bi_e_k = m['eth']['price_kr'], m['eth']['kimp']
-
-                                    up_x, up_x_k = m['xrp']['upbit_price'], m['xrp']['upbit_kimp']
-                                    bi_x, bi_x_k = m['xrp']['price_kr'], m['xrp']['kimp']
-
-                                    rsi_u = self.latest_rsi.get('rsi_usdt', 0)
-                                    rsi_b = self.latest_rsi.get('rsi_btc', 0)
-
-                                    msg += f"🪙 [코인 시세 & 김프]\n"
-                                    msg += f"( 🔵업비트 | 🟠빗썸 )\n"
-                                    msg += f"USDT: 🔵{up_u:,.0f}({up_u_k:+.2f}%) 🟠{bi_u:,.0f}({bi_u_k:+.2f}%) | RSI:{rsi_u}\n"
-                                    msg += f"BTC : 🔵{up_b / 1000:,.0f}K({up_b_k:+.2f}%) 🟠{bi_b / 1000:,.0f}K({bi_b_k:+.2f}%) | RSI:{rsi_b}\n"
-                                    msg += f"ETH : 🔵{up_e / 1000:,.0f}K({up_e_k:+.2f}%) 🟠{bi_e / 1000:,.0f}K({bi_e_k:+.2f}%)\n"
-                                    msg += f"XRP : 🔵{up_x:,.0f}({up_x_k:+.2f}%) 🟠{bi_x:,.0f}({bi_x_k:+.2f}%)\n"
-
-                                print(f"🔔 {msg}")
-                                try:
-                                    if 'mybot.TelegramMessenger' in sys.modules:
-                                        asyncio.run(tm.send_dollar_message(msg))
-                                except Exception as e:
-                                    pass
-        except Exception as e:
-            pass
 
     def get_naver_index(self, market_code):
         try:
@@ -235,6 +121,7 @@ class MarketObserver:
             res = requests.get(url, headers=headers, timeout=3)
             soup = BeautifulSoup(res.text, 'html.parser')
 
+            # 1순위: 메타 태그에서 확실하게 가져오기
             meta_price = soup.find('meta', attrs={'name': 'price'})
             if meta_price and meta_price.get('content'):
                 text_val = meta_price['content'].replace(',', '')
@@ -242,6 +129,7 @@ class MarketObserver:
                 if match:
                     return float(match.group())
 
+            # 2순위: 메인 가격 태그에서 가져오기
             price_h2 = soup.find('h2', {'class': 'intraday__price'})
             if price_h2:
                 el = price_h2.find('bg-quote')
@@ -251,11 +139,12 @@ class MarketObserver:
                     if match:
                         return float(match.group())
         except Exception as e:
-            pass
+            print(f"MarketWatch Fetch Error ({url}): {e}")
         return None
 
     def update_indices_realtime(self):
         headers = {"User-Agent": "Mozilla/5.0"}
+
         dom_symbols = {"kospi": "KOSPI", "kosdaq": "KOSDAQ"}
         dom_url = "https://m.stock.naver.com/api/index/{}/price?pageSize=1&page=1"
 
@@ -316,7 +205,14 @@ class MarketObserver:
             if not hist.empty:
                 usd_y = float(hist['Close'].iloc[-1])
                 self.cached_macro["usd_krw_y"] = round(usd_y, 2)
-                # self.check_volatility(usd_y)
+                self.check_volatility(usd_y)
+        except:
+            pass
+
+        try:
+            usd_m = self.get_marketwatch_price("https://www.marketwatch.com/investing/currency/usdkrw")
+            if usd_m:
+                self.cached_macro["usd_krw_m"] = round(usd_m, 2)
         except:
             pass
 
@@ -360,8 +256,12 @@ class MarketObserver:
                     ohlcv = []
                     for row in data['data'][-100:]:
                         ohlcv.append([
-                            int(row[0]) + 32400000,
-                            float(row[1]), float(row[3]), float(row[4]), float(row[2]), float(row[5])
+                            int(row[0]),  # Time
+                            float(row[1]),  # Open
+                            float(row[3]),  # High
+                            float(row[4]),  # Low
+                            float(row[2]),  # Close
+                            float(row[5])  # Volume
                         ])
                     return ohlcv
         except Exception as e:
@@ -374,10 +274,7 @@ class MarketObserver:
             btc_kr = self.fetch_bithumb_15m_direct('BTC/KRW')
 
             btc_us = self.binance.fetch_ohlcv('BTC/USDT', '15m', limit=100)
-            for row in btc_us: row[0] += 32400000
-
             usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
-            for row in usdt_up: row[0] += 32400000
 
             usd_krw_chart_data = []
             try:
@@ -385,17 +282,11 @@ class MarketObserver:
                 if not usd_df.empty:
                     if isinstance(usd_df.columns, pd.MultiIndex):
                         usd_df.columns = usd_df.columns.get_level_values(0)
-
-                    yf_latest = float(usd_df['Close'].iloc[-1])
-                    real_usd = self.cached_macro['usd_krw']
-                    offset = real_usd - yf_latest
-
                     for dt, row in usd_df.tail(100).iterrows():
-                        kst_ms = int(dt.timestamp() * 1000) + 32400000
                         usd_krw_chart_data.append([
-                            kst_ms,
-                            float(row['Open']) + offset, float(row['High']) + offset,
-                            float(row['Low']) + offset, float(row['Close']) + offset, 0
+                            int(dt.timestamp() * 1000) + 32400000,  # KST 변환
+                            float(row['Open']), float(row['High']),
+                            float(row['Low']), float(row['Close']), 0
                         ])
             except Exception as e:
                 pass
@@ -407,9 +298,10 @@ class MarketObserver:
                     if isinstance(dxy_df.columns, pd.MultiIndex):
                         dxy_df.columns = dxy_df.columns.get_level_values(0)
                     for dt, row in dxy_df.tail(100).iterrows():
-                        kst_ms = int(dt.timestamp() * 1000) + 32400000
                         dxy_chart_data.append([
-                            kst_ms, float(row['Open']), float(row['High']), float(row['Low']), float(row['Close']), 0
+                            int(dt.timestamp() * 1000) + 32400000,  # KST 변환
+                            float(row['Open']), float(row['High']),
+                            float(row['Low']), float(row['Close']), 0
                         ])
             except Exception as e:
                 pass
@@ -420,30 +312,12 @@ class MarketObserver:
                     'time')
                 df_us = pd.DataFrame(btc_us, columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values(
                     'time')
-                df_usd = pd.DataFrame(usd_krw_chart_data,
-                                      columns=['time', 'open', 'high', 'low', 'close', 'volume']).sort_values('time')
 
                 df_merge = pd.merge_asof(df_kr, df_us, on='time', suffixes=('_kr', '_us'), direction='backward')
+                ex_rate = self.cached_macro['usd_krw']
 
-                if not df_usd.empty:
-                    df_merge = pd.merge_asof(df_merge, df_usd[['time', 'close']], on='time', direction='backward')
-                    df_merge.rename(columns={'close': 'ex_rate'}, inplace=True)
-                    df_merge['ex_rate'] = df_merge['ex_rate'].ffill().bfill().fillna(self.cached_macro['usd_krw'])
-                else:
-                    df_merge['ex_rate'] = self.cached_macro['usd_krw']
-
-                df_merge['kimp'] = ((df_merge['close_kr'] / (df_merge['close_us'] * df_merge['ex_rate'])) - 1) * 100
+                df_merge['kimp'] = ((df_merge['close_kr'] / (df_merge['close_us'] * ex_rate)) - 1) * 100
                 kimp_15m_series = df_merge[['time', 'kimp']].dropna().to_dict('records')
-
-                try:
-                    p_btc_kr = float(
-                        requests.get("https://api.bithumb.com/public/ticker/BTC_KRW", timeout=3).json()['data'][
-                            'closing_price'])
-                    p_btc_gl = self.binance.fetch_ticker('BTC/USDT')['last']
-                    rt_kimp = ((p_btc_kr / (p_btc_gl * self.cached_macro['usd_krw'])) - 1) * 100
-                    kimp_15m_series.append({'time': int(time.time() * 1000) + 32400000, 'kimp': rt_kimp})
-                except Exception as e:
-                    pass
 
             return {
                 "usdt": usdt,
@@ -549,7 +423,7 @@ class MarketObserver:
 
 
 def run_bot():
-    print("=== 🤖 봇 시작 (모닝 브리핑 패치 완료) ===")
+    print("=== 🤖 봇 시작 (MarketWatch 메타 태그 & 정규식 추출 패치 완료) ===")
     observer = MarketObserver()
     last_chart_update = 0
 
@@ -566,7 +440,6 @@ def run_bot():
                     with open("command.json", 'w') as f: json.dump({}, f)
 
             observer.update_macro_data()
-            observer.check_bank_updates()
 
             curr = time.time()
             if curr - last_chart_update > 15:
