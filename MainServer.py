@@ -1,6 +1,6 @@
 import ctypes
 
-from flask import Flask, jsonify, send_file, render_template, request, redirect, url_for, session
+from flask import Flask, jsonify, send_file, render_template, request, redirect, url_for, session, send_from_directory
 # 메인 페이지
 
 import os
@@ -19,6 +19,11 @@ app.register_blueprint(infinite_bp)
 # 이미지 저장 디렉터리 설정
 IMAGE_DIRECTORY = "images"
 os.makedirs(IMAGE_DIRECTORY, exist_ok=True)
+
+
+@app.route('/images/<path:filename>')
+def serve_image(filename):
+    return send_from_directory(IMAGE_DIRECTORY, filename)
 
 
 # 로그인 페이지
@@ -83,6 +88,18 @@ def upload_picture():
     file_path = os.path.join(IMAGE_DIRECTORY, file.filename)
     file.save(file_path)
     return jsonify({"status": "success", "message": f"File {file.filename} uploaded!"})
+
+
+# 어린이 한국사 타임라인 페이지
+@app.route('/history')
+def history_timeline():
+    return render_template('history.html')
+
+
+# 어린이 한국사 상세 돋보기 페이지
+@app.route('/history/chronicle/<era_id>')
+def history_chronicle(era_id):
+    return render_template('chronicle.html', era_id=era_id)
 
 
 if __name__ == '__main__':

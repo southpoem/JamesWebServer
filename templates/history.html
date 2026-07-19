@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 우당탕탕 한국사 모험 타임라인 🌟</title>
+    <!-- Google Fonts: Gaegu (제목/발랄함), Nanum Gothic (가독성), Jua (재미) -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #FDFBF7;
+            --text-color: #333333;
+            --timeline-line-color: #E2D4C9;
+            --card-shadow: 0 8px 24px rgba(188, 170, 150, 0.15);
+            --card-hover-shadow: 0 16px 32px rgba(188, 170, 150, 0.3);
+            
+            /* 국가별/시대별 테마 컬러 */
+            --color-gojoseon: linear-gradient(135deg, #A0522D, #CD853F);
+            --color-goguryeo: linear-gradient(135deg, #1E3A8A, #3B82F6);
+            --color-baekje: linear-gradient(135deg, #D97706, #F59E0B);
+            --color-silla: linear-gradient(135deg, #B91C1C, #EC4899);
+            --color-gaya: linear-gradient(135deg, #0D9488, #14B8A6);
+            --color-unified-silla: linear-gradient(135deg, #7C3AED, #A78BFA);
+            --color-balhae: linear-gradient(135deg, #059669, #34D399);
+            --color-goryeo: linear-gradient(135deg, #4D7C0F, #84CC16);
+            --color-joseon: linear-gradient(135deg, #DC2626, #FBBF24);
+            --color-colonial: linear-gradient(135deg, #4B5563, #9CA3AF);
+            --color-modern: linear-gradient(135deg, #2563EB, #06B6D4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* 헤더 스타일 */
+        header {
+            background: linear-gradient(to bottom, #FFEBCD, #FAF0E6);
+            text-align: center;
+            padding: 60px 20px;
+            position: relative;
+            border-bottom: 5px dashed #E2D4C9;
+        }
+
+        header h1 {
+            font-family: 'Jua', sans-serif;
+            font-size: 3rem;
+            color: #6F4E37;
+            text-shadow: 2px 2px 0px #FFF;
+            margin-bottom: 15px;
+            animation: bounce 1.5s infinite alternate;
+        }
+
+        header p {
+            font-family: 'Gaegu', sans-serif;
+            font-size: 1.6rem;
+            color: #8B5A2B;
+            font-weight: bold;
+        }
+
+        .scroll-indicator {
+            margin-top: 25px;
+            font-family: 'Gaegu', sans-serif;
+            font-size: 1.2rem;
+            color: #A0522D;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* 전체 타임라인 컨테이너 */
+        .timeline-container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        /* 중앙 세로선 (단일 타임라인용) */
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background-color: var(--timeline-line-color);
+            transform: translateX(-50%);
+            z-index: 1;
+            border-radius: 3px;
+        }
+
+        /* 시대 그룹 */
+        .era-section {
+            margin-bottom: 120px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* 시대 타이틀 배너 */
+        .era-title {
+            text-align: center;
+            margin-bottom: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .era-title span {
+            font-family: 'Jua', sans-serif;
+            display: inline-block;
+            padding: 12px 35px;
+            font-size: 1.8rem;
+            color: white;
+            border-radius: 50px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        /* 돋보기 상세 정보 보기 버튼 */
+        .chronicle-btn {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.1rem;
+            color: #8B4513;
+            background-color: #FFF2CC;
+            border: 2px solid #D6B656;
+            padding: 8px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chronicle-btn:hover {
+            transform: translateY(-3px);
+            background-color: #FFE599;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
+
+        /* 시대별 색상 매핑 */
+        .era-gojoseon .era-title span { background: var(--color-gojoseon); }
+        .era-three-kingdoms .era-title span { background: linear-gradient(135deg, #1E3A8A, #EC4899); }
+        .era-north-south .era-title span { background: linear-gradient(135deg, #7C3AED, #059669); }
+        .era-goryeo .era-title span { background: var(--color-goryeo); }
+        .era-joseon .era-title span { background: var(--color-joseon); }
+        .era-colonial .era-title span { background: var(--color-colonial); }
+        .era-modern .era-title span { background: var(--color-modern); }
+
+        /* 카드 기본 레이아웃 (좌우 교차) */
+        .timeline-item {
+            display: flex;
+            justify-content: flex-end;
+            padding-right: 30px;
+            position: relative;
+            margin-bottom: 50px;
+            width: 50%;
+            transition: all 0.6s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .timeline-item.left {
+            align-self: flex-start;
+            justify-content: flex-start;
+            padding-right: 0;
+            padding-left: 30px;
+            left: 50%;
+        }
+
+        /* 스크롤 감지 클래스 */
+        .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 카드 스타일 */
+        .history-card {
+            background-color: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--card-shadow);
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+        }
+
+        .history-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        /* 시대 테두리 적용 */
+        .era-gojoseon .history-card:hover { border-color: #CD853F; }
+        .era-goryeo .history-card:hover { border-color: #84CC16; }
+        .era-joseon .history-card:hover { border-color: #DC2626; }
+        .era-colonial .history-card:hover { border-color: #4B5563; }
+        .era-modern .history-card:hover { border-color: #2563EB; }
+
+        /* 카드 커스텀 내용 */
+        .card-year {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.3rem;
+            color: #A0522D;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .card-figure {
+            display: inline-block;
+            background-color: #FAF0E6;
+            color: #8B4513;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .card-summary {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .card-thumb {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 2px solid #F0E6DF;
+        }
+
+        /* 퀴즈 배지 */
+        .quiz-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #FFD700;
+            color: #8B7500;
+            font-family: 'Gaegu', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 10px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        /* 분할 타임라인 (삼국시대 3열, 남북국 2열) */
+        .split-timeline-wrapper {
+            display: grid;
+            gap: 30px;
+            width: 100%;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        /* 삼국시대 3열 배치 */
+        .era-three-kingdoms .split-timeline-wrapper {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* 남북국시대 2열 배치 */
+        .era-north-south .split-timeline-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .split-column {
+            background-color: #F8F4EE;
+            border-radius: 25px;
+            padding: 20px;
+            border: 3px dashed #E2D4C9;
+            position: relative;
+        }
+
+        .split-column-title {
+            text-align: center;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.6rem;
+            padding: 10px;
+            border-radius: 15px;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        /* 삼국시대 컬러 */
+        .col-goguryeo .split-column-title { background: var(--color-goguryeo); }
+        .col-baekje .split-column-title { background: var(--color-baekje); }
+        .col-silla .split-column-title { background: var(--color-silla); }
+        .col-gaya .split-column-title { background: var(--color-gaya); }
+
+        /* 남북국 컬러 */
+        .col-unifsilla .split-column-title { background: var(--color-unified-silla); }
+        .col-balhae .split-column-title { background: var(--color-balhae); }
+
+        /* 분할 타임라인 내부 아이템 */
+        .split-column .timeline-item-split {
+            width: 100%;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+            margin-bottom: 35px;
+        }
+
+        .split-column .timeline-item-split.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .split-column .history-card {
+            max-width: 100%;
+        }
+
+        /* 삼국 테두리 효과 */
+        .col-goguryeo .history-card:hover { border-color: #3B82F6; }
+        .col-baekje .history-card:hover { border-color: #F59E0B; }
+        .col-silla .history-card:hover { border-color: #EC4899; }
+        .col-gaya .history-card:hover { border-color: #14B8A6; }
+        .col-unifsilla .history-card:hover { border-color: #A78BFA; }
+        .col-balhae .history-card:hover { border-color: #34D399; }
+
+        /* 공통 모달 기본 레이아웃 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 100%;
+            padding: 35px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 6px solid #FFEBCD;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2.2rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-year {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.4rem;
+            color: #A0522D;
+        }
+
+        .modal-title {
+            font-family: 'Jua', sans-serif;
+            font-size: 2.2rem;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .modal-img {
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 3px solid #FAF0E6;
+        }
+
+        .modal-story {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #444;
+            margin-bottom: 25px;
+        }
+
+        /* 퀴즈 박스 */
+        .quiz-section {
+            background-color: #FFF9E6;
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid #FFE494;
+        }
+
+        .quiz-question {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.2rem;
+            color: #8B6508;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            background-color: white;
+            border: 2px solid #FFEAA7;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quiz-option:hover {
+            background-color: #FFFDF0;
+            border-color: #F1C40F;
+            transform: translateX(5px);
+        }
+
+        .quiz-option.correct {
+            background-color: #E8F5E9;
+            border-color: #4CAF50;
+            color: #2E7D32;
+        }
+
+        .quiz-option.wrong {
+            background-color: #FFEBEE;
+            border-color: #EF5350;
+            color: #C62828;
+        }
+
+        /* 퀴즈 결과 피드백 */
+        .quiz-feedback {
+            font-family: 'Gaegu', sans-serif;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-top: 15px;
+            text-align: center;
+            min-height: 30px;
+        }
+
+        /* 푸터 */
+        footer {
+            background-color: #F0E6DF;
+            text-align: center;
+            padding: 40px 20px;
+            font-family: 'Gaegu', sans-serif;
+            font-size: 1.3rem;
+            color: #8B7A6B;
+            border-top: 5px dashed #D5C2B5;
+        }
+
+        /* 반응형 스타일 (모바일 대응) */
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.2rem; }
+            header p { font-size: 1.3rem; }
+            
+            .timeline-line {
+                left: 20px;
+            }
+
+            .timeline-item {
+                width: 100%;
+                left: 0 !important;
+                padding-left: 45px !important;
+                padding-right: 0 !important;
+            }
+
+            /* 삼국시대, 남북국시대 분할 타임라인을 모바일에서는 세로 1열로 변환 */
+            .era-three-kingdoms .split-timeline-wrapper,
+            .era-north-south .split-timeline-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .split-column {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌟 우당탕탕 한국사 모험 타임라인 🌟</h1>
+        <p>고조선부터 현대까지! 역사 속 재미있는 인물과 사건 속으로 떠나요!</p>
+        <div class="scroll-indicator">▼ 아래로 살살 스크롤해서 역사의 문을 열어보세요!</div>
+    </header>
+
+    <div class="timeline-container">
+        <!-- 중앙선 -->
+        <div class="timeline-line"></div>
+
+        <!-- 1. 고조선 시대 -->
+        <section class="era-section era-gojoseon">
+            <div class="era-title">
+                <span>🐻 고조선 시대 (BC 2333 ~ BC 108)</span>
+                <button class="chronicle-btn" onclick="location.href='/history/chronicle/gojoseon'">🔍 고조선 상세 돋보기</button>
+            </div>
+            
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('gojoseon_dangun')">
+                    <span class="quiz-badge">💡 퀴즈</span>
+                    <div class="card-year">📅 BC 2333년</div>
+                    <div class="card-title">단군왕검, 고조선을 세우다!</div>
+                    <span class="card-figure">주요인물: 단군왕검</span>
+                    <p class="card-summary">하늘의 아들 환웅과 곰에서 사람이 된 웅녀 사이에서 태어난 단군왕검이 우리나라 최초의 나라인 고조선을 세웠어요.</p>
+                    <img class="card-thumb" src="/images/dangun_gojoseon.jpg" alt="단군왕검 일러스트">
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('gojoseon_wiman')">
+                    <div class="card-year">📅 BC 194년</div>
+                    <div class="card-title">위만, 고조선의 왕이 되다</div>
+                    <span class="card-figure">주요인물: 위만왕</span>
+                    <p class="card-summary">중국에서 건너온 위만이 철기 문화를 본격적으로 퍼뜨리며 고조선을 아주 강하고 부유한 나라로 만들었어요.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 삼국시대 (3열 분할) -->
+        <section class="era-section era-three-kingdoms">
+            <div class="era-title">
+                <span>⚔️ 삼국시대 (BC 57 ~ AD 676)</span>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="chronicle-btn" onclick="location.href='/history/chronicle/goguryeo'">🏹 고구려 돋보기</button>
+                    <button class="chronicle-btn" onclick="location.href='/history/chronicle/baekje'">🎨 백제 돋보기</button>
+                    <button class="chronicle-btn" onclick="location.href='/history/chronicle/silla'">👑 신라/가야 돋보기</button>
+                </div>
+            </div>
+
+            <!-- 삼국시대 분할 레이아웃 -->
+            <div class="split-timeline-wrapper">
+                
+                <!-- 고구려 열 -->
+                <div class="split-column col-goguryeo">
+                    <div class="split-column-title">🏹 고구려 (BC 37)</div>
+                    
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('goguryeo_jumong')">
+                            <span class="quiz-badge">💡 퀴즈</span>
+                            <div class="card-year">📅 BC 37년</div>
+                            <div class="card-title">알에서 태어난 활쏘기 대장 주몽</div>
+                            <span class="card-figure">인물: 동명성왕(주몽)</span>
+                            <p class="card-summary">부여를 탈출해 날렵한 활 솜씨로 씩씩하고 강한 나라인 고구려를 세웠어요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('goguryeo_gwanggaeto')">
+                            <div class="card-year">📅 AD 391년</div>
+                            <div class="card-title">영토를 드넓게 넓힌 광개토대왕</div>
+                            <span class="card-figure">인물: 광개토대왕</span>
+                            <p class="card-summary">북쪽 영토를 크게 확장하고 고구려의 이름을 널리 떨친 정복 왕이에요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('goguryeo_eulji')">
+                            <div class="card-year">📅 AD 612년</div>
+                            <div class="card-title">수나라 대군을 물리친 살수대첩</div>
+                            <span class="card-figure">인물: 을지문덕</span>
+                            <p class="card-summary">수나라 30만 대군을 살수(청천강)에서 엄청난 계책으로 물리친 역사적 승리에요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 백제 열 -->
+                <div class="split-column col-baekje">
+                    <div class="split-column-title">🎨 백제 (BC 18)</div>
+                    
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('baekje_onjo')">
+                            <div class="card-year">📅 BC 18년</div>
+                            <div class="card-title">온조왕, 따뜻한 남쪽에 백제를 세우다</div>
+                            <span class="card-figure">인물: 온조왕</span>
+                            <p class="card-summary">주몽의 아들인 온조가 한강 유역의 살기 좋은 한성에 터를 잡고 백제를 세웠어요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('baekje_geunchogo')">
+                            <span class="quiz-badge">💡 퀴즈</span>
+                            <div class="card-year">📅 AD 346년</div>
+                            <div class="card-title">백제의 전성기를 이끈 근초고왕</div>
+                            <span class="card-figure">인물: 근초고왕</span>
+                            <p class="card-summary">바다 건너 중국, 일본과 활발히 교류하며 백제의 전성기를 연 무역의 왕이에요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('baekje_gyebaek')">
+                            <div class="card-year">📅 AD 660년</div>
+                            <div class="card-title">결사대와 함께 싸운 황산벌 전투</div>
+                            <span class="card-figure">인물: 계백 장군</span>
+                            <p class="card-summary">나라를 지키기 위해 5천 명의 결사대와 함께 끝까지 싸운 슬프고도 위대한 장군이에요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 신라 (+ 가야) 열 -->
+                <div class="split-column col-silla">
+                    <div class="split-column-title">👑 신라 (BC 57) / 가야</div>
+                    
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('silla_hyeokgeose')">
+                            <div class="card-year">📅 BC 57년</div>
+                            <div class="card-title">알에서 깨어난 소년 박혁거세</div>
+                            <span class="card-figure">인물: 박혁거세</span>
+                            <p class="card-summary">빛나는 알에서 태어난 그를 사람들이 우러러보며 신라의 첫 임금으로 모셨어요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('gaya_suro')">
+                            <div class="card-year">📅 AD 42년</div>
+                            <div class="card-title">철의 나라 금관가야 세운 수로왕</div>
+                            <span class="card-figure">인물: 김수로왕</span>
+                            <p class="card-summary">가야 연맹의 맹주로, 철을 만드는 기술이 대단히 발달했던 황금빛 가야를 세웠어요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('silla_seondeok')">
+                            <span class="quiz-badge">💡 퀴즈</span>
+                            <div class="card-year">📅 AD 632년</div>
+                            <div class="card-title">별을 지켜보는 첨성대와 선덕여왕</div>
+                            <span class="card-figure">인물: 선덕여왕</span>
+                            <p class="card-summary">우리나라 최초의 여왕님으로, 첨성대와 황룡사 9층 목탑을 지어 문화를 발전시켰어요.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 3. 남북국시대 (2열 분할) -->
+        <section class="era-section era-north-south">
+            <div class="era-title">
+                <span>🌊 남북국시대 (AD 698 ~ AD 935)</span>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="chronicle-btn" onclick="location.href='/history/chronicle/unifsilla'">🌸 통일 신라 돋보기</button>
+                    <button class="chronicle-btn" onclick="location.href='/history/chronicle/balhae'">🦅 발해 돋보기</button>
+                </div>
+            </div>
+
+            <div class="split-timeline-wrapper">
+                <!-- 통일 신라 -->
+                <div class="split-column col-unifsilla">
+                    <div class="split-column-title">🌸 통일 신라</div>
+                    
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('silla_munmu')">
+                            <div class="card-year">📅 AD 676년</div>
+                            <div class="card-title">삼국 통일을 이뤄낸 문무왕</div>
+                            <span class="card-figure">인물: 문무왕</span>
+                            <p class="card-summary">당나라를 몰아내고 대동강 이남의 영토를 통일하여 하나 된 신라를 완성했어요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('silla_jangbogo')">
+                            <span class="quiz-badge">💡 퀴즈</span>
+                            <div class="card-year">📅 AD 828년</div>
+                            <div class="card-title">바다의 왕, 청해진의 장보고</div>
+                            <span class="card-figure">인물: 장보고</span>
+                            <p class="card-summary">완도에 청해진을 세워 바다의 해적을 소탕하고 동아시아 바다 무역을 주도했어요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 발해 -->
+                <div class="split-column col-balhae">
+                    <div class="split-column-title">🦅 발해 (AD 698)</div>
+                    
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('balhae_daejoyeong')">
+                            <div class="card-year">📅 AD 698년</div>
+                            <div class="card-title">고구려의 뒤를 잇는 대조영의 발해</div>
+                            <span class="card-figure">인물: 대조영 (고왕)</span>
+                            <p class="card-summary">고구려 유민들과 말갈족을 이끌고 동모산 근처에 대제국 발해를 세웠어요.</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item-split">
+                        <div class="history-card" onclick="openModal('balhae_seongguk')">
+                            <div class="card-year">📅 AD 818년</div>
+                            <div class="card-title">해동성국, 바다 동쪽의 융성한 나라</div>
+                            <span class="card-figure">인물: 선왕</span>
+                            <p class="card-summary">발해의 영토를 최대로 넓히고 문화를 발전시켜 중국(당)으로부터 '해동성국'이라 불렸어요.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. 고려 시대 -->
+        <section class="era-section era-goryeo">
+            <div class="era-title">
+                <span>🏺 고려 시대 (AD 918 ~ AD 1392)</span>
+                <button class="chronicle-btn" onclick="location.href='/history/chronicle/goryeo'">🔍 고려 왕과 인물 돋보기</button>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('goryeo_wanggeon')">
+                    <div class="card-year">📅 AD 918년</div>
+                    <div class="card-title">태조 왕건, 고려를 건국하다</div>
+                    <span class="card-figure">인물: 태조 왕건</span>
+                    <p class="card-summary">포용력 있는 리더십으로 후삼국을 통일하고, 새로운 고려의 하늘을 열었습니다.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('goryeo_seohui')">
+                    <span class="quiz-badge">💡 퀴즈</span>
+                    <div class="card-year">📅 AD 993년</div>
+                    <div class="card-title">말로 거란군을 물리친 외교가 서희</div>
+                    <span class="card-figure">인물: 서희</span>
+                    <p class="card-summary">피 한 방울 흘리지 않고 말솜씨(외교 담판)만으로 거란 대군을 물러나게 하고 강동 6주를 얻었어요.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('goryeo_ganggamchan')">
+                    <div class="card-year">📅 AD 1019년</div>
+                    <div class="card-title">귀주대첩! 강감찬 장군의 대승리</div>
+                    <span class="card-figure">인물: 강감찬 장군</span>
+                    <p class="card-summary">거란의 10만 대군을 귀주에서 몰살하듯 격퇴시켜 나라를 든든하게 구했습니다.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. 조선 시대 -->
+        <section class="era-section era-joseon">
+            <div class="era-title">
+                <span>📜 조선 시대 (AD 1392 ~ AD 1910)</span>
+                <button class="chronicle-btn" onclick="location.href='/history/chronicle/joseon'">👑 조선 27대 왕과 인물 돋보기</button>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('joseon_tayejo')">
+                    <div class="card-year">📅 AD 1392년</div>
+                    <div class="card-title">이성계, 조선을 건국하다</div>
+                    <span class="card-figure">인물: 태조 이성계</span>
+                    <p class="card-summary">새로운 유교 중심의 나라 '조선'을 세우고 수도를 한양(오늘날 서울)으로 옮겼어요.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('joseon_sejong')">
+                    <span class="quiz-badge">💡 퀴즈</span>
+                    <div class="card-year">📅 AD 1443년</div>
+                    <div class="card-title">백성을 사랑하는 글자, 훈민정음(한글) 창제</div>
+                    <span class="card-figure">인물: 세종대왕</span>
+                    <p class="card-summary">글을 모르는 백성들을 위해 배우기 쉬운 우리의 소리글자 '한글'을 만드셨어요.</p>
+                    <img class="card-thumb" src="/images/king_sejong_hangul.jpg" alt="세종대왕 일러스트">
+                </div>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('joseon_yisunsin')">
+                    <span class="quiz-badge">💡 퀴즈</span>
+                    <div class="card-year">📅 AD 1592년</div>
+                    <div class="card-title">임진왜란을 구한 영웅과 거북선</div>
+                    <span class="card-figure">인물: 충무공 이순신</span>
+                    <p class="card-summary">세계 최초의 철갑선인 '거북선'을 만들어 왜군(일본군)의 침략으로부터 나라를 지켜냈어요.</p>
+                    <img class="card-thumb" src="/images/yi_sun_sin_turtle_ship.jpg" alt="이순신 장군 일러스트">
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('joseon_jeongjo')">
+                    <div class="card-year">📅 AD 1796년</div>
+                    <div class="card-title">과학으로 지은 수원 화성 완성</div>
+                    <span class="card-figure">인물: 정조대왕</span>
+                    <p class="card-summary">조선의 학문 발전을 적극 지원하고 거중기 등의 과학 기구를 사용하여 철저한 계획도시 화성을 축조했어요.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. 일제강점기 -->
+        <section class="era-section era-colonial">
+            <div class="era-title">
+                <span>🇰🇷 일제강점기 (AD 1910 ~ AD 1945)</span>
+                <button class="chronicle-btn" onclick="location.href='/history/chronicle/colonial'">🔍 독립운동가 돋보기</button>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('colonial_31')">
+                    <span class="quiz-badge">💡 퀴즈</span>
+                    <div class="card-year">📅 AD 1919년</div>
+                    <div class="card-title">대한독립만세! 3.1 만세 운동</div>
+                    <span class="card-figure">인물: 유관순 열사</span>
+                    <p class="card-summary">남녀노소 모두 태극기를 들고 거리로 나와 평화적으로 대한민국의 독립을 외쳤습니다.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('colonial_imsi')">
+                    <div class="card-year">📅 AD 1919년</div>
+                    <div class="card-title">대한민국 임시정부 수립</div>
+                    <span class="card-figure">인물: 백범 김구</span>
+                    <p class="card-summary">조국의 독립을 체계적으로 이끌기 위해 중국 상하이에 대한민국의 뿌리가 되는 임시정부를 세웠어요.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('colonial_ahn')">
+                    <div class="card-year">📅 AD 1909년</div>
+                    <div class="card-title">하얼빈역에서 이토 히로부미를 쏘다</div>
+                    <span class="card-figure">인물: 안중근 의사</span>
+                    <p class="card-summary">조국을 빼앗으려는 침략의 원흉 이토 히로부미를 처단하여 조선의 굳건한 독립 의지를 만천하에 알렸어요.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. 대한민국 현대사 -->
+        <section class="era-section era-modern">
+            <div class="era-title">
+                <span>🚀 대한민국 현대사 (AD 1945 ~ 현재)</span>
+                <button class="chronicle-btn" onclick="location.href='/history/chronicle/modern'">🔍 현대사 핵심 사건 & 위인 돋보기</button>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('modern_815')">
+                    <div class="card-year">📅 AD 1945년</div>
+                    <div class="card-title">빛을 다시 찾은 날! 8.15 광복</div>
+                    <span class="card-figure">주요 사건</span>
+                    <p class="card-summary">제2차 세계대전이 연합국의 승리로 끝나며 일본으로부터 빼앗겼던 독립을 되찾았습니다.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('modern_war')">
+                    <div class="card-year">📅 AD 1950년</div>
+                    <div class="card-title">가슴 아픈 남북의 갈등, 6.25 전쟁</div>
+                    <span class="card-figure">주요 사건</span>
+                    <p class="card-summary">한반도가 남북으로 분단된 상태에서 발발한 비극적인 전쟁으로, 휴전선을 경계로 현재까지 나뉘어 있습니다.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item left">
+                <div class="history-card" onclick="openModal('modern_olympic')">
+                    <span class="quiz-badge">💡 퀴즈</span>
+                    <div class="card-year">📅 AD 1988년</div>
+                    <div class="card-title">세계로 뻗어가는 1988 서울 올림픽</div>
+                    <span class="card-figure">주요 사건</span>
+                    <p class="card-summary">한강의 기적을 통해 가난을 딛고 성장한 대한민국이 1988년 전 세계인들을 모아 올림픽을 개최하여 위상을 널리 알렸어요.</p>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="history-card" onclick="openModal('modern_future')">
+                    <div class="card-year">📅 AD 2002년 ~ 현재</div>
+                    <div class="card-title">K-컬처와 글로벌 기술 강국으로!</div>
+                    <span class="card-figure">주요 성과</span>
+                    <p class="card-summary">2002 한일 월드컵 4강 진출부터 반도체 기술, 그리고 오늘날 전 세계가 사랑하는 K-팝(BTS 등)과 콘텐츠 강국으로 우뚝 섰어요.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 1. 기본 팝업 모달창 (핵심 사건 상세) -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="modal-header">
+                <div id="modalYear" class="modal-year">📅 연도</div>
+                <h2 id="modalTitle" class="modal-title">사건/인물명</h2>
+            </div>
+            <img id="modalImg" class="modal-img" src="" alt="역사 이미지" style="display: none;">
+            <p id="modalStory" class="modal-story">재미있는 역사 이야기 설명 구절...</p>
+            
+            <!-- 퀴즈 영역 -->
+            <div id="modalQuizSection" class="quiz-section" style="display: none;">
+                <div class="quiz-question">⭐ [어린이 역사 퀴즈] <span id="quizText">질문내용</span></div>
+                <div class="quiz-options" id="quizOptions">
+                    <!-- 버튼들이 동적으로 생성됨 -->
+                </div>
+                <div id="quizFeedback" class="quiz-feedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>❤️ 우리 아이들을 위해 정성스레 만든 역사 놀이터 ❤️</p>
+        <p style="font-size: 1rem; margin-top: 10px; opacity: 0.8;">© 2026 우당탕탕 한국사 대모험. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // 타임라인 데이터베이스
+        const historyData = {
+            gojoseon_dangun: {
+                year: "BC 2333년",
+                title: "단군왕검, 고조선을 세우다!",
+                img: "/images/dangun_gojoseon.jpg",
+                story: "옛날 하늘의 신 환인의 아들인 '환웅'이 땅에 내려와 세상을 널리 이롭게(홍익인간) 다스리려고 했어요. 이때 곰과 호랑이가 사람이 되고 싶다고 찾아왔고, 환웅은 쑥과 마늘만 먹으며 동굴에서 100일을 버티라고 했지요. 호랑이는 포기했지만 참을성이 많은 곰은 끝까지 견뎌내어 예쁜 여자(웅녀)가 되었고, 환웅과 결혼하여 나라를 세운 아들 '단군왕검'을 낳았답니다! 단군왕검은 우리나라 최초의 나라인 고조선을 평양 근처에 세우고 널리 인간을 이롭게 다스렸어요.",
+                quiz: {
+                    question: "웅녀가 사람이 되기 위해 동굴 안에서 끝까지 먹고 견뎌낸 두 가지 음식은 무엇일까요?",
+                    options: [
+                        { text: "1. 떡볶이와 김밥", isCorrect: false },
+                        { text: "2. 쑥과 마늘", isCorrect: true },
+                        { text: "3. 당근과 양파", isCorrect: false }
+                    ]
+                }
+            },
+            gojoseon_wiman: {
+                year: "BC 194년",
+                title: "위만, 고조선의 왕이 되다",
+                img: "",
+                story: "중국 땅이 매우 시끄럽던 철기 시대, 상투를 틀고 고조선 옷을 입은 '위만'이라는 용감한 사람이 무리를 이끌고 고조선으로 건너왔어요. 당시 준왕은 위만을 믿고 국경을 지키게 했으나, 위만은 점차 힘을 키워 스스로 왕위에 올랐답니다. 이를 '위만조선'이라고 불러요. 위만은 더욱 앞선 철기 기술을 들여와 강력한 무기와 농기구를 만들었고, 주변 작은 나라들을 통합하며 고조선의 영토와 경제력을 크게 키웠어요."
+            },
+            goguryeo_jumong: {
+                year: "BC 37년",
+                title: "알에서 태어난 활쏘기 대장 주몽",
+                img: "",
+                story: "부여의 궁궐에서 무럭무럭 자라난 소년 주몽은 아주 특별하게도 알에서 태어났다고 해요! 주몽은 활을 너무 잘 쏘아서 '활을 잘 쏘는 사람'이라는 뜻의 '주몽'이라는 이름을 얻었지요. 주몽의 재능을 질투한 부여의 왕자들을 피해 남쪽으로 도망치던 주몽은 거북이와 물고기들이 다리를 만들어주어 무사히 강을 건넜고, 졸본 지방에 활기차고 씩씩한 기상이 넘쳐나는 나라인 '고구려'를 세웠답니다.",
+                quiz: {
+                    question: "'주몽'이라는 이름은 어떤 대단한 재주를 가진 사람을 뜻하는 말이었을까요?",
+                    options: [
+                        { text: "1. 활을 매우 잘 쏘는 사람", isCorrect: true },
+                        { text: "2. 달리기를 무척 잘하는 사람", isCorrect: false },
+                        { text: "3. 씨름을 제일 잘하는 사람", isCorrect: false }
+                    ]
+                }
+            },
+            goguryeo_gwanggaeto: {
+                year: "AD 391년",
+                title: "영토를 드넓게 넓힌 광개토대왕",
+                img: "",
+                story: "광개토대왕은 이름 그대로 '사방의 땅을 넓게 열어준 임금님'이라는 뜻이에요. 18살이라는 아주 젊은 나이에 왕이 된 그는 강력한 철갑기마병을 이끌고 북쪽의 요동 땅과 만주 벌판을 향해 돌격하여 엄청나게 영토를 확장했어요. 백제와 신라까지 그 영향력을 뻗쳐 고구려를 동아시아 최강국으로 우뚝 세웠답니다. 그의 위대한 업적은 아들인 장수왕이 세운 큰 '광개토대왕릉비'에 지금도 또렷하게 적혀 전해지고 있어요."
+            },
+            goguryeo_eulji: {
+                year: "AD 612년",
+                title: "수나라 대군을 물리친 살수대첩",
+                img: "",
+                story: "중국을 통일한 거대한 나라인 수나라는 100만이 넘는 거대한 군대를 이끌고 고구려를 침략해 왔어요. 이때 고구려의 명장 을지문덕 장군은 적을 유인하기 위해 일부러 지는 척하며 수나라 별동대를 평양성 부근 살수(청천강)까지 깊숙이 끌어들였어요. 적들이 강을 건널 때 미리 막아두었던 상류의 둑을 터뜨려 거대한 물살로 적들을 휩쓸어 버렸답니다! 30만 대군 중 살아 돌아간 적이 겨우 수천 명에 불과할 정도로 완벽한 승리였어요."
+            },
+            baekje_onjo: {
+                year: "BC 18년",
+                title: "온조왕, 따뜻한 남쪽에 백제를 세우다",
+                img: "",
+                story: "고구려를 세운 주몽의 아들인 온조와 비류 형제는 남쪽으로 길을 나섰어요. 형 비류는 바닷가 근처인 미추홀(오늘날 인천)로 향했고, 동생 온조는 한강 남쪽의 비옥하고 널찍한 한성(오늘날 서울)에 정착하여 나라를 세웠어요. 처음에는 10명의 신하가 도왔다고 하여 '십제'라 불렀으나, 곧 형 비류의 백성들까지 합쳐지며 '모든 백성이 기쁘게 따랐다'는 뜻인 '백제'로 이름을 고치고 화려한 문화를 꽃피웠습니다."
+            },
+            baekje_geunchogo: {
+                year: "AD 346년",
+                title: "백제의 전성기를 이끈 근초고왕",
+                img: "",
+                story: "근초고왕은 백제 역사상 가장 강력한 힘을 자랑하던 전성기를 이끈 왕이에요. 남쪽으로는 전라도 마한 지역을 통합하고 북쪽으로는 고구려 평양성을 공격해 고국원왕을 전사시킬 만큼 용맹했답니다. 또한 막강한 해군력을 바탕으로 서해를 건너 중국 요서 지역, 그리고 바다 건너 일본(왜)과 활발하게 무역을 하며 나라를 엄청나게 풍요롭게 만들었어요. 일본 왕에게 백제의 철제 무기인 칠지도(가지가 일곱 개인 칼)를 보낸 왕이기도 해요.",
+                quiz: {
+                    question: "근초고왕이 뛰어난 제철 기술력을 뽐내며 일본 왕에게 선물로 보낸, 가지가 7개 달린 칼의 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 엑스칼리버", isCorrect: false },
+                        { text: "2. 사인검", isCorrect: false },
+                        { text: "3. 칠지도", isCorrect: true }
+                    ]
+                }
+            },
+            baekje_gyebaek: {
+                year: "AD 660년",
+                title: "결사대와 함께 싸운 황산벌 전투",
+                img: "",
+                story: "신라와 당나라 연합군이 백제를 향해 쳐들어오자, 백제의 마지막 명장 계백 장군은 나라의 운명이 다했음을 직감했어요. 그는 자신의 가족들이 적의 노예가 되어 치욕을 당하느니 내 손으로 죽이겠다며 굳은 결의를 다지고, 단 5천 명의 결사대를 조직하여 황산벌로 나갔습니다. 신라의 5만 대군을 맞이하여 죽기를 각오하고 네 번이나 적을 격퇴했으나, 몰려드는 적을 당해내지 못하고 장렬하게 전사하며 백제는 역사 속으로 사라졌습니다."
+            },
+            silla_hyeokgeose: {
+                year: "BC 57년",
+                title: "알에서 깨어난 소년 박혁거세",
+                img: "",
+                story: "옛날 신라 땅에는 6개의 마을이 모여 살고 있었어요. 어느 날 양산 기슭 우물가에 흰 말 한 마리가 무릎을 꿇고 절을 하고 있었는데, 그곳으로 가보니 번쩍번쩍 빛나는 커다란 알이 하나 놓여 있었답니다. 말은 하늘로 날아가고, 알이 깨지며 아주 잘생기고 기품 있는 아기가 태어났어요. 몸에서 광채가 났던 이 신비로운 아이는 박처럼 생긴 알에서 태어났다고 하여 성을 '박'씨로, 세상을 밝게 다스린다는 뜻의 '혁거세'라는 이름을 얻고 신라의 첫 임금이 되었어요."
+            },
+            gaya_suro: {
+                year: "AD 42년",
+                title: "철의 나라 금관가야 세운 수로왕",
+                img: "",
+                story: "김해 구지봉이라는 봉우리에서 이상한 소리가 들려왔어요. 9명의 추장들이 구지봉에 모여 흙을 파헤치며 '거북아 거북아 머리를 내밀어라, 내밀지 않으면 구워 먹으리'라는 구지가를 부르며 춤을 추었더니, 하늘에서 붉은 보자기에 싸인 황금 알 6개가 담긴 상자가 내려왔답니다! 며칠 뒤 알에서 가장 먼저 깨어난 소년이 바로 '수로왕'이었으며, 그는 우수한 철기 문화와 해상 교역을 꽃피운 나라 '금관가야'를 세웠습니다."
+            },
+            silla_seondeok: {
+                year: "AD 632년",
+                title: "별을 지켜보는 첨성대와 선덕여왕",
+                img: "",
+                story: "신라 제27대 임금인 선덕여왕은 신라 최초의 여왕님이에요. 여성이 왕이 되었다고 무시하는 주변 나라들의 위협 속에서도 여왕은 놀라운 지혜로 나라를 돌보았어요. 농사에 필요한 날씨를 예측하기 위해 동양에서 가장 오래된 천문대인 '첨성대'를 짓고, 나라를 부처님의 힘으로 지키고자 거대한 9층 목탑(황룡사 9층 목탑)을 세우는 등 뛰어난 문화 업적을 다수 이룩해 냈습니다.",
+                quiz: {
+                    question: "선덕여왕이 별의 움직임과 날씨를 관측하기 위해 경주에 세운 동양 최고(古)의 천문대 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 다보탑", isCorrect: false },
+                        { text: "2. 첨성대", isCorrect: true },
+                        { text: "3. 석굴암", isCorrect: false }
+                    ]
+                }
+            },
+            silla_munmu: {
+                year: "AD 676년",
+                title: "삼국 통일을 이뤄낸 문무왕",
+                img: "",
+                story: "당나라를 몰아내고 대동강 이남의 영토를 통일하여 하나 된 신라를 완성했어요. 문무왕은 죽어서도 바다의 용이 되어 왜구로부터 동해안과 나라를 지키겠다며 동해 바다 바위섬 아래 묻어달라고 유언했고, 그 무덤이 바로 세계 유일의 수중릉인 '문무대왕릉'이랍니다."
+            },
+            silla_jangbogo: {
+                year: "AD 828년",
+                title: "바다의 왕, 청해진의 장보고",
+                img: "",
+                story: "장보고는 활을 아주 잘 쏘아 당나라로 건너가 뛰어난 군인으로 성공한 신라 사람이에요. 하지만 신라 사람들이 바다 해적들에게 잡혀가 노예로 팔리는 슬픈 모습을 보고 신라로 돌아와 흥덕왕에게 군사를 청했답니다. 그는 전라남도 완도에 '청해진'이라는 거대한 군사 및 무역 기지를 세우고 해적들을 완벽하게 소탕했어요. 이후 신라, 당나라, 일본을 잇는 활발한 해상 무역 네트워크를 개척하여 바다의 왕이 되었습니다.",
+                quiz: {
+                    question: "장보고가 해적을 물리치고 동아시아 해상 무역을 통제하기 위해 완도에 설치한 해군/무역 기지의 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 청해진", isCorrect: true },
+                        { text: "2. 당항성", isCorrect: false },
+                        { text: "3. 벽란도", isCorrect: false }
+                    ]
+                }
+            },
+            balhae_daejoyeong: {
+                year: "AD 698년",
+                title: "고구려의 뒤를 잇는 대조영의 발해",
+                img: "",
+                story: "고구려가 멸망한 지 약 30년 뒤, 고구려 장수 출신인 대조영은 고구려의 옛 영토를 되찾기 위해 유민들과 말갈족 사람들을 이끌고 당나라 군대의 추격을 따돌렸어요. 천문령 전투에서 당나라 군대를 멋지게 대파한 뒤, 동모산 기슭에 고구려의 찬란한 기상과 문화를 계승한 새로운 나라인 '발해'를 세우고 스스로 왕이 되었답니다. 이로써 한반도 남쪽의 신라와 북쪽의 발해가 공존하는 '남북국 시대'가 시작되었습니다."
+            },
+            balhae_seongguk: {
+                year: "AD 818년",
+                title: "해동성국, 바다 동쪽의 융성한 나라",
+                img: "",
+                story: "발해의 제10대 임금인 선왕은 넓고 웅장한 대제국 발해의 전성기를 완성한 왕이에요. 고구려의 옛 영토를 대부분 회복하며 요동 지역과 북쪽 말갈 부족들을 통합하여 발해 역사상 가장 거대한 영토를 차지했답니다. 행정 제도를 정비하고 문화를 크게 번창시켰는데, 당나라 등 주변국들은 발해의 부강함과 높은 문화 수준에 감탄하여 '바다 동쪽의 융성하고 번영한 나라'라는 뜻의 '해동성국'이라는 극찬을 아끼지 않았습니다."
+            },
+            goryeo_wanggeon: {
+                year: "AD 918년",
+                title: "태조 왕건, 고려를 건국하다",
+                img: "",
+                story: "신라가 힘을 잃고 견훤의 후백제와 궁예의 후고구려로 갈라진 혼란한 후삼국 시대, 궁예 밑에서 신망을 얻었던 장수 왕건이 백성들과 신하들의 지지를 받아 왕위에 오르고 나라 이름을 '고려'라 지었어요. 왕건은 발해 유민들을 따뜻하게 품어주고, 후백제와 신라를 무력으로 짓밟는 대신 유화적인 정책과 혼인 정책을 통해 마음을 사로잡았어요. 마침내 936년, 후삼국을 평화롭게 재통일하는 기틀을 마련했습니다."
+            },
+            goryeo_seohui: {
+                year: "AD 993년",
+                title: "말로 거란군을 물리친 외교가 서희",
+                img: "",
+                story: "북쪽의 사나운 유목민족인 거란족이 고려를 빼앗기 위해 80만 대군을 이끌고 침공해 왔어요. 고려 조정이 겁에 질려 땅을 떼어주고 항복하려 할 때, 뛰어난 지혜를 지닌 관리 서희가 홀로 적진으로 들어갔습니다. 거란의 장수 소손녕과의 당당한 담판에서 서희는 '고려는 고구려를 계승한 나라'임을 밝히며 거란과 교류하지 못한 것은 여진족이 길을 막고 있기 때문이라고 설득했어요. 이에 감탄한 거란군은 스스로 물러갔을 뿐만 아니라 강동 6주라는 영토까지 고려에게 넘겨주었답니다!",
+                quiz: {
+                    question: "서희 장군이 뛰어난 말솜씨와 당당한 태도로 거란 장수 소손녕을 감복시켜 피 한 방울 흘리지 않고 확보한 영토의 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 개성공단", isCorrect: false },
+                        { text: "2. 강동 6주", isCorrect: true },
+                        { text: "3. 대마도", isCorrect: false }
+                    ]
+                }
+            },
+            goryeo_ganggamchan: {
+                year: "AD 1019년",
+                title: "귀주대첩! 강감찬 장군의 대승리",
+                img: "",
+                story: "거란족이 세 번째로 고려를 쳐들어왔을 때, 70세가 넘은 백전노장 강감찬 장군이 고려군을 이끌었어요. 장군은 흥화진에서 쇠가죽을 밧줄로 엮어 강물을 막았다가 적들이 건널 때 터뜨려 큰 혼란에 빠뜨렸고, 후퇴하는 거란군을 귀주 벌판에서 포위하여 무찌르는 귀주대첩을 완성했습니다. 10만 명에 달하던 거란군 중 살아서 도망친 자가 겨우 수천 명에 불과할 정도로 고려 역사상 가장 통쾌하고 위대한 대승리였습니다."
+            },
+            joseon_tayejo: {
+                year: "AD 1392년",
+                title: "이성계, 조선을 건국하다",
+                img: "",
+                story: "고려 말기, 나라가 부정부패로 어지럽고 홍건적과 왜구의 침략이 잦았을 때 활을 백발백중으로 쏘아 영웅이 된 장수가 바로 이성계였어요. 명나라를 공격하라는 왕의 명령을 받고 군대를 이끌고 압록강 위화도까지 갔던 이성계는, 무리한 전쟁을 피하기 위해 군대를 돌려(위화도 회군) 정권을 잡았습니다. 이후 정도전 등 신진 사대부들과 뜻을 합쳐 새로운 유교 국가인 '조선'을 세우고, 한양(서울)으로 수도를 옮겼습니다."
+            },
+            joseon_sejong: {
+                year: "AD 1443년",
+                title: "백성을 사랑하는 글자, 훈민정음(한글) 창제",
+                img: "/images/king_sejong_hangul.jpg",
+                story: "조선의 제4대 왕인 세종대왕은 백성을 지극히 사랑한 따뜻한 성군이었어요. 당시 백성들은 중국의 어려운 한자를 쓰지 못해 억울한 일을 당해도 관청에 글을 올리지 못했지요. 이를 가엾게 여긴 세종대왕은 집현전 학자들과 함께 입과 혀의 모양을 본떠 소리 나는 대로 쉽게 쓰고 읽을 수 있는 28자의 글자 '훈민정음'을 만들어 반포하셨답니다. 이 밖에도 측우기, 자격루, 혼천의 등을 만들어 백성들의 생활과 농업을 획기적으로 도우셨습니다.",
+                quiz: {
+                    question: "'백성을 가르치는 바른 소리'라는 뜻을 가진 한글의 본래 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 훈민정음", isCorrect: true },
+                        { text: "2. 조선글", isCorrect: false },
+                        { text: "3. 아리랑", isCorrect: false }
+                    ]
+                }
+            },
+            joseon_yisunsin: {
+                year: "AD 1592년",
+                title: "임진왜란을 구한 영웅과 거북선",
+                img: "/images/yi_sun_sin_turtle_ship.jpg",
+                story: "임진왜란이 일어나 왜군이 한반도를 침략하여 국왕이 피란을 가는 등 나라가 멸망할 뻔한 큰 위기에 처했어요. 이때 남해 바다를 굳건히 지킨 이가 충무공 이순신 장군입니다. 장군은 적들의 총알을 막고 돌격할 수 있도록 거북이 등껍질 모양의 철판을 씌우고 대포를 장착한 특수 군함 '거북선'을 개발했어요. 23번 싸워 23번 모두 이긴 전설적인 무패의 기록을 세웠으며, 한산도 대첩, 명량 대첩 등을 통해 전쟁의 흐름을 바꾸고 나라를 구하셨습니다.",
+                quiz: {
+                    question: "이순신 장군이 적의 총알과 화살을 막기 위해 철판을 덮고 송곳을 꽂아 개발한 독창적인 돌격선의 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 판옥선", isCorrect: false },
+                        { text: "2. 거북선", isCorrect: true },
+                        { text: "3. 황포돛배", isCorrect: false }
+                    ]
+                }
+            },
+            joseon_jeongjo: {
+                year: "AD 1796년",
+                title: "과학으로 지은 수원 화성 완성",
+                img: "",
+                story: "정조대왕은 억울하게 돌아가신 아버지 사도세자의 묘를 수원으로 옮기고, 신도시 수원을 군사와 상업의 중심지로 만들기 위해 웅장하고 아름다운 성곽인 '수원 화성'을 건설했어요. 수원 화성은 오늘날 세계문화유산으로 지정될 만큼 과학적이고 뛰어난 건축물로 평가받고 있습니다."
+            },
+            colonial_31: {
+                year: "AD 1919년",
+                title: "대한독립만세! 3.1 만세 운동",
+                img: "",
+                story: "일제에 의해 나라를 빼앗긴 지 9년째 되던 해인 3월 1일, 전국의 탑골공원과 거리마다 수많은 백성들이 태극기를 흔들며 '대한독립만세'를 평화적으로 외쳤어요. 이 운동은 전국과 세계로 번져나갔습니다. 특히 유관순 열사는 아우내 장터에서 만세 시위를 이끌며 모진 고문 앞에서도 독립을 다짐했습니다.",
+                quiz: {
+                    question: "아우내 장터에서 독립 만세 운동을 지휘하고 옥중에서도 굴하지 않고 만세를 외친 소녀 독립운동가는 누구일까요?",
+                    options: [
+                        { text: "1. 신사임당", isCorrect: false },
+                        { text: "2. 허난설헌", isCorrect: false },
+                        { text: "3. 유관순", isCorrect: true }
+                    ]
+                }
+            },
+            colonial_imsi: {
+                year: "AD 1919년",
+                title: "대한민국 임시정부 수립",
+                img: "",
+                story: "3.1 만세 운동을 계기로 상하이에 '대한민국 임시정부'가 세워졌습니다. 백범 김구 선생은 임시정부의 주석으로서 광복군을 조직하고 애국단원들의 독립 활동을 이끌었습니다."
+            },
+            colonial_ahn: {
+                year: "AD 1909년",
+                title: "하얼빈역에서 이토 히로부미를 쏘다",
+                img: "",
+                story: "안중근 의사는 하얼빈역에서 이토 히로부미를 사살하여 대한민국의 굳건한 독립 의지를 세계에 널리 알렸습니다."
+            },
+            modern_815: {
+                year: "AD 1945년",
+                title: "빛을 다시 찾은 날! 8.15 광복",
+                img: "",
+                story: "제2차 세계대전에서 일본이 항복하면서 1945년 8월 15일 감격스러운 광복을 맞이하게 되었어요! 3년 뒤인 1948년 8월 15일에는 대한민국 정부가 공식 수립되었습니다."
+            },
+            modern_war: {
+                year: "AD 1950년",
+                title: "가슴 아픈 남북의 갈등, 6.25 전쟁",
+                img: "",
+                story: "1950년 6월 25일 새벽, 북한군의 기습 남침으로 6.25 전쟁이 일어나 3년 동안 치열하고 아픈 동족상잔의 비극이 계속되었습니다. 1953년 7월에 휴전 협정이 맺어졌습니다."
+            },
+            modern_olympic: {
+                year: "AD 1988년",
+                title: "세계로 뻗어가는 1988 서울 올림픽",
+                img: "",
+                story: "한강의 기적을 통해 가난을 딛고 성장한 대한민국이 1988년 전 세계인들의 축제인 제24회 서울 올림픽을 성공적으로 개최했습니다.",
+                quiz: {
+                    question: "1988년 전 세계인을 감동시킨 서울 올림픽의 귀여운 호랑이 마스코트 이름은 무엇일까요?",
+                    options: [
+                        { text: "1. 뽀로로", isCorrect: false },
+                        { text: "2. 호돌이", isCorrect: true },
+                        { text: "3. 펭수", isCorrect: false }
+                    ]
+                }
+            },
+            modern_future: {
+                year: "AD 2002년 ~ 현재",
+                title: "K-컬처와 글로벌 기술 강국으로!",
+                img: "",
+                story: "대한민국은 2002년 한일 월드컵 4강 진출 신화를 이루었고, 최고 수준의 반도체 기술 국가이자 전 세계가 사랑하는 K-팝(BTS 등) 문화 강국으로 우뚝 섰습니다."
+            }
+        };
+
+        // 돋보기 상세 데이터베이스 (역대 왕/지도자 및 위인들)
+        const chronicleData = {
+            gojoseon: {
+                title: "🐻 고조선 시대 연대기 돋보기",
+                mnemonic: "",
+                mnemonicTitle: "",
+                kings: [
+                    { name: "단군왕검 (檀君王儉)", period: "BC 2333 ~", desc: "고조선을 세운 개국 시조로, 홍익인간('널리 인간을 이롭게 한다')의 이념을 세웠습니다." },
+                    { name: "부왕 (否王)", period: "BC 3세기 말", desc: "진나라의 침공에 맞서 장성을 보수하고 왕권을 대대적으로 강화했습니다." },
+                    { name: "준왕 (準王)", period: "BC 3세기 말 ~ BC 194년", desc: "위만을 믿고 서쪽 영토를 수비하도록 맡겼으나 배신당해 남쪽 진국으로 피난했습니다." },
+                    { name: "위만왕 (衛滿王)", period: "BC 194년 ~ BC 180년경", desc: "철기 문화를 본격 유입하고 영토를 넓혀 강한 중앙집권 연맹을 이뤘습니다." },
+                    { name: "우거왕 (右渠王)", period: "BC 129년경 ~ BC 108년", desc: "고조선의 마지막 왕으로, 중국 한나라 무제 군대와 1년 동안 씩씩하게 싸웠습니다." }
+                ],
+                figures: [
+                    { name: "단군 할아버지 (기원전 2333년경)", job: "고조선의 건국자", desc: "곰이 사람이 된 웅녀와 하늘의 아들 환웅 사이에서 태어나 고조선을 건국했습니다.", relatedKings: ["단군왕검"] },
+                    { name: "웅녀 (생몰년 미상)", job: "단군의 어머니", desc: "마늘과 쑥을 동굴에서 100일간 먹고 참아내어 사람이 된 곰입니다.", relatedKings: ["단군왕검"] },
+                    { name: "환웅 (생몰년 미상)", job: "단군의 아버지", desc: "하늘에서 백성들을 다스리기 위해 바람, 비, 구름의 신을 거느리고 내려온 신의 아들입니다.", relatedKings: ["단군왕검"] },
+                    { name: "위만 (기원전 2세기 활동)", job: "철기 전파자 & 왕", desc: "중국에서 들어와 진보된 철기 주조술과 농경법을 고조선에 도입하여 경제를 일으켰습니다.", relatedKings: ["위만왕"] }
+                ]
+            },
+            goguryeo: {
+                title: "🏹 고구려 시대 연대기 돋보기",
+                mnemonic: "주몽-유리-대무신-민중-모본-태조-차대-신대-고국천-산상-동천-중천-서천-봉상-미천-고국원-소수림-고국양-광개토-장수-문자명-안장-안원-양원-평원-영양-영류-보장",
+                mnemonicTitle: "🏹 고구려 28대 임금 암기 탭 (누르면 스크롤 이동!)",
+                kings: [
+                    { name: "1대 동명성왕 (주몽)", period: "BC 37 ~ BC 19", desc: "고구려의 위대한 건국자. 활쏘기의 달인이자 나라의 터를 닦았습니다." },
+                    { name: "2대 유리명왕 (유리)", period: "BC 19 ~ AD 18", desc: "주몽의 맏아들. 신비로운 부러진 칼을 맞춰 후계자가 되었고 수도를 국내성으로 옮겼습니다." },
+                    { name: "3대 대무신왕 (무휼)", period: "AD 18 ~ AD 44", desc: "강력한 군사력으로 낙랑군을 제압하고 부여를 쳐부순 고구려의 전쟁 영웅입니다." },
+                    { name: "6대 태조대왕 (궁)", period: "AD 53 ~ AD 146", desc: "국가 체제를 중앙집권화하고 옥저와 요동을 정벌해 대국으로 성장시켰습니다." },
+                    { name: "9대 고국천왕 (남무)", period: "AD 179 ~ AD 197", desc: "국상 을파소와 함께 불쌍한 빈민을 구제하는 대출법인 '진대법'을 개발했습니다." },
+                    { name: "15대 미천왕 (을불)", period: "AD 300 ~ AD 331", desc: "한때 소금 장수로 숨어 지냈으나 극적으로 왕이 되어 낙랑군을 영토에서 몰아냈습니다." },
+                    { name: "16대 고국원왕 (사유)", period: "AD 331 ~ AD 371", desc: "백제 근초고왕의 평양성 공격을 방어하다 화살에 맞아 안타깝게 서거했습니다." },
+                    { name: "17대 소수림왕 (구부)", period: "AD 371 ~ AD 384", desc: "불교 수용, 태학 설립, 율령 반포 등 고구려의 국가 기반 제도를 완전히 다졌습니다." },
+                    { name: "19대 광개토대왕 (담덕)", period: "AD 391 ~ AD 413", desc: "만주 대륙과 요동을 휩쓸며 한국 역사상 가장 방대한 북방 영토를 일군 정복의 상징입니다." },
+                    { name: "20대 장수왕 (거련)", period: "AD 413 ~ AD 491", desc: "광개토대왕의 아들. 79년간 왕위에 있으며 수도를 평양으로 천도하고 남진 정책을 폈습니다." },
+                    { name: "26대 영양왕 (원)", period: "AD 590 ~ AD 618", desc: "수나라의 거대한 113만 침략군을 요동성과 살수에서 완벽하게 대파했습니다." },
+                    { name: "28대 보장왕 (장)", period: "AD 642 ~ AD 668", desc: "고구려의 마지막 왕. 당나라 침공을 맞이했으나 결국 나당 연합군에 의해 멸망을 지켜봤습니다." }
+                ],
+                figures: [
+                    { name: "동명왕 주몽 (BC 58 ~ BC 19)", job: "고구려 시조", desc: "알에서 태어난 비범한 인물로, 뛰어난 활솜씨를 지녔으며 졸본에 나라를 세웠습니다.", relatedKings: ["동명성왕"] },
+                    { name: "광개토대왕 (374 ~ 413)", job: "고구려의 정복자", desc: "만주 벌판을 지배하고 신라에 침입한 왜구를 격퇴해 준 영웅 군주입니다.", relatedKings: ["광개토대왕"] },
+                    { name: "을지문덕 (6세기 말 ~ 7세기 초)", job: "살수대첩의 영웅", desc: "수나라 장수에게 조롱하는 시를 보내 속인 뒤 강물로 침몰시켰습니다.", relatedKings: ["영양왕"] },
+                    { name: "연개소문 (603 ~ 666)", job: "대막리지", desc: "칼 다섯 자루를 차며 당나라의 모든 침략에 맞서 나라를 강하게 지켰습니다.", relatedKings: ["보장왕"] },
+                    { name: "온달 장군 (? ~ 590)", job: "용맹한 장수", desc: "바보 소리를 듣다가 평강공주의 헌신으로 용감한 고구려 최고의 무사가 되었습니다.", relatedKings: ["영양왕", "평원왕"] },
+                    { name: "양만춘 장군 (7세기 중엽)", job: "안시성의 영웅", desc: "당나라 태종의 대군을 안시성에서 끝까지 막아내고 화살로 그의 눈을 맞췄습니다.", relatedKings: ["보장왕"] }
+                ]
+            },
+            baekje: {
+                title: "🎨 백제 시대 연대기 돋보기",
+                mnemonic: "온조-다루-기루-개루-초고-구수-사반-고이-책계-분서-비류-계왕-근초고-근구수-침류-아신-전지-구이신-비유-개로-문주-삼근-동성-무령-성왕-위덕-혜왕-법왕-무왕-의자",
+                mnemonicTitle: "🎨 백제 31대 임금 암기 탭 (누르면 스크롤 이동!)",
+                kings: [
+                    { name: "1대 온조왕 (온조)", period: "BC 18 ~ AD 28", desc: "위례성(서울 한강 부근)에 터를 잡고 십제를 세운 건국주입니다." },
+                    { name: "8대 고이왕 (고이)", period: "AD 234 ~ AD 286", desc: "관리들의 옷 색깔을 정하고 법률과 공무원 제도를 만들어 백제를 법치국가로 이끌었습니다." },
+                    { name: "13대 근초고왕 (근초고)", period: "AD 346 ~ AD 375", desc: "요서 지방과 일본 규슈까지 해상 무역 영역을 확장하고 전성기를 창조했습니다." },
+                    { name: "15대 침류왕 (침류)", period: "AD 384 ~ AD 385", desc: "인도 승려 마라난타를 통해 불교를 공식 수용하여 백성의 사상을 하나로 모았습니다." },
+                    { name: "25대 무령왕 (사마)", period: "AD 501 ~ AD 523", desc: "지방에 22담로를 설치하고 왕족을 파견해 정치를 안정시켰습니다. (공주 무령왕릉 발굴)" },
+                    { name: "26대 성왕 (명농)", period: "AD 523 ~ AD 554", desc: "도읍을 사비(부여)로 옮기고 나라 이름을 남부여로 고쳤으나 관산성에서 전사했습니다." },
+                    { name: "30대 무왕 (장)", period: "AD 600 ~ AD 641", desc: "신라 선화공주와 결혼한 서동요 설화의 주인공이자, 웅장한 익산 미륵사를 지었습니다." },
+                    { name: "31대 의자왕 (의자)", period: "AD 641 ~ AD 660", desc: "처음에는 해동증자라 불리며 총명했으나 말년에 당나라와 신라 연합군에 사비성이 넘어가며 멸망을 맞이했습니다." }
+                ],
+                figures: [
+                    { name: "온조왕 (BC 18 ~ AD 28)", job: "백제 건국자", desc: "고구려 주몽의 아들로 한강의 한성에 살기 좋은 터를 잡았습니다.", relatedKings: ["온조왕"] },
+                    { name: "의자왕 (599? ~ 660)", job: "백제 마지막 군주", desc: "삼천궁녀 설화가 있으며, 나당 연합군의 침공으로 망국의 한을 품었습니다.", relatedKings: ["의자왕"] },
+                    { name: "계백 장군 (? ~ 660)", job: "결사대 대장", desc: "황산벌 전투에서 5천 결사대를 이끌고 신라군에 맞서 목숨 바쳐 싸웠습니다.", relatedKings: ["의자왕"] },
+                    { name: "아직기 (4세기 말 활동)", job: "일본 학문 전파자", desc: "일본 태자에게 한자를 가르치고 왕인 박사를 일본에 추천해 주었습니다.", relatedKings: ["근초고왕"] },
+                    { name: "왕인 박사 (4세기 말 활동)", job: "아스카 문화의 스승", desc: "일본 왕의 초청으로 천자문과 논어를 전해 문화를 번창하게 해주었습니다.", relatedKings: ["근초고왕"] }
+                ]
+            },
+            silla: {
+                title: "👑 신라 / 가야 시대 연대기 돋보기",
+                mnemonic: "혁거세-남해-유리-탈해-파사-지마-일성-아달라-벌휴-내해-조분-첨해-미추-유례-기림-흘해-내물-실성-눌지-자비-소지-지증-법흥-진흥-진지-진평-선덕-진덕-무열-문무-신문-효소-성덕-효성-경덕-혜공-선덕-원성-소성-애장-헌덕-흥덕-희강-민애-신무-문성-헌안-경문-헌강-정강-진성-효공-신덕-경명-경애-경순",
+                mnemonicTitle: "👑 신라 56대 임금 암기 탭 (누르면 스크롤 이동!)",
+                kings: [
+                    { name: "1대 박혁거세", period: "BC 57 ~ AD 4", desc: "신라를 세운 시조로 알에서 태어났습니다. 도읍을 경주에 정했습니다." },
+                    { name: "4대 탈해이사금 (석탈해)", period: "AD 57 ~ AD 80", desc: "바다 건너와 대장장이 집안을 돕다가 뛰어난 총명함으로 사위 임금이 되었습니다." },
+                    { name: "13대 미추이사금", period: "AD 262 ~ AD 284", desc: "김씨 최초의 신라 왕. 적이 쳐들어왔을 때 대나무 잎을 귀에 꽂은 군인들이 도와줬다는 설화가 있습니다." },
+                    { name: "17대 내물마립간", period: "AD 356 ~ AD 402", desc: "왕의 칭호를 '마립간'으로 격상하고 고구려 광개토대왕에게 왜구 소탕을 요청했습니다." },
+                    { name: "22대 지증왕 (대로)", period: "AD 500 ~ AD 514", desc: "나라 이름을 '신라'로, 왕의 호칭을 '왕'으로 정하고 이사부를 보내 독도를 복속시켰습니다." },
+                    { name: "23대 법흥왕 (원종)", period: "AD 514 ~ AD 540", desc: "불교를 공인(이차돈의 순교)하고 율령을 통과시켜 통치 기반을 마련했습니다." },
+                    { name: "24대 진흥왕 (삼맥종)", period: "AD 540 ~ AD 576", desc: "화랑도를 국가 조직으로 육성하고 한강 유역을 완전히 확보해 삼국통일의 발판을 마련했습니다." },
+                    { name: "27대 선덕여왕 (덕만)", period: "AD 632 ~ AD 647", desc: "신라 최초의 여왕. 황룡사 9층 목탑과 첨성대를 지어 외침의 불안을 종교와 과학으로 달랬습니다." },
+                    { name: "29대 태종무열왕 (김춘추)", period: "AD 654 ~ AD 661", desc: "최초의 진골 출신 왕으로, 당나라와 손잡고 백제를 무너뜨렸습니다." },
+                    { name: "30대 문무왕 (법민)", period: "AD 661 ~ AD 681", desc: "당나라와의 전쟁까지 승리로 끝맺으며 삼국 통일을 완성했습니다. '동해의 용이 되겠다'는 유언을 남겼습니다." },
+                    { name: "56대 경순왕 (김부)", period: "AD 930 ~ AD 935", desc: "고려 태조 왕건에게 평화적으로 정권을 양도한 신라의 마지막 국왕입니다." }
+                ],
+                figures: [
+                    { name: "박혁거세 (BC 69 ~ AD 4)", job: "신라 건국 시조", desc: "하늘에서 내려온 알에서 깨어나 6촌장들에 의해 왕으로 추대되었습니다.", relatedKings: ["박혁거세"] },
+                    { name: "이사부 장군 (6세기 초 활동)", job: "우산국 정벌 장군", desc: "나무로 깎은 사자 인형으로 섬나라 우산국(울릉도와 독도)을 위협해 항복받았습니다.", relatedKings: ["지증왕", "진흥왕"] },
+                    { name: "백결 선생 (414 ~ ?)", job: "신라 거문고 대가", desc: "집이 몹시 가난했으나 거문고를 타며 떡 방아 찧는 소리를 내어 아내를 위로했습니다.", relatedKings: ["눌지마립간", "자비마립간"] },
+                    { name: "화랑 관창 (645 ~ 660)", job: "용맹한 화랑 전사", desc: "황산벌 전투에서 백제군에 홀로 적진에 뛰어들었다 사로잡혔으나 굴하지 않고 장렬히 전사했습니다.", relatedKings: ["무열왕", "의자왕"] },
+                    { name: "김유신 장군 (595 ~ 673)", job: "삼국 통일의 주역", desc: "말의 목을 베어 마음을 다잡고, 백제와 고구려를 쳐부수며 통일 전쟁을 끝까지 지휘했습니다.", relatedKings: ["선덕여왕", "태종무열왕", "문무왕"] },
+                    { name: "김수로왕 (가야) (AD 42 ~ AD 199)", job: "금관가야 건국조", desc: "구지봉에서 알로 태어나 6가야 중 가장 뛰어난 철의 나라를 세우고 다스렸습니다.", relatedKings: ["김수로왕 (가야)"] },
+                    { name: "허황옥 (생몰년 미상)", job: "가야 김수로왕비", desc: "인도 아유타국에서 배를 타고 건너온 공주로, 우리나라 역사상 최초의 다문화 가정이자 활발했던 국제 교류를 보여주는 상징적인 인물입니다.", relatedKings: ["김수로왕 (가야)"] },
+                    { name: "솔거 (6세기 후반 활동)", job: "신라의 전설적 화가", desc: "황룡사 벽에 소나무(노송도)를 그렸는데, 새들이 진짜 소나무인 줄 알고 날아와서 부딪혔다는 전설을 지닌 뛰어난 화가입니다.", relatedKings: ["진흥왕"] }
+                ]
+            },
+            north_south: {
+                title: "🌊 남북국 시대 연대기 돋보기",
+                mnemonic: "대조영-무왕-문왕-폐왕-성왕-강왕-정왕-희왕-간왕-선왕-이진-건황-현석-위해-인선",
+                mnemonicTitle: "🦅 발해 15대 임금 암기 탭 (누르면 스크롤 이동!)",
+                kings: [
+                    { name: "발해 1대 고왕 (대조영)", period: "AD 698 ~ AD 719", desc: "고구려 유민을 이끌고 당나라 군대를 천문령에서 격퇴하여 나라를 세웠습니다." },
+                    { name: "발해 2대 무왕 (대무예)", period: "AD 719 ~ AD 737", desc: "강력한 군대를 육성해 영토를 개척하고 당나라 산둥 지방을 선제공격했습니다." },
+                    { name: "발해 3대 문왕 (대흠무)", period: "AD 737 ~ AD 793", desc: "당나라와 화친하며 문물을 적극 수용하고 3성 6부 행정 체제를 갖췄습니다." },
+                    { name: "발해 10대 선왕 (대인수)", period: "AD 818 ~ AD 830", desc: "발해 영토를 만주 전역으로 확대하여 황금기인 '해동성국'을 탄생시켰습니다." },
+                    { name: "신라 31대 신문왕 (김정명)", period: "AD 681 ~ AD 692", desc: "통일 직후 귀족의 영지(녹읍)를 폐지하고 왕권을 극대화했으며 교육기관 국학을 설립했습니다." },
+                    { name: "신라 35대 경덕왕 (헌강)", period: "AD 742 ~ AD 765", desc: "석굴암과 불국사, 성덕대왕신종(에밀레종)을 제작하기 시작하여 불교 예술의 꽃을 피웠습니다." }
+                ],
+                figures: [
+                    { name: "대조영 (? ~ 719)", job: "발해의 건국 태조", desc: "천문령 전투 승리 후 요동 동모산 기슭에 발해를 건국했습니다.", relatedKings: ["대조영"] },
+                    { name: "문무왕 (626 ~ 681)", job: "통일을 완수한 용의 왕", desc: "삼국 통일을 완전히 매듭짓고 바다의 용이 되겠다며 바다 아래에 잠들었습니다.", relatedKings: ["문무왕"] },
+                    { name: "원효대사 (617 ~ 686)", job: "대중 불교의 선구자", desc: "해골물을 통한 큰 깨달음으로 모든 귀족 중심 불교를 서민 속으로 확산시켰습니다.", relatedKings: ["문무왕"] },
+                    { name: "혜초 스님 (704 ~ 787)", job: "세계적인 구법 탐험가", desc: "인도와 중앙아시아를 직접 횡단한 후 '왕오천축국전'이라는 세계적인 기행문을 남겼습니다.", relatedKings: ["신문왕", "효소왕"] },
+                    { name: "설총 (655 ~ ?)", job: "신라 유학의 조상", desc: "원효대사의 아들로, 이두 문자를 정리하여 신라의 한문 교육과 발전에 헌신했습니다.", relatedKings: ["신문왕"] },
+                    { name: "장보고 (? ~ 846)", job: "바다의 무역 제왕", desc: "완도 청해진을 근거지로 해상을 완전히 지배하며 황금 경제 루트를 개척했습니다.", relatedKings: ["경덕왕"] },
+                    { name: "최치원 (857 ~ ?)", job: "신라 최고의 문장가", desc: "당나라 빈공과에 장원으로 합격한 천재이며 시무 10조 개혁안을 왕에게 제기했습니다.", relatedKings: ["경덕왕"] },
+                    { name: "김대성 (700 ~ 774)", job: "예술 창조자", desc: "전생의 부모를 위해 석굴암을, 현생의 부모를 위해 불국사를 조각한 정승입니다.", relatedKings: ["경덕왕"] },
+                    { name: "걸사비우 (? ~ 698)", job: "말갈 연합 장군", desc: "대조영과 손잡고 수만 대군 당나라의 침공을 막다 장렬히 전사했습니다.", relatedKings: ["대조영"] }
+                ]
+            },
+            goryeo: {
+                title: "🏺 고려 시대 연대기 돋보기",
+                mnemonic: "태조-혜종-정종-광종-경종-성종-목종-현종-덕종-정종-문종-순종-선종-헌종-숙종-예종-인종-의종-명종-신종-희종-강종-고종-원종-충렬-충선-충숙-충혜-충목-충정-공민-우왕-창왕-공양",
+                mnemonicTitle: "🏺 고려 34대 임금 암기 탭 (누르면 스크롤 이동!)",
+                kings: [
+                    { name: "1대 태조 (왕건)", period: "AD 918 ~ AD 943", desc: "포용적인 정치로 후삼국을 하나로 엮고 나라의 안정을 도모했습니다." },
+                    { name: "4대 광종 (소)", period: "AD 949 ~ AD 975", desc: "과거 제도를 처음 도입하고 불법으로 노비가 된 백성을 양민으로 해방시켰습니다." },
+                    { name: "6대 성종 (치)", period: "AD 981 ~ AD 997", desc: "최승로의 시무 28조를 수용하여 유교 중심의 3성 6부 제도를 구축했습니다." },
+                    { name: "8대 현종 (순)", period: "AD 1009 ~ AD 1031", desc: "지방 행정 체제를 개편하고 거란의 침입을 대장경 간행과 함께 극복해냈습니다." },
+                    { name: "11대 문종 (휘)", period: "AD 1046 ~ AD 1083", desc: "고려의 경제와 문화 수준을 대폭 끌어올려 고려 최고의 평화 시대를 만들었습니다." },
+                    { name: "31대 공민왕 (기)", period: "AD 1351 ~ AD 1374", desc: "원나라 몽골풍을 금지하고 빼앗긴 영토(쌍성총관부)를 회복하기 위해 개혁 정치를 폈습니다." },
+                    { name: "34대 공양왕 (요)", period: "AD 1389 ~ AD 1392", desc: "신진사대부에 의해 왕위에 옹립되었으나 이성계의 건국으로 고려의 마지막 왕이 되었습니다." }
+                ],
+                figures: [
+                    { name: "강감찬 장군 (948 ~ 1031)", job: "귀주대첩 영웅", desc: "거란군 10만 명을 물과 지형을 활용해 완벽하게 정벌하여 나라를 지켰습니다.", relatedKings: ["현종"] },
+                    { name: "서희 (942 ~ 998)", job: "외교 담판 천재", desc: "침공해 온 거란 장수 소손녕을 말 한마디로 물러나게 하고 강동 6주를 얻었습니다.", relatedKings: ["성종"] },
+                    { name: "정중부 (1106 ~ 1179)", job: "무신정권 주동자", desc: "문신 중심의 차별 정치를 타파하기 위해 보현원에서 무신란을 단행했습니다.", relatedKings: ["의종", "명종"] },
+                    { name: "최무선 (1325 ~ 1395)", job: "화약 발명가", desc: "최초로 국산 화약 제조법을 성공시키고 왜구를 화포로 대격퇴시켰습니다.", relatedKings: ["공민왕", "공양왕"] },
+                    { name: "죽림칠현 (12세기 후반 활동)", job: "은둔 시인들", desc: "어지러운 무신정권을 피하여 대나무 숲에 모여 시와 술을 읊으며 학문을 논했습니다.", relatedKings: ["명종"] },
+                    { name: "김부식 (1075 ~ 1151)", job: "삼국사기 편찬가", desc: "묘청의 난을 진압하고, 우리나라 최고의 역사책인 삼국사기를 집필했습니다.", relatedKings: ["인종"] },
+                    { name: "지눌 국사 (1158 ~ 1210)", job: "정혜쌍수 승려", desc: "선종과 교종 불교를 하나로 통합하기 위해 헌신한 조계종의 창시자입니다.", relatedKings: ["의종", "명종"] },
+                    { name: "의천 대사 (1055 ~ 1101)", job: "천태종 개창 국사", desc: "문종의 아들로, 불교 정비와 송나라 교류를 주도하며 천태종을 창시했습니다.", relatedKings: ["문종", "숙종"] },
+                    { name: "이종무 장군 (1360 ~ 1425)", job: "대마도 정벌 명장", desc: "왜구의 본거지인 쓰시마 섬(대마도)을 전함 200여 척으로 완벽 정벌했습니다.", relatedKings: ["공양왕"] },
+                    { name: "정몽주 (1337 ~ 1392)", job: "고려 마지막 충신", desc: "끝까지 고려를 지키다 이방원에 의해 선죽교에서 단심가를 남기고 피살되었습니다.", relatedKings: ["공양왕"] },
+                    { name: "문익점 (1329 ~ 1398)", job: "목화 보급 애국자", desc: "중국에서 목화씨를 붓두껍에 몰래 숨겨와 서민들에게 무명옷을 입혔습니다.", relatedKings: ["공민왕"] },
+                    { name: "최충 (984 ~ 1068)", job: "해동공자 (교육의 대가)", desc: "고려 최고의 사설 학당 구재학당을 창조하여 수많은 국가 인재를 육성했습니다.", relatedKings: ["문종"] },
+                    { name: "일연 대사 (1206 ~ 1289)", job: "삼국유사 저술가", desc: "국난 극복기에 단군신화 등 고대 역사를 체계화한 삼국유사를 편찬했습니다.", relatedKings: ["고종", "원종"] },
+                    { name: "최영 장군 (1316 ~ 1388)", job: "황금 보기를 돌같이 하라", desc: "외적 침입을 막은 최고 명장이나, 요동 정벌 계획 중 위화도 회군으로 피살되었습니다.", relatedKings: ["우왕"] },
+                    { name: "무학대사 (1327 ~ 1405)", job: "태조 이성계의 스승", desc: "이성계에게 조선 건국과 새 수도 한양의 터를 추천하고 결정한 인물입니다.", relatedKings: ["공양왕"] }
+                ]
+            },
+            joseon: {
+                title: "📜 조선 시대 연대기 돋보기",
+                mnemonic: "태-정-태-세-문-단-세-예-성-연-중-인-명-선-광-인-효-현-숙-경-영-정-순-헌-철-고-순",
+                mnemonicTitle: "📜 조선 27대 임금 암기 탭 (글자를 누르면 해당 왕 카드로 바로 이동!)",
+                kings: [
+                    { name: "1대 태조 (이성계)", period: "1392 ~ 1398", desc: "고려를 폐하고 유교 국가인 조선을 세웠으며 한양(서울)으로 천도했습니다." },
+                    { name: "2대 정종 (이방과)", period: "1398 ~ 1400", desc: "개경으로 잠시 도읍을 옮겼으며 형제간의 다툼 속에 왕위를 동생 방원에게 넘겼습니다." },
+                    { name: "3대 태종 (이방원)", period: "1400 ~ 1418", desc: "사병을 혁파하고 호패법을 실시하여 강력한 왕의 권력을 구축했습니다." },
+                    { name: "4대 세종 (이도)", period: "1418 ~ 1450", desc: "과학과 훈민정음을 개발하고 4군 6진을 정복하여 북방 경계를 확정한 최고의 성군입니다." },
+                    { name: "5대 문종 (이향)", period: "1450 ~ 1452", desc: "세종의 맏아들로 과학 기술에 재능이 많아 측우기를 함께 개발했으나 건강이 나빠 일찍 승하했습니다." },
+                    { name: "6대 단종 (이홍위)", period: "1452 ~ 1455", desc: "12세에 왕이 되었으나 작은아버지 수양대군(세조)에 의해 왕위를 뺏기고 영월로 유배되어 죽임을 당했습니다." },
+                    { name: "7대 세조 (이유)", period: "1455 ~ 1468", desc: "왕권을 복구하고 국정 운영 체계를 정리하며 법전인 경국대전의 초석을 다졌습니다." },
+                    { name: "8대 예종 (이황)", period: "1468 ~ 1469", desc: "어린 나이에 즉위하여 재위 13개월 만에 세상을 떠났습니다." },
+                    { name: "9대 성종 (이혈)", period: "1469 ~ 1494", desc: "조선의 기본 법전인 '경국대전'을 마침내 완성 및 반포하여 법치 제도를 확립했습니다." },
+                    { name: "10대 연산군 (이융)", period: "1494 ~ 1506", desc: "조선 최악의 폭군. 무오사화와 갑자사화로 많은 학자들을 숙청하고 중종반정으로 폐위되었습니다." },
+                    { name: "11대 중종 (이역)", period: "1506 ~ 1544", desc: "반정으로 왕이 된 뒤 조광조의 급진적 개혁을 추진했으나 나중에 기묘사화로 그를 숙청했습니다." },
+                    { name: "12대 인종 (이호)", period: "1544 ~ 1545", desc: "조선 역사상 가장 짧은 재위 기간(8개월)을 보냈으며, 효심이 매우 깊었다고 전해집니다." },
+                    { name: "13대 명종 (이환)", period: "1545 ~ 1567", desc: "어머니 문정왕후의 섭정 아래 을사사화가 발생했고 임꺽정이 난을 일으켜 어지러웠습니다." },
+                    { name: "14대 선조 (이연)", period: "1567 ~ 1608", desc: "사림 세력이 정권을 잡았으나 임진왜란이 일어나 백성을 버리고 의주로 피란해 비판을 받았습니다." },
+                    { name: "15대 광해군 (이혼)", period: "1608 ~ 1623", desc: "전후 복구 사업과 실리적인 중립 외교를 펼치고 토지세 부담을 줄이는 대동법을 시작했으나 폐위되었습니다." },
+                    { name: "16대 인조 (이종)", period: "1623 ~ 1649", desc: "친명 정책을 펴다가 정묘호란과 병자호란을 겪고 남한산성에서 내려와 삼전도의 굴욕을 겪었습니다." },
+                    { name: "17대 효종 (이호)", period: "1649 ~ 1659", desc: "병자호란의 치욕을 갚기 위해 군대를 훈련하고 북쪽을 정벌하자는 '북벌론'을 추진했습니다." },
+                    { name: "18대 현종 (이연)", period: "1659 ~ 1674", desc: "예법 문제로 신하들이 격렬하게 논쟁했던 '예송 논쟁'을 조율하며 시간을 보냈습니다." },
+                    { name: "19대 숙종 (이순)", period: "1674 ~ 1720", desc: "환국 정치를 통해 신하들의 세력을 조율하고 상평통보를 전국에 유통하여 시장 경제를 일으켰습니다." },
+                    { name: "20대 경종 (이윤)", period: "1720 ~ 1724", desc: "몸이 허약하여 일찍 세상을 떠났으며 장희빈의 아들입니다." },
+                    { name: "21대 영조 (이금)", period: "1724 ~ 1776", desc: "당파 싸움을 누르기 위해 탕평책을 쓰고 세금을 줄였으나 아들 사도세자를 뒤주에 갇혀 죽게 한 슬픈 왕입니다." },
+                    { name: "22대 정조 (이산)", period: "1776 ~ 1800", desc: "할아버지 영조의 뒤를 이어 학문 연구소 규장각을 세우고 상업 자유화 및 과학적인 수원 화성을 완성했습니다." },
+                    { name: "23대 순조 (이공)", period: "1800 ~ 1834", desc: "어린 나이에 즉위하여 외척 세력들이 정권을 마음대로 부리는 세도정치가 시작되어 민란이 빗발쳤습니다." },
+                    { name: "24대 헌종 (이환)", period: "1834 ~ 1849", desc: "8세에 즉위하여 세도정치 속에서 살다가 23세의 젊은 나이에 자녀 없이 세상을 떠났습니다." },
+                    { name: "25대 철종 (이원범)", period: "1849 ~ 1863", desc: "강화도에서 농사를 짓던 도중 영문도 모른 채 왕으로 추대되어 실권 없는 세도정치의 허수아비 역할을 감당했습니다." },
+                    { name: "26대 고종 (이희)", period: "1863 ~ 1907", desc: "외세의 침략 속에서 나라를 구하려 1897년 '대한제국'을 선포하고 황제라 불렀으나 일제에 의해 강제 퇴위되었습니다." },
+                    { name: "27대 순종 (이척)", period: "1907 ~ 1910", desc: "조선과 대한제국의 마지막 황제. 일제강점기로 넘어가며 망국의 아픔을 겪었습니다." }
+                ],
+                figures: [
+                    { name: "황희 정승 (1363 ~ 1452)", job: "조선 초기 명재상", desc: "청렴결백하고 세종대왕을 도와 건국 초기 안정을 도모한 대표 정승입니다.", relatedKings: ["세종"] },
+                    { name: "맹사성 정승 (1360 ~ 1438)", job: "예악의 달인 정승", desc: "소박한 삶을 살며 황희와 함께 태평성대를 창조한 좌의정입니다.", relatedKings: ["세종"] },
+                    { name: "장영실 (1390년 경 ~ 1450년 경)", job: "조선 최고 과학자", desc: "비천한 신분에서 세종의 부름을 받아 자격루, 측우기 등을 개발했습니다.", relatedKings: ["세종"] },
+                    { name: "신숙주 (1417 ~ 1475)", job: "집현전 출신 정치가", desc: "조선 전기 외교 대가이자 신하로서 세조의 신임을 받으며 성종까지 활동했습니다.", relatedKings: ["세조", "성종"] },
+                    { name: "한명회 (1415 ~ 1487)", job: "계유정난의 공신", desc: "수양대군을 도와 정난을 도모하고 조선 전기 권력의 중심에 선 정치가입니다.", relatedKings: ["세조", "성종"] },
+                    { name: "이퇴계 이황 (1501 ~ 1570)", job: "성리학의 1인자", desc: "조선 주리론을 정립하고 서원을 중심으로 유학을 크게 부흥시킨 영남 학파의 스승입니다.", relatedKings: ["선조", "명종"] },
+                    { name: "이율곡 이이 (1536 ~ 1584)", job: "십만양병설 학자", desc: "주기론을 정비하고 십만양병설과 대동법의 시초를 왕에게 진언한 현실 개혁 유학자입니다.", relatedKings: ["선조"] },
+                    { name: "신사임당 (1504 ~ 1551)", job: "초충도의 천재 예술가", desc: "율곡 이이의 어머니이며 시와 그림(초충도)에 완벽한 실력을 보인 조선 천재 여성입니다.", relatedKings: ["중종", "명종"] },
+                    { name: "곽재우 장군 (1552 ~ 1617)", job: "붉은 옷의 의병장", desc: "임진왜란 때 최초로 의병을 모아 붉은 옷을 입고 홍의장군이라 불렸습니다.", relatedKings: ["선조"] },
+                    { name: "조헌 (1544 ~ 1592)", job: "금산 전투 의병장", desc: "임진왜란 때 700의총으로 불리는 칠백 의병을 거느리고 나라를 위해 끝까지 항전했습니다.", relatedKings: ["선조"] },
+                    { name: "김시민 장군 (1554 ~ 1592)", job: "진주성 대첩 영웅", desc: "3천 명의 적은 군사로 진주성에서 2만 왜군을 완벽 격퇴하고 전사했습니다.", relatedKings: ["선조"] },
+                    { name: "충무공 이순신 (1545 ~ 1598)", job: "조선 삼도수군통제사", desc: "거북선과 한산도 대첩으로 남해 바다의 통제권을 완전히 장악하여 나라를 구했습니다.", relatedKings: ["선조"] },
+                    { name: "사육신 (1456년 사망)", job: "단종 복위 충신들", desc: "세조의 왕위 찬탈에 맞서 단종을 다시 옹립하려다 목숨을 잃은 성삼문 등 6인의 신하입니다.", relatedKings: ["세조"] },
+                    { name: "생육신 (15세기 활동)", job: "은둔의 충신들", desc: "벼슬을 버리고 평생 야인으로 살며 단종을 그리워한 김시습 등 6인의 지조 높은 신하입니다.", relatedKings: ["세조"] },
+                    { name: "의기 논개 (1574 ~ 1593)", job: "진주성 순국 의인", desc: "진주성이 함락된 뒤 왜장을 끌어안고 남강 푸른 물속으로 투신한 애국의 상징입니다.", relatedKings: ["선조"] },
+                    { name: "권율 장군 (1537 ~ 1599)", job: "행주대첩 도원수", desc: "행주산성에서 부녀자들과 힘을 합쳐 적을 물리쳐 대첩을 이룩한 도원수입니다.", relatedKings: ["선조"] },
+                    { name: "의적 홍길동 (연산군 시대 활동)", job: "소설 주인공 모델", desc: "가난한 자를 돕고 탐관오리를 혼내준 실존 의적이며 허균의 소설 모델이 되었습니다.", relatedKings: ["연산군"] },
+                    { name: "임꺽정 (? ~ 1562)", job: "황해도 의적 대장", desc: "조정의 횡포에 반대해 봉기한 백정 출신의 농민적 대장입니다.", relatedKings: ["명종"] },
+                    { name: "삼학사 (1637년 사망)", job: "척화파 세 신하", desc: "병자호란 때 청나라 굴복에 결사 반대하고 잡혀가 청나라에서 죽임을 당한 홍익한 등 3인입니다.", relatedKings: ["인조"] },
+                    { name: "암행어사 박문수 (1691 ~ 1756)", job: "서민들의 영웅 어사", desc: "마패를 차고 영조대왕을 대신해 탐관오리를 엄단하고 굶주린 백성을 구제했습니다.", relatedKings: ["영조"] },
+                    { name: "한석봉 (1543 ~ 1605)", job: "조선 최고 명필가", desc: "어둠 속에서도 붓글씨를 완벽하게 써서 떡을 썬 어머니와 함께 서법의 대가가 되었습니다.", relatedKings: ["선조"] },
+                    { name: "단원 김홍도 (1745 ~ 1806)", job: "대표 풍속화가", desc: "백성들의 해학적인 일상 모습을 생생하게 그린 서민 화풍의 대가입니다.", relatedKings: ["정조"] },
+                    { name: "김삿갓 (1807 ~ 1863)", job: "방랑시인 김병연", desc: "삿갓을 쓰고 전국을 돌며 부패한 정치를 유쾌한 시로 풍자하고 노래했습니다.", relatedKings: ["순조"] },
+                    { name: "김정호 (1804 ~ 1866)", job: "대동여지도 제작자", desc: "조선 전역을 직접 답사하며 가장 정확하고 과학적인 목판지도인 대동여지도를 제작했습니다.", relatedKings: ["철종"] },
+                    { name: "허준 (1539 ~ 1615)", job: "동의보감 편찬 의성", desc: "우리 땅에서 자란 약재를 집대성한 한국 최고 의학서 동의보감을 집필했습니다.", relatedKings: ["선조", "광해군"] },
+                    { name: "사명대사 (1544 ~ 1610)", job: "승병장 & 외교 승려", desc: "임진왜란 때 승병을 일으켰으며 전후 일본에 직접 건너가 포로 3천 명을 데려왔습니다.", relatedKings: ["선조"] },
+                    { name: "홍경래 (1771 ~ 1812)", job: "평안도 반란 주동자", desc: "세도정치와 평안도 지방 차별에 저항해 평서대원수를 자처하고 민중 봉기를 이끌었습니다.", relatedKings: ["순조"] },
+                    { name: "전봉준 (1855 ~ 1895)", job: "녹두장군", desc: "탐관오리 조병갑의 횡포에 맞서 전라도 고부에서 동학농민운동을 일으켰습니다.", relatedKings: ["고종"] },
+                    { name: "김대건 신부 (1821 ~ 1846)", job: "한국 최초 신부", desc: "마카오 유학 후 조선 최초의 신부가 되었으나 천주교 박해 속에 순교했습니다.", relatedKings: ["헌종"] },
+                    { name: "황진이 (1506 ~ 1544 경)", job: "조선 최고 시인 예인", desc: "빼어난 지혜와 한시 작사 능력으로 풍류를 장식한 명월이라는 별명의 예인입니다.", relatedKings: ["중종"] },
+                    { name: "김옥균 (1851 ~ 1894)", job: "개화파 정치가", desc: "근대화를 추진하기 위해 1884년 우정국 개국 축하연에서 갑신정변을 일으켰습니다.", relatedKings: ["고종"] },
+                    { name: "다산 정약용 (1762 ~ 1836)", job: "조선 후기 실학자", desc: "무거운 돌을 올리는 '거중기'를 발명하여 수원 화성을 편리하게 지었으며, 백성들의 실제 생활에 도움이 되는 학문인 '실학'을 연구한 천재 과학자입니다.", relatedKings: ["정조"] },
+                    { name: "연암 박지원 (1737 ~ 1805)", job: "실용주의 실학자", desc: "중국 기행문인 『열하일기』, 양반들의 위선을 꼬집은 『양반전』 등을 통해 수레나 벽돌과 같은 실생활에 유용한 서양/중국식 기술 도입을 강력히 주장했습니다.", relatedKings: ["정조", "영조"] },
+                    { name: "허난설헌 (1563 ~ 1589)", job: "천재 여성 시인", desc: "『홍길동전』을 지은 허균의 누나로, 자유롭고 아름다운 서사를 지닌 수백 편의 시를 지어 조선을 넘어 중국과 일본까지 이름을 떨쳤습니다.", relatedKings: ["선조"] },
+                    { name: "혜원 신윤복 (1758 ~ 1814?)", job: "조선 대표 풍속화가", desc: "김홍도와 더불어 조선 후기를 대표하는 화가로, 당시 유교 사회에서 그리기 힘들었던 양반들의 유쾌한 놀이 문화와 조선 여성들의 당당하고 아름다운 모습을 섬세하고 화려한 색채로 표현했습니다.", relatedKings: ["정조"] }
+                ]
+            },
+            colonial: {
+                title: "🇰🇷 일제강점기 임시정부 & 독립운동가 돋보기",
+                mnemonic: "",
+                mnemonicTitle: "",
+                kings: [
+                    { name: "이승만 (임시정부 1대 대통령)", period: "1919 ~ 1925", desc: "대한민국 임시정부의 초대 대통령으로 선출되어 미국 등지에서 외교 독립 활동을 이끌었습니다." },
+                    { name: "박은식 (임시정부 2대 대통령)", period: "1925", desc: "독립운동가이자 민족사학자로, 한국독립운동지혈사 등을 저술하여 민족 혼을 일깨웠습니다." },
+                    { name: "이동녕 (임시정부 국무령)", period: "1926 ~ 1940", desc: "임시정부의 든든한 대들보 역할을 자처하며 김구 등 독립가들을 지지하고 내정을 안정시켰습니다." },
+                    { name: "김구 (임시정부 주석)", period: "1940 ~ 1948", desc: "한인애국단을 결성하여 안중근, 윤봉길 등의 활동을 지휘했고 충칭에서 한국광복군을 창설했습니다." }
+                ],
+                figures: [
+                    { name: "안중근 (1879 ~ 1910)", job: "독립군 참모중장", desc: "1909년 중국 하얼빈역에서 동양평화를 저해하는 일본의 우두머리 이토 히로부미를 총탄으로 물리쳤습니다.", relatedKings: ["이승만", "박은식"] },
+                    { name: "이완용 (1858 ~ 1926)", job: "매국노 (친일파 파탄자)", desc: "나라를 적극적으로 팔아넘긴 을사오적의 우두머리이자 친일파의 대명사입니다.", relatedKings: ["이승만"] },
+                    { name: "홍범도 장군 (1868 ~ 1943)", job: "독립군 대장", desc: "만주 봉오동 계곡으로 유인하여 신출귀몰한 전술로 일본 정규군을 대패시켜 첫 대승리를 안겨줬습니다.", relatedKings: ["김구", "이동녕"] },
+                    { name: "김좌진 장군 (1889 ~ 1930)", job: "북로군정서 장군", desc: "청산리 일대 계곡에서 6일 동안 10여 차례 전투를 벌여 일본군을 완전 소탕한 대첩을 완수했습니다.", relatedKings: ["김구", "이동녕"] },
+                    { name: "손병희 (1861 ~ 1922)", job: "3.1운동 민족대표", desc: "천도교의 3대 교주이자 기미독립선언 때 민족대표 33인의 첫 머리로 서명하여 만세운동을 이끌었습니다.", relatedKings: ["이승만"] },
+                    { name: "유관순 (1902 ~ 1920)", job: "만세운동의 성녀", desc: "3.1 운동 당시 아우내 장터에서 태극기를 나누어주며 선두에서 만세를 부르다 옥중에서도 평화를 부르짖었습니다.", relatedKings: ["이승만", "김구"] },
+                    { name: "안창호 (1878 ~ 1938)", job: "흥사단 설립 지사", desc: "도산 안창호. 독립협회 및 신민회를 거치며 민족 교육과 실력 양성에 헌신했습니다.", relatedKings: ["이승만"] },
+                    { name: "방정환 (1899 ~ 1931)", job: "어린이날 창시자", desc: "차별받던 우리 아이들에게 '어린이'라는 예쁜 이름을 붙이고 행복을 주는 어린이날을 제정했습니다.", relatedKings: ["이승만", "김구"] },
+                    { name: "지석영 (1855 ~ 1935)", job: "종두법 보급 의학자", desc: "조선 후기부터 서양식 천연두 백신인 우두종두법을 국내에 처음 전수 보급해 생명을 살렸습니다.", relatedKings: ["이승만"] },
+                    { name: "신채호 (1880 ~ 1936)", job: "독립운동 역사학자", desc: "단재 신채호. 조선혁명선언을 집필하고 주체적 역사론을 확립해 민족혼을 살렸습니다.", relatedKings: ["김구"] },
+                    { name: "한용운 (1879 ~ 1944)", job: "민족대표 만해 시인", desc: "님의 침묵을 집필한 저항 시인이자 불교 개혁을 부르짖은 애국 스님입니다.", relatedKings: ["이승만"] },
+                    { name: "윤동주 (1917 ~ 1945)", job: "저항 시인", desc: "부끄럼 없는 삶을 살길 바라며 서시, 별 헤는 밤 등을 짓고 후쿠오카 형무소에서 요절했습니다.", relatedKings: ["김구"] },
+                    { name: "이수일과 심순애 (1913년 발표)", job: "신소설 주인공", desc: "김중배의 다이아몬드 반지 때문에 사랑이 깨지는 대중적인 한국 신극/소설의 주인공들입니다.", relatedKings: ["이승만"] },
+                    { name: "김두한 (1918 ~ 1972)", job: "장군의 아들", desc: "김좌진 장군의 아들이자, 일제강점기 종로 야인 시대 주역으로 협객 의적 활동을 벌였습니다.", relatedKings: ["김구"] },
+                    { name: "이상 (1910 ~ 1937)", job: "천재 초현실주의 시인", desc: "오감도, 날개 등을 집필하여 식민지 지식인의 아픔을 기하학적인 시어로 표출했습니다.", relatedKings: ["김구"] },
+                    { name: "이중섭 (1916 ~ 1956)", job: "소의 화가", desc: "강력하고 역동적인 흰 소를 그렸으며, 은지화 등 독창적 예술 영역을 가난 속에 남겼습니다.", relatedKings: ["김구"] },
+                    { name: "김구 (1876 ~ 1949)", job: "임시정부의 대들보 주석", desc: "한인애국단을 결성하고 조국 독립 운동의 구심점 역할을 완수한 민족의 지도자입니다.", relatedKings: ["김구"] },
+                    { name: "안익태 (1906 ~ 1965)", job: "한국 애국가 작곡가", desc: "세계적인 지휘자이자 웅장하고 아름다운 우리의 애국가 멜로디를 직접 작곡해 헌정했습니다.", relatedKings: ["김구"] },
+                    { name: "윤봉길 (1908 ~ 1932)", job: "상하이 의거 열사", desc: "도시락 물통 폭탄으로 상하이 홍구공원에서 전승식을 올리던 일본 수뇌부를 격퇴시켰습니다.", relatedKings: ["김구"] },
+                    { name: "주시경 (1876 ~ 1914)", job: "한글의 스승", desc: "일제의 문화 탄압 속에서도 우리말과 글을 지키고 연구해 '한글'이라는 자랑스러운 이름을 처음 지어 보급해주신 국어 학자입니다.", relatedKings: ["이승만", "이동녕"] },
+                    { name: "간송 전형필 (1906 ~ 1962)", job: "문화재의 수호신", desc: "자신의 엄청난 개인 재산을 전부 쏟아부어 일본으로 반출될 뻔한 『훈민정음 해례본』, 청자, 백자 등 수많은 문화유산을 지켜내 나라의 얼을 보존했습니다.", relatedKings: ["김구"] },
+                    { name: "이회영 (1867 ~ 1932)", job: "노블레스 오블리주의 표상", desc: "명문가의 거대한 자산과 권리를 기꺼이 버리고 전 재산을 기부하여 만주에 신흥무관학교를 세워 정예 독립군들을 훈련시키고 양성해 냈습니다.", relatedKings: ["김구", "이동녕"] },
+                    { name: "손기정 (1912 ~ 2002)", job: "올림픽 금메달 마라토너", desc: "1936년 베를린 올림픽 마라톤 경기에서 세계 신기록으로 우승했으나, 가슴에 태극기 대신 일장기를 달고 달려 슬픔을 참아야 했던 민족의 영웅입니다.", relatedKings: ["김구"] }
+                ]
+            },
+            modern: {
+                title: "🚀 대한민국 현대사 핵심 이정표 돋보기",
+                mnemonic: "이승만-윤보선-박정희-최규하-전두환-노태우-김영삼-김대중-노무현-이명박-박근혜-문재인-윤석열-이재명",
+                mnemonicTitle: "🚀 대한민국 역대 대통령 암기 탭 (글자를 누르면 해당 대통령 카드로 바로 이동!)",
+                kings: [
+                    { name: "1대~3대 이승만 (1875 ~ 1965)", period: "1948 ~ 1960", desc: "대한민국 초대 대통령으로 정부 수립을 선포했으나, 독재정치와 3.15 부정선거에 맞선 4.19 혁명으로 하야했습니다." },
+                    { name: "4대 윤보선 (1897 ~ 1990)", period: "1960 ~ 1962", desc: "4.19 혁명 이후 내각책임제 하에서 국회에 의해 선출된 대통령으로, 짧은 임기 후 사임했습니다." },
+                    { name: "5대~9대 박정희 (1917 ~ 1979)", period: "1963 ~ 1979", desc: "새마을 운동과 중화학 공업 육성, 경부고속도로 건설 등 한강의 기적으로 불리는 놀라운 초고속 경제 성장을 이끌었으나, 유신 독재 정책을 병행했습니다." },
+                    { name: "10대 최규하 (1919 ~ 2006)", period: "1979 ~ 1980", desc: "10.26 사태 이후 임시로 즉위한 대통령으로, 12.12 군사 반란 등으로 인해 임기 8개월 만에 물러났습니다." },
+                    { name: "11대~12대 전두환 (1931 ~ 2021)", period: "1980 ~ 1988", desc: "12.12 사태와 5.18 민주화운동 유혈 진압으로 정권을 잡았으나, 1987년 6월 민주항쟁을 거치며 대통령 직선제를 수용했습니다." },
+                    { name: "13대 노태우 (1932 ~ 2021)", period: "1988 ~ 1993", desc: "직선제를 통해 당선되었으며, 1988 서울 올림픽을 성공적으로 개최하고 공산권 국가들과 적극 교류하는 북방외교를 펼쳤습니다." },
+                    { name: "14대 김영삼 (1927 ~ 2015)", period: "1993 ~ 1998", desc: "'문민정부'를 선언하며 금융실명제를 도입하고 하나회를 척결하여 개혁을 단행했으나, 임기 말 IMF 외환위기를 맞이했습니다." },
+                    { name: "15대 김대중 (1924 ~ 2009)", period: "1998 ~ 2003", desc: "'국민의 정부'를 이끌며 금모으기 운동 등으로 IMF 위기를 극복했고, 역사적인 첫 남북정상회담 성사로 한국인 최초 노벨평화상을 받았습니다." },
+                    { name: "16대 노무현 (1946 ~ 2009)", period: "2003 ~ 2008", desc: "'참여정부'를 통해 권위주의를 청산하고 국민 중심 정치를 열었으며, 지역 균형 발전과 행정도시 세종시 건설 등을 추진했습니다." },
+                    { name: "17대 이명박 (1941 ~ 현재)", period: "2008 ~ 2013", desc: "'실용정부'를 표방하며 서울 G20 정상회의를 개최하고 저탄소 녹색성장을 앞세웠으며, 4대강 사업을 대대적으로 실행했습니다." },
+                    { name: "18대 박근혜 (1952 ~ 현재)", period: "2013 ~ 2017", desc: "대한민국 최초의 여성 대통령으로 당선되었으나, 국정농단 사태로 촉발된 촛불집회와 국회 탄핵 소추안 의결로 임기 도중 파면되었습니다." },
+                    { name: "19대 문재인 (1953 ~ 현재)", period: "2017 ~ 2022", desc: "촛불 혁명 이후 즉위하여 한반도 평화 프로세스를 위한 남북정상회담을 여러 차례 열었으며, 세계적인 코로나19 위기에 K-방역으로 대응했습니다." },
+                    { name: "20대 윤석열 (1960 ~ 현재)", period: "2022 ~ 현재", desc: "정의와 공정을 핵심 가치로 내세우며 청와대를 국민에게 개방하고 용산 대통령실 시대를 열었으며, 한미일 협력 강화를 전면에 내세웠습니다." },
+                    { name: "21대 이재명 (1964 ~ 현재)", period: "2026 ~ 현재", desc: "기본소득 및 민생 경제 회복, 복지 사각지대 해소를 핵심 기치로 내세우며 국가 정책을 이끌고 있습니다." }
+                ],
+                figures: [
+                    { name: "반기문 (1944 ~ 현재)", job: "UN 사무총장", desc: "대한민국 최초이자 아시아인으로서는 역대 두 번째로 전 세계 평화를 조율하는 국제연합(UN)의 수장이 되었습니다.", relatedKings: ["노무현", "김대중"] },
+                    { name: "봉준호 (1969 ~ 현재)", job: "영화감독", desc: "영화 '기생충'을 통해 칸 영화제 황금종려상 및 미국 아카데미 시상식 4관왕을 휩쓸며 한국 영화의 품격을 전 세계에 알렸습니다.", relatedKings: ["노무현", "김대중"] },
+                    { name: "BTS (방탄소년단) (2013 ~ 현재)", job: "글로벌 아티스트", desc: "한국어로 된 노래로 미국 빌보드 차트 1위를 휩쓸며 지구촌 청소년들에게 따뜻한 희망과 위로의 메시지를 전하는 글로벌 문화 리더입니다.", relatedKings: ["김대중", "노무현"] },
+                    { name: "백남준 (1932 ~ 2006)", job: "비디오 아트 창시자", desc: "TV 화면과 비디오 카메라를 예술에 최초로 결합하여 '비디오 아트'라는 독창적인 미술 장르를 개척한 세계적인 미디어 아티스트입니다.", relatedKings: ["박정희", "김대중"] },
+                    { name: "김연아 (1990 ~ 현재)", job: "피겨스케이팅 금메달리스트", desc: "척박한 국내 피겨 스케이팅 환경을 딛고 피나는 훈련과 끈기로 세계 최고 자리에 오르며 올림픽 금메달을 획득해 국민에게 큰 희망을 준 은반 위의 영웅입니다.", relatedKings: ["노무현", "이명박"] },
+                    { name: "박지성 (1981 ~ 현재)", job: "대한민국 최초 프리미어리거", desc: "2002 월드컵 4강 신화의 주역이자 한국인 최초로 잉글랜드 프리미어리그(맨체스터 유나이티드)에 진출해 맹활약한 축구 전설입니다.", relatedKings: ["김대중", "노무현"] },
+                    { name: "손흥민 (1992 ~ 현재)", job: "프리미어리그 득점왕", desc: "아시아 선수 최초로 프리미어리그 득점왕(골든부트)을 거머쥐고, 국가대표 주장으로서 월드컵 기적의 16강 진출을 이끈 세계적인 현역 축구 영웅입니다.", relatedKings: ["문재인", "윤석열"] },
+                    { name: "차범근 (1953 ~ 현재)", job: "독일 분데스리가의 전설", desc: "1980년대 독일 분데스리가에서 '갈색 폭격기(차붐)'로 명성을 떨치며 아시아 축구 선수의 위상을 세계에 알린 한국 축구의 선구자입니다.", relatedKings: ["박정희", "김대중"] }
+                ]
+            }
+        };
+
+        // 모달창 제어 함수 (기본 모드 상세)
+        function openModal(id) {
+            const data = historyData[id];
+            if (!data) return;
+
+            document.getElementById("modalYear").innerText = data.year;
+            document.getElementById("modalTitle").innerText = data.title;
+            document.getElementById("modalStory").innerText = data.story;
+
+            const modalImg = document.getElementById("modalImg");
+            if (data.img) {
+                modalImg.src = data.img;
+                modalImg.style.display = "block";
+            } else {
+                modalImg.style.display = "none";
+            }
+
+            // 퀴즈 렌더링
+            const quizSection = document.getElementById("modalQuizSection");
+            const feedback = document.getElementById("quizFeedback");
+            feedback.innerText = "";
+            feedback.className = "quiz-feedback";
+
+            if (data.quiz) {
+                document.getElementById("quizText").innerText = data.quiz.question;
+                const optionsContainer = document.getElementById("quizOptions");
+                optionsContainer.innerHTML = "";
+
+                data.quiz.options.forEach(opt => {
+                    const btn = document.createElement("button");
+                    btn.className = "quiz-option";
+                    btn.innerText = opt.text;
+                    btn.onclick = function() {
+                        // 다른 옵션 클릭 비활성화
+                        const allOptions = optionsContainer.querySelectorAll(".quiz-option");
+                        allOptions.forEach(b => b.disabled = true);
+
+                        if (opt.isCorrect) {
+                            btn.classList.add("correct");
+                            feedback.innerText = "🎉 정답이에요! 참 잘했어요! ⭐";
+                            feedback.style.color = "#2E7D32";
+                            triggerConfetti();
+                        } else {
+                            btn.classList.add("wrong");
+                            feedback.innerText = "😢 아쉬워요! 다시 한번 생각해 볼까요?";
+                            feedback.style.color = "#C62828";
+                        }
+                    };
+                    optionsContainer.appendChild(btn);
+                });
+
+                quizSection.style.display = "block";
+            } else {
+                quizSection.style.display = "none";
+            }
+
+            document.getElementById("historyModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("historyModal").style.display = "none";
+        }
+
+        // 모달 밖 영역 클릭 시 닫기 통합
+        window.onclick = function(event) {
+            const hModal = document.getElementById("historyModal");
+            if (event.target === hModal) {
+                closeModal();
+            }
+        };
+
+        // 미니 꽃가루 파티 효과 (정답을 맞췄을 때)
+        function triggerConfetti() {
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement("div");
+                confetti.style.position = "fixed";
+                confetti.style.width = "10px";
+                confetti.style.height = "10px";
+                confetti.style.backgroundColor = ["#FFD700", "#FF4500", "#FF69B4", "#00FF00", "#00FFFF"][Math.floor(Math.random() * 5)];
+                confetti.style.left = (50 + (Math.random() - 0.5) * 40) + "vw";
+                confetti.style.top = "50vh";
+                confetti.style.borderRadius = "50%";
+                confetti.style.zIndex = "999";
+                confetti.style.pointerEvents = "none";
+                document.body.appendChild(confetti);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 5 + Math.random() * 8;
+                let vx = Math.cos(angle) * velocity;
+                let vy = Math.sin(angle) * velocity - 5; // 상향 기동
+                
+                let opacity = 1;
+                let posX = parseFloat(confetti.style.left);
+                let posY = 50;
+
+                const anim = setInterval(() => {
+                    vy += 0.4; // 중력
+                    posX += vx * 0.1;
+                    posY += vy * 0.4;
+                    opacity -= 0.02;
+
+                    confetti.style.left = posX + "vw";
+                    confetti.style.top = posY + "vh";
+                    confetti.style.opacity = opacity;
+
+                    if (opacity <= 0) {
+                        clearInterval(anim);
+                        confetti.remove();
+                    }
+                }, 20);
+            }
+        }
+
+        // 스크롤 드러나기 효과 (IntersectionObserver)
+        document.addEventListener("DOMContentLoaded", function() {
+            const items = document.querySelectorAll(".timeline-item, .timeline-item-split");
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("visible");
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            items.forEach(item => {
+                observer.observe(item);
+            });
+        });
+    </script>
+</body>
+</html>
+    </script>
+</body>
+</html>

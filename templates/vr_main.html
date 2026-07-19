@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR 밸류 리밸런싱 대시보드</title>
+    <!-- Google Fonts for premium feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --blue: #3b82f6;
+            --blue-bg: rgba(59, 130, 246, 0.1);
+        }
+        
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: #121214;
+            padding: 0.35rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+        
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+        
+        .nav-tab:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-tab.active {
+            color: #000000;
+            background: #ffffff;
+            font-weight: 600;
+        }
+
+        .vr-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .vr-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .vr-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .vr-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--border-color);
+        }
+        
+        .vr-card.status-red::before { background: var(--red); }
+        .vr-card.status-blue::before { background: var(--blue); }
+        .vr-card.status-green::before { background: var(--green); }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ticker-badge-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .ticker-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .mode-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .badge-red { background: var(--red-bg); color: var(--red); }
+        .badge-blue { background: var(--blue-bg); color: var(--blue); }
+        .badge-green { background: var(--green-bg); color: var(--green); }
+
+        /* Band Visualizer Progress Bar */
+        .visualizer-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            background: #121214;
+            padding: 0.85rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+        
+        .visualizer-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .bar-track {
+            height: 10px;
+            background: #27272a;
+            border-radius: 5px;
+            position: relative;
+            margin: 0.25rem 0;
+            overflow: visible;
+        }
+
+        .bar-safe-zone {
+            position: absolute;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 1px dashed rgba(255, 255, 255, 0.2);
+            border-right: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .bar-marker {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #000000;
+            top: -2px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+            transition: left 0.3s ease;
+        }
+        
+        .status-red .bar-marker { background: var(--red); box-shadow: 0 0 8px var(--red); }
+        .status-blue .bar-marker { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+        .status-green .bar-marker { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+        /* Metrics List Table */
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #222;
+            padding-bottom: 0.25rem;
+        }
+        
+        .metric-label {
+            color: var(--text-muted);
+        }
+        
+        .metric-value {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .action-panel {
+            background: #18181b;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .action-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+        
+        .btn-action:hover {
+            background: #e4e4e7;
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(9, 9, 11, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-card {
+            background: #18181b;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            width: 90%;
+            max-width: 480px;
+            padding: 1.5rem;
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+        
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        /* History styling */
+        .history-table-container {
+            margin-top: 2rem;
+            overflow-x: auto;
+        }
+
+        .history-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-history {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            font-family: var(--font-sans);
+            text-align: left;
+        }
+
+        .table-history th, .table-history td {
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-history th {
+            color: var(--text-muted);
+            font-weight: 500;
+            background: #121214;
+        }
+        
+        .table-history tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-row">
+            <div class="header-title-group">
+                <h1 style="margin: 0; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.03em;">라오어 VR 5.0</h1>
+                <span class="date-badge">Value Rebalancing Dashboard</span>
+            </div>
+            <a href="/vr/settings" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: auto; margin: 0;">⚙️ VR 설정</a>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="/infinite" class="nav-tab">무한매수 대시보드</a>
+            <a href="/vr" class="nav-tab active">VR 밸류리밸런싱</a>
+            <a href="/vr/simulation" class="nav-tab">VR 시뮬레이션</a>
+            <a href="/settings_infinite" class="nav-tab">무한매수 설정</a>
+            <a href="/vr/settings" class="nav-tab">VR 설정</a>
+        </div>
+
+        <!-- VR Slots Grid -->
+        <div class="vr-grid">
+            {% for slot in slots %}
+                {% if slot.active %}
+                    <div class="glass-panel vr-card status-{{ slot.status_color }}">
+                        <!-- Top header of slot -->
+                        <div class="card-top">
+                            <div class="ticker-badge-group">
+                                <span class="ticker-title">{{ slot.ticker }}</span>
+                                <span class="mode-badge" style="color: {% if slot.mode == 'private' %}#60a5fa{% else %}#a1a1aa{% endif %}; border-color: {% if slot.mode == 'private' %}#3b82f6{% else %}#27272a{% endif %};">
+                                    {{ slot.mode }}
+                                </span>
+                            </div>
+                            
+                            <span class="status-badge badge-{{ slot.status_color }}">
+                                {% if slot.status_color == 'red' %}
+                                    🔴 SELL (고평가)
+                                {% elif slot.status_color == 'blue' %}
+                                    🔵 BUY (저평가)
+                                {% else %}
+                                    🟢 HOLD (안정)
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Band Progress Visualizer -->
+                        <div class="visualizer-container">
+                            <div class="visualizer-labels">
+                                <span>하한 밴드: ${{ "{:,.0f}".format(slot.lower_band) }}</span>
+                                <span>상한 밴드: ${{ "{:,.0f}".format(slot.upper_band) }}</span>
+                            </div>
+                            
+                            <div class="bar-track">
+                                <!-- Safe Zone 70% width from 15% to 85% -->
+                                <div class="bar-safe-zone" style="left: 15%; width: 70%;"></div>
+                                
+                                <!-- Indicator marker positioned based on current evaluation relative to target V -->
+                                <!-- 50% = Target V, 15% = Lower Band (-15%), 85% = Upper Band (+15%) -->
+                                {% set rel_pct = 50.0 %}
+                                {% if slot.V > 0 %}
+                                    {% set val_pct = ((slot.eval_val - slot.lower_band) / (slot.upper_band - slot.lower_band)) * 70.0 + 15.0 %}
+                                    {% if val_pct < 0 %}
+                                        {% set rel_pct = 0.0 %}
+                                    {% elif val_pct > 100 %}
+                                        {% set rel_pct = 100.0 %}
+                                    {% else %}
+                                        {% set rel_pct = val_pct %}
+                                    {% endif %}
+                                {% endif %}
+                                <div class="bar-marker" style="left: {{ rel_pct }}%;"></div>
+                            </div>
+                            
+                            <div class="visualizer-labels" style="justify-content: center; font-weight: 600; color: #ffffff;">
+                                현재 평가액: ${{ "{:,.2f}".format(slot.eval_val) }}
+                            </div>
+                        </div>
+
+                        <!-- Metrics table -->
+                        <div class="metrics-list">
+                            <div class="metric-row">
+                                <span class="metric-label">현재 가격</span>
+                                <span class="metric-value">${{ "{:,.2f}".format(slot.current_price) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">목표 평가금 (V)</span>
+                                <span class="metric-value">${{ "{:,.0f}".format(slot.V) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">가용 예수금 (P)</span>
+                                <span class="metric-value">${{ "{:,.2f}".format(slot.P) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">기울기 (G)</span>
+                                <span class="metric-value">/{{ slot.G }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">보유 주식 수 / 평단가</span>
+                                <span class="metric-value">{{ slot.shares }}주 / ${{ "{:,.2f}".format(slot.average_price) }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">다음 사이클 V 예측치</span>
+                                <span class="metric-value" style="color: #60a5fa; font-weight: 600;">${{ "{:,.0f}".format(slot.next_V_est) }}</span>
+                            </div>
+                            <div class="metric-row" style="border: none;">
+                                <span class="metric-label">시작일</span>
+                                <span class="metric-value">{{ slot.start_date }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Panel -->
+                        <div class="action-panel">
+                            <div class="action-text">
+                                {% if slot.rec_action == 'SELL' %}
+                                    <span style="color: var(--red);">⚠️ 권장 매도: {{ slot.rec_shares }}주 (약 ${{ "{:,.0f}".format(slot.rec_value) }} 분량)</span>
+                                {% elif slot.rec_action == 'BUY' %}
+                                    <span style="color: var(--blue);">🐳 권장 매수: {{ slot.rec_shares }}주 (약 ${{ "{:,.0f}".format(slot.rec_value) }} 분량)</span>
+                                {% else %}
+                                    <span style="color: var(--green);">✅ 밴드 이내 유지 (Hold)</span>
+                                {% endif %}
+                            </div>
+                            <button onclick="openRebalanceModal('{{ slot.key }}', '{{ slot.ticker }}', '{{ slot.rec_action }}', {{ slot.rec_shares }}, {{ slot.current_price }}, {{ slot.gradient_add }})" class="btn-action" style="margin-bottom: 0.5rem;">
+                                ⚡ 리밸런싱 실행 기록
+                            </button>
+                            <button onclick="openChartModal('{{ slot.key }}')" class="btn-action" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-main);">
+                                📈 밴드 추이 차트
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- History Log Section -->
+        <div class="glass-panel history-table-container">
+            <h2 class="history-title">🕒 최근 리밸런싱 실행 이력</h2>
+            <table class="table-history">
+                <thead>
+                    <tr>
+                        <th>실행 일시</th>
+                        <th>종목</th>
+                        <th>매매</th>
+                        <th>수량</th>
+                        <th>체결가</th>
+                        <th>직전 V ➔ 신규 V</th>
+                        <th>직전 P ➔ 신규 P</th>
+                        <th>적립금</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if history %}
+                        {% for log in history %}
+                            <tr>
+                                <td style="color: var(--text-muted); font-family: var(--font-mono);">{{ log.date }}</td>
+                                <td style="font-weight: 600;">{{ log.ticker }}</td>
+                                <td>
+                                    <span class="mode-badge" style="
+                                        color: {% if log.action == 'BUY' %}var(--blue){% elif log.action == 'SELL' %}var(--red){% else %}var(--green){% endif %};
+                                        background: {% if log.action == 'BUY' %}var(--blue-bg){% elif log.action == 'SELL' %}var(--red-bg){% else %}var(--green-bg){% endif %};
+                                        border: none; font-size: 0.65rem; padding: 0.1rem 0.35rem; font-weight: 700;
+                                    ">
+                                        {{ log.action }}
+                                    </span>
+                                </td>
+                                <td style="font-family: var(--font-mono);">{{ log.shares_diff }}주</td>
+                                <td style="font-family: var(--font-mono);">${{ "{:,.2f}".format(log.price) }}</td>
+                                <td style="font-family: var(--font-mono);">${{ "{:,.0f}".format(log.old_V) }} ➔ ${{ "{:,.0f}".format(log.new_V) }}</td>
+                                <td style="font-family: var(--font-mono);">${{ "{:,.2f}".format(log.old_P) }} ➔ ${{ "{:,.2f}".format(log.new_P) }}</td>
+                                <td style="font-family: var(--font-mono); color: #60a5fa;">+${{ "{:,.0f}".format(log.add_cash) }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">기록된 리밸런싱 이력이 없습니다.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Rebalance Modal Overlay -->
+    <div id="rebalance-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title" style="margin: 0; font-family: 'Outfit';">리밸런싱 매매 기록</h3>
+                <button onclick="closeRebalanceModal()" class="modal-close">&times;</button>
+            </div>
+            
+            <form id="rebalance-form" onsubmit="submitRebalance(event)">
+                <input type="hidden" id="modal-slot-key">
+                
+                <div class="form-group">
+                    <label>거래 종류</label>
+                    <select id="modal-action" style="width:100%;" onchange="adjustModalRecommendation()">
+                        <option value="BUY">BUY (매수)</option>
+                        <option value="SELL">SELL (매도)</option>
+                        <option value="HOLD">HOLD (관망/매매 없음)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="modal-shares-group">
+                    <label>체결 수량 (주)</label>
+                    <input type="number" id="modal-shares" step="1" min="0" required style="width: 100%;">
+                    <div id="modal-shares-recommend" style="font-size:0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+                </div>
+
+                <div class="form-group" id="modal-price-group">
+                    <label>체결 가격 ($)</label>
+                    <input type="number" id="modal-price" step="0.01" min="0.01" required style="width: 100%;">
+                </div>
+
+                <div class="form-group">
+                    <label>추가 적립 현금 ($) <span style="font-size:0.7rem; color: var(--text-muted); font-weight: normal;">(매 사이클 추가하는 투자 자금)</span></label>
+                    <input type="number" id="modal-add-cash" step="10" min="0" required style="width: 100%;">
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+                    <button type="button" onclick="closeRebalanceModal()" class="btn btn-secondary" style="flex: 1; margin: 0;">취소</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; margin: 0;">⚡ 거래 완료 기록</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let recommendShares = 0;
+        
+        function openRebalanceModal(slotKey, ticker, action, recShares, currentPrice, defaultAddCash) {
+            document.getElementById("modal-slot-key").value = slotKey;
+            document.getElementById("modal-title").innerText = `${ticker} - 리밸런싱 실행 기록`;
+            document.getElementById("modal-action").value = action;
+            document.getElementById("modal-shares").value = recShares;
+            document.getElementById("modal-price").value = currentPrice.toFixed(2);
+            document.getElementById("modal-add-cash").value = defaultAddCash;
+            
+            recommendShares = recShares;
+            adjustModalRecommendation();
+
+            document.getElementById("rebalance-modal").classList.add("active");
+        }
+
+        function closeRebalanceModal() {
+            document.getElementById("rebalance-modal").classList.remove("active");
+        }
+
+        function adjustModalRecommendation() {
+            const action = document.getElementById("modal-action").value;
+            const sharesGroup = document.getElementById("modal-shares-group");
+            const priceGroup = document.getElementById("modal-price-group");
+            const recommendDiv = document.getElementById("modal-shares-recommend");
+            
+            if (action === "HOLD") {
+                sharesGroup.style.display = "none";
+                priceGroup.style.display = "none";
+                document.getElementById("modal-shares").removeAttribute("required");
+                document.getElementById("modal-price").removeAttribute("required");
+                document.getElementById("modal-shares").value = "0";
+                document.getElementById("modal-price").value = "1.00";
+            } else {
+                sharesGroup.style.display = "block";
+                priceGroup.style.display = "block";
+                document.getElementById("modal-shares").setAttribute("required", "true");
+                document.getElementById("modal-price").setAttribute("required", "true");
+                recommendDiv.innerText = `권장 수량: ${recommendShares}주`;
+            }
+        }
+
+        function submitRebalance(event) {
+            event.preventDefault();
+            
+            const slotKey = document.getElementById("modal-slot-key").value;
+            const action = document.getElementById("modal-action").value;
+            const sharesDiff = parseFloat(document.getElementById("modal-shares").value || 0);
+            const price = parseFloat(document.getElementById("modal-price").value || 0);
+            const addCash = parseFloat(document.getElementById("modal-add-cash").value || 0);
+            
+            fetch("/api/vr/rebalance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    slot_key: slotKey,
+                    action: action,
+                    shares_diff: sharesDiff,
+                    price: price,
+                    add_cash: addCash
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("리밸런싱 매매 기록이 안전하게 저장되고 V값이 공식에 따라 갱신되었습니다!");
+                    location.reload();
+                } else {
+                    alert(`오류 발생: ${data.error}`);
+                }
+            })
+            .catch(err => {
+                alert(`통신 오류: ${err}`);
+            });
+        }
+
+        let vrChartInstance = null;
+        
+        function openChartModal(slotKey) {
+            fetch(`/api/vr/chart_data?slot_key=${slotKey}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "error") {
+                        alert(data.message);
+                        return;
+                    }
+                    
+                    document.getElementById("chart-modal-title").innerText = `${data.ticker} - VR 밸류 밴드 및 평가금 추이`;
+                    document.getElementById("chart-modal").classList.add("active");
+                    
+                    const ctx = document.getElementById("vrChart").getContext("2d");
+                    
+                    if (vrChartInstance) {
+                        vrChartInstance.destroy();
+                    }
+                    
+                    vrChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: [
+                                {
+                                    label: '상한 밴드 (+15%)',
+                                    data: data.upper_band,
+                                    borderColor: '#ef4444',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 1.5,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0
+                                },
+                                {
+                                    label: '목표 평가금 (V)',
+                                    data: data.v_values,
+                                    borderColor: '#71717a',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 1.5,
+                                    borderDash: [3, 3],
+                                    pointRadius: 0
+                                },
+                                {
+                                    label: '하한 밴드 (-15%)',
+                                    data: data.lower_band,
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'transparent',
+                                    borderWidth: 1.5,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0
+                                },
+                                {
+                                    label: '현재 주식 평가금',
+                                    data: data.eval_values,
+                                    borderColor: '#ffffff',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: '#ffffff',
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    grid: { color: '#27272a' },
+                                    ticks: { color: '#71717a', font: { family: 'Inter' } }
+                                },
+                                y: {
+                                    grid: { color: '#27272a' },
+                                    ticks: { 
+                                        color: '#71717a', 
+                                        font: { family: 'Inter' },
+                                        callback: function(value) { return '$' + value.toLocaleString(); }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: { color: '#e4e4e7', font: { family: 'Inter', size: 10 } }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: $${context.raw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    alert(`통신 오류: ${err}`);
+                });
+        }
+        
+        function closeChartModal() {
+            document.getElementById("chart-modal").classList.remove("active");
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    closeChartModal();
+                    closeRebalanceModal();
+                }
+            });
+            
+            const chartModal = document.getElementById("chart-modal");
+            chartModal.addEventListener("click", (e) => {
+                if (e.target === chartModal) {
+                    closeChartModal();
+                }
+            });
+
+            const rebalanceModal = document.getElementById("rebalance-modal");
+            rebalanceModal.addEventListener("click", (e) => {
+                if (e.target === rebalanceModal) {
+                    closeRebalanceModal();
+                }
+            });
+        });
+    </script>
+
+    <!-- Chart Modal Overlay -->
+    <div id="chart-modal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 650px; padding: 1.5rem;">
+            <div class="modal-header">
+                <h3 id="chart-modal-title" style="margin: 0; font-family: 'Outfit';">VR 밴드 및 평가금 추이</h3>
+                <button onclick="closeChartModal()" class="modal-close">&times;</button>
+            </div>
+            <div style="position: relative; width: 100%; height: 350px;">
+                <canvas id="vrChart"></canvas>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

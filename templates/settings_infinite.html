@@ -1,179 +1,216 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>설정 입력 - 다크모드</title>
-  <style>
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h2 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .card {
-      border: 1px solid #333;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      background-color: #1e1e1e;
-      box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
-    }
-
-    label {
-      display: block;
-      margin: 10px 0 5px;
-      font-size: 14px;
-    }
-
-    input[type="text"],
-    select {
-      width: 100%;
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 5px;
-      box-sizing: border-box;
-      transition: background-color 0.3s, border-color 0.3s;
-    }
-
-    input[type="checkbox"] {
-      transform: scale(1.2);
-      margin-right: 8px;
-    }
-
-    button {
-      background-color: #B388FF; /* 연보라색 */
-      border: none;
-      padding: 15px 30px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 16px;
-      border-radius: 8px;
-      margin: 20px auto 0;
-      display: block;
-      transition: background-color 0.3s;
-    }
-
-    button:hover {
-      background-color: #9b6bff;
-    }
-
-    @media (min-width: 768px) {
-      .card {
-        max-width: 500px;
-        margin: 0 auto;
-      }
-    }
-
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매매 설정 입력 - James World</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        #settings-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+        }
+        @media (min-width: 768px) {
+            #settings-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            transition: all var(--transition-fast);
+        }
+        .card.mode-public-card {
+            border-color: var(--border-color);
+        }
+        .card.mode-private-card {
+            border-color: rgba(245, 158, 11, 0.45);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.03);
+        }
+        .card-header-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .card-num {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        .mode-private-card .card-num {
+            color: var(--yellow);
+        }
+        .card-body-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .col-span-2 {
+            grid-column: span 2;
+        }
+    </style>
 </head>
 <body>
-  <h2>설정 입력</h2>
-  <div id="settings-container"></div>
-  <br />
-  <button onclick="saveSettings()">💾 저장</button>
+    <div class="container">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 0.5rem;">
+            <h2>자동 매매 설정 관리</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                각 종목에 적용할 무한매수법 세부 파라미터를 입력합니다
+            </p>
+        </div>
 
-  <script>
-    const rowCount = 4;
-    const container = document.getElementById("settings-container");
+        <!-- Dynamic Settings Container -->
+        <div id="settings-container"></div>
 
-    function applyStyle(div, isPublic) {
-      div.style.backgroundColor = isPublic ? "#505050" : "#1e1e1e";
-      div.style.color = isPublic ? "#000" : "#fff";
+        <!-- Action Footer -->
+        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+            <button onclick="saveSettings()" class="btn btn-primary" style="max-width: 320px;">💾 설정값 저장</button>
+            <a href="/infinite" class="back-link">← 대시보드로 돌아가기</a>
+        </div>
+    </div>
 
-      const inputs = div.querySelectorAll("input[type='text'], select");
-      inputs.forEach(el => {
-        el.style.backgroundColor = isPublic ? "#2a2a2a" : "#2a2a2a";
-        el.style.color = "#fff";
-        el.style.border = "1px solid #555";
-      });
-    }
+    <script>
+        const rowCount = 4;
+        const container = document.getElementById("settings-container");
 
-    function createCard(index, data = {}) {
-      const div = document.createElement("div");
-      div.className = "card";
+        function applyStyle(div, isPublic) {
+            if (isPublic) {
+                div.className = "card mode-public-card";
+            } else {
+                div.className = "card mode-private-card";
+            }
+        }
 
-      const mode = data.mode || "public";
-      const auto = data.auto ? "checked" : "";
+        function createCard(index, data = {}) {
+            const div = document.createElement("div");
+            
+            const mode = data.mode || "public";
+            const auto = data.auto ? "checked" : "";
+            const strategy = data.strategy || "v2.2";
 
-      div.innerHTML = `
-        <label>모드 선택</label>
-        <select name="mode_${index}">
-          <option value="public"${mode === "public" ? " selected" : ""}>public</option>
-          <option value="private"${mode === "private" ? " selected" : ""}>private</option>
-        </select>
+            div.innerHTML = `
+                <div class="card-header-group">
+                    <span class="card-num">SLOT #${index + 1}</span>
+                    <label class="checkbox-container" style="margin: 0;">
+                        <input type="checkbox" name="auto_${index}" ${auto}>
+                        <span class="custom-checkbox"></span>
+                        <span class="checkbox-label" style="font-size: 0.8rem;">자동매매 활성화</span>
+                    </label>
+                </div>
 
-        <label><input type="checkbox" name="auto_${index}" ${auto}>자동화</label>
+                <div class="card-body-grid">
+                    <div class="form-group col-span-2">
+                        <label>모드 선택</label>
+                        <select name="mode_${index}">
+                            <option value="public"${mode === "public" ? " selected" : ""}>Public</option>
+                            <option value="private"${mode === "private" ? " selected" : ""}>Private</option>
+                        </select>
+                    </div>
 
-        <label>종목</label>
-        <input type="text" name="ticker_${index}" value="${data.ticker || ""}">
+                     <div class="form-group col-span-2">
+                         <label>전략 선택</label>
+                         <select name="strategy_${index}">
+                             <option value="v1"${strategy === "v1" ? " selected" : ""}>무한매수법 v1</option>
+                             <option value="v2.1"${strategy === "v2.1" ? " selected" : ""}>무한매수법 v2.1</option>
+                             <option value="v2.2"${strategy === "v2.2" ? " selected" : ""}>무한매수법 v2.2</option>
+                             <option value="v3"${strategy === "v3" ? " selected" : ""}>무한매수법 v3</option>
+                             <option value="only_buying"${strategy === "only_buying" ? " selected" : ""}>Only Buying (매수 전용)</option>
+                         </select>
+                     </div>
 
-        <label>가용금($)</label>
-        <input type="text" name="capital_${index}" value="${data.capital || ""}">
+                    <div class="form-group col-span-2">
+                        <label>종목명 (Ticker)</label>
+                        <input type="text" name="ticker_${index}" value="${data.ticker || ""}" placeholder="예: TQQQ" style="text-transform: uppercase;">
+                    </div>
 
-        <label>분할횟수</label>
-        <input type="text" name="split_${index}" value="${data.split || ""}">
+                    <div class="form-group">
+                        <label>가용금 ($)</label>
+                        <input type="number" name="capital_${index}" value="${data.capital || ""}" placeholder="50000">
+                    </div>
 
-        <label>목표 수익률(%)</label>
-        <input type="text" name="target_${index}" value="${data.target || ""}">
-      `;
+                    <div class="form-group">
+                        <label>분할횟수 (회)</label>
+                        <input type="number" name="split_${index}" value="${data.split || ""}" placeholder="40">
+                    </div>
 
-      container.appendChild(div);
+                    <div class="form-group col-span-2">
+                        <label>목표 수익률 (%)</label>
+                        <input type="text" name="target_${index}" value="${data.target || ""}" placeholder="12.0">
+                    </div>
 
-      const modeSelect = div.querySelector(`select[name=mode_${index}]`);
-      applyStyle(div, modeSelect.value === "public");
+                    <div class="form-group col-span-2">
+                        <label>이번 회차 시작일</label>
+                        <input type="date" name="start_date_${index}" value="${data.start_date || "2026-07-11"}">
+                    </div>
+                </div>
+            `;
 
-      modeSelect.addEventListener("change", () => {
-        applyStyle(div, modeSelect.value === "public");
-      });
-    }
+            container.appendChild(div);
 
-    function loadSettings() {
-      fetch("/infinite_load_settings")
-        .then(res => res.json())
-        .then(data => {
-          container.innerHTML = "";
-          let i = 0;
-          for (const [key, value] of Object.entries(data)) {
-            createCard(i++, value);
-          }
-          while (i < rowCount) createCard(i++);
-        });
-    }
+            const modeSelect = div.querySelector(`select[name=mode_${index}]`);
+            applyStyle(div, modeSelect.value === "public");
 
-    function saveSettings() {
-      const settings = {};
-      for (let i = 0; i < rowCount; i++) {
-        const ticker = document.querySelector(`[name=ticker_${i}]`).value;
-        if (!ticker) continue;
-        const mode = document.querySelector(`[name=mode_${i}]`).value;
-        const auto = document.querySelector(`[name=auto_${i}]`).checked;
-        const capital = document.querySelector(`[name=capital_${i}]`).value;
-        const split = document.querySelector(`[name=split_${i}]`).value;
-        const target = document.querySelector(`[name=target_${i}]`).value;
+            modeSelect.addEventListener("change", () => {
+                applyStyle(div, modeSelect.value === "public");
+            });
+        }
 
-        const key = `${mode}_${ticker}`;
-        settings[key] = { mode, auto, ticker, capital, split, target };
-      }
+        function loadSettings() {
+            fetch("/infinite_load_settings")
+                .then(res => res.json())
+                .then(data => {
+                    container.innerHTML = "";
+                    let i = 0;
+                    for (const [key, value] of Object.entries(data)) {
+                        createCard(i++, value);
+                    }
+                    while (i < rowCount) createCard(i++);
+                });
+        }
 
-      fetch("/infinite_save_settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
-      }).then(res => res.json())
-        .then(data => alert(data.message));
-    }
+        function saveSettings() {
+            const settings = {};
+            for (let i = 0; i < rowCount; i++) {
+                const tickerElement = document.querySelector(`[name=ticker_${i}]`);
+                const ticker = tickerElement ? tickerElement.value.trim().toUpperCase() : "";
+                if (!ticker) continue;
+                
+                const mode = document.querySelector(`[name=mode_${i}]`).value;
+                const auto = document.querySelector(`[name=auto_${i}]`).checked;
+                const capital = document.querySelector(`[name=capital_${i}]`).value;
+                const split = document.querySelector(`[name=split_${i}]`).value;
+                const target = document.querySelector(`[name=target_${i}]`).value;
+                const strategy = document.querySelector(`[name=strategy_${i}]`).value;
+                const startDate = document.querySelector(`[name=start_date_${i}]`).value;
 
-    window.onload = loadSettings;
-  </script>
+                const key = `${mode}_ticker`; // Wait, this key should be `${mode}_${ticker}`! Let's write `${mode}_${ticker}`.
+                settings[`${mode}_${ticker}`] = { mode, auto, ticker, capital, split, target, strategy, start_date: startDate };
+            }
+
+            fetch("/infinite_save_settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
+            }).then(res => res.json())
+                .then(data => alert(data.message));
+        }
+
+        window.onload = loadSettings;
+    </script>
 </body>
 </html>

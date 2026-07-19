@@ -1,126 +1,553 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>무한매수법 계좌</title>
-  <style>
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    th, td {
-      border: 1px solid #444;
-      padding: 6px 8px;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    th {
-      background-color: #333;
-    }
-
-    tr:nth-child(even) {
-      background-color: #1e1e1e;
-    }
-
-    h2 {
-      margin-bottom: 16px;
-    }
-
-    .button-group {
-      margin-top: 30px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .action-button {
-      width: 220px;
-      padding: 12px 24px;
-      background-color: #B388FF;
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-weight: bold;
-      font-size: 14px;
-      cursor: pointer;
-      text-align: center;
-    }
-
-    .action-button:hover {
-      background-color: #9b6bff;
-    }
-
-    .action-form {
-      margin: 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>무한매수법 계좌 대시보드</title>
+    <!-- Google Fonts for premium feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: #121214;
+            padding: 0.35rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+        .nav-tab:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-tab.active {
+            color: #000000;
+            background: #ffffff;
+            font-weight: 600;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .header-title-group {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+        }
+        .date-badge {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            width: auto;
+            margin: 0;
+        }
+        .dashboard-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+        @media (max-width: 600px) {
+            .dashboard-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        tbody tr {
+            cursor: pointer;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            width: 90%;
+            max-width: 700px;
+            padding: 1.5rem;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .modal-title {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-title);
+        }
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color var(--transition-fast);
+            padding: 0.2rem 0.5rem;
+            line-height: 1;
+        }
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 380px;
+        }
+    </style>
 </head>
 <body>
-<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-  <h2 style="margin: 0;">{{ latest_date }}</h2>
-  <form action="/run_infinite_account" method="post" style="margin: 0;">
-    <button type="submit" style="
-      background-color: #B388FF;
-      color: white;
-      font-weight: bold;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      line-height: 1;
-    ">
-      계좌업데이트
-    </button>
-  </form>
-</div>
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="header-row">
+            <div class="header-title-group">
+                <h2>무한매수법 현황</h2>
+                <span class="date-badge">기준일자: {{ latest_date }}</span>
+            </div>
+            
+            <form action="/run_infinite_account" method="post" style="margin: 0;">
+                <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
+            </form>
+        </div>
 
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="/infinite" class="nav-tab active">무한매수 대시보드</a>
+            <a href="/vr" class="nav-tab">VR 밸류리밸런싱</a>
+            <a href="/vr/simulation" class="nav-tab">VR 시뮬레이션</a>
+            <a href="/settings_infinite" class="nav-tab">무한매수 설정</a>
+            <a href="/vr/settings" class="nav-tab">VR 설정</a>
+        </div>
 
+        <!-- Dashboard Table -->
+        <div class="glass-panel" style="padding: 1.25rem;">
+            <div class="table-container" style="margin-bottom: 0;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>시작일</th>
+                            <th>구분</th>
+                            <th>종목</th>
+                            <th>전략</th>
+                            <th>회차</th>
+                            <th>개수</th>
+                            <th>평단가(수익률)</th>
+                            <th>현재가</th>
+                            <th>총매입금액($)</th>
+                            <th>총투자금액$(목표)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ table_rows | safe }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-  <div style="overflow-x:auto;">
-    <table>
-      <thead>
-        <tr>
-          <th>종목</th>
-          <th>회차</th>
-          <th>개수</th>
-          <th>평단가(수익률)</th>
-          <th>현재가</th>
-          <th>총매입금액$</th>
-          <th>총투자금액$(목표수익율)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{ table_rows | safe }}
-      </tbody>
-    </table>
-  </div>
+        <!-- Action Buttons -->
+        <div class="dashboard-buttons">
+            <form action="/infinite_settings" method="get" style="margin: 0;">
+                <button type="submit" class="btn btn-secondary">⚙️ 매매 설정</button>
+            </form>
+            
+            <form action="/run_infinite_buying" method="post" style="margin: 0;">
+                <button type="submit" class="btn btn-primary">⚡ 무한매수 실행</button>
+            </form>
+            
+            <form action="/infinite_help" method="get" style="margin: 0;">
+                <button type="submit" class="btn btn-secondary">📖 전략 설명</button>
+            </form>
+        </div>
 
-  <!-- ✅ 버튼 3개를 통일된 크기로 정렬 -->
-  <div class="button-group">
-    <form action="/infinite_settings" method="get" class="action-form">
-      <button type="submit" class="action-button">설정</button>
-    </form>
+        <div class="text-center" style="margin-top: 1.5rem;">
+            <a href="/" class="back-link">← 제어반 메인으로 돌아가기</a>
+        </div>
+    </div>
+    <!-- Chart Modal Overlay -->
+    <div id="chart-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span id="modal-title-text" class="modal-title">매매 이력 차트</span>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <!-- Cycle Selection Controls -->
+            <div class="filter-controls" style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem;">
+                <label for="cycle-select" style="font-size: 0.8rem; text-transform: none; font-weight: 500; letter-spacing: 0; color: var(--text-muted);">회차(기간) 선택:</label>
+                <select id="cycle-select" onchange="handleCycleChange()" style="padding: 0.4rem 0.6rem; font-size: 0.85rem; width: auto; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-title); border-radius: var(--radius-sm); outline: none; cursor: pointer;">
+                    <!-- Dynamically populated options -->
+                </select>
+                <div id="custom-date-container" style="display: none; align-items: center; gap: 0.5rem;">
+                    <label for="custom-start-date" style="font-size: 0.8rem; text-transform: none; font-weight: 500; letter-spacing: 0; color: var(--text-muted);">시작일:</label>
+                    <input type="date" id="custom-start-date" onchange="handleCustomDateChange()" style="padding: 0.35rem 0.5rem; font-size: 0.85rem; width: auto; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-title); border-radius: var(--radius-sm); outline: none; cursor: pointer;">
+                </div>
+            </div>
 
-    <form action="/run_infinite_buying" method="post" class="action-form">
-      <button type="submit" class="action-button">무한매수 실행</button>
-    </form>
+            <div class="chart-wrapper">
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+    </div>
 
-    <form action="/infinite_help" method="get" class="action-form">
-      <button type="submit" class="action-button">전략 설명</button>
-    </form>
-  </div>
+    <script>
+        let myChart = null;
+        let currentChartData = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const rows = document.querySelectorAll("tbody tr");
+            rows.forEach(row => {
+                row.addEventListener("click", () => {
+                    const cells = row.querySelectorAll("td");
+                    if (cells.length >= 3) {
+                        const accountType = cells[1].innerText.trim(); // "Public" or "Private"
+                        const ticker = cells[2].innerText.trim();      // e.g. "TQQQ"
+                        openChartModal(accountType, ticker);
+                    }
+                });
+            });
+
+            // ESC closes modal
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    closeModal();
+                }
+            });
+
+            // Background click closes modal
+            const modal = document.getElementById("chart-modal");
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        });
+
+        function openChartModal(accountType, ticker) {
+            const modal = document.getElementById("chart-modal");
+            const titleText = document.getElementById("modal-title-text");
+            titleText.innerText = `${accountType} ${ticker} 매매 이력 및 평단가 추이`;
+
+            fetch(`/api/ticker_history?account=${accountType.toLowerCase()}&ticker=${ticker.toUpperCase()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "error") {
+                        alert(data.message);
+                        return;
+                    }
+                    currentChartData = data;
+                    
+                    // 1. 회차 목록 구성
+                    populateCycleDropdown(data);
+                    
+                    // 2. 기본값(2026-07-11 시작)으로 차트 렌더링
+                    renderFilteredChart();
+                    
+                    modal.classList.add("active");
+                })
+                .catch(err => {
+                    console.error("Error fetching ticker history:", err);
+                    alert("차트 데이터를 불러오는 도중 오류가 발생했습니다.");
+                });
+        }
+
+        function populateCycleDropdown(data) {
+            const select = document.getElementById("cycle-select");
+            select.innerHTML = "";
+
+            // 1. 이번 회차 (기본값)
+            const optCurrent = document.createElement("option");
+            optCurrent.value = "2026-07-11";
+            optCurrent.innerText = "이번 회차 (2026-07-11 ~ 현재)";
+            select.appendChild(optCurrent);
+
+            // 2. 과거 회차 탐색 (buy_points에서 shares_added == total_shares 인 날 탐색)
+            const prevStarts = [];
+            data.buy_points.forEach(pt => {
+                if (pt.shares_added === pt.total_shares && pt.x !== "2026-07-11") {
+                    prevStarts.push(pt.x);
+                }
+            });
+
+            // 내림차순 정렬하여 가장 최근 회차를 위로 배치
+            prevStarts.sort().reverse();
+
+            prevStarts.forEach(start => {
+                const optPrev = document.createElement("option");
+                optPrev.value = start;
+                optPrev.innerText = `이전 회차 (${start} ~ )`;
+                select.appendChild(optPrev);
+            });
+
+            // 3. 전체 기간
+            const optAll = document.createElement("option");
+            optAll.value = "all";
+            optAll.innerText = "전체 기간";
+            select.appendChild(optAll);
+
+            // 4. 직접 선택
+            const optCustom = document.createElement("option");
+            optCustom.value = "custom";
+            optCustom.innerText = "직접 날짜 선택...";
+            select.appendChild(optCustom);
+
+            // 초기 커스텀 날짜 선택창 감춤
+            document.getElementById("custom-date-container").style.display = "none";
+        }
+
+        function handleCycleChange() {
+            const select = document.getElementById("cycle-select");
+            const val = select.value;
+            const customDateContainer = document.getElementById("custom-date-container");
+
+            if (val === "custom") {
+                customDateContainer.style.display = "inline-flex";
+                const dateInput = document.getElementById("custom-start-date");
+                if (!dateInput.value) {
+                    dateInput.value = "2026-07-11";
+                }
+            } else {
+                customDateContainer.style.display = "none";
+            }
+            renderFilteredChart();
+        }
+
+        function handleCustomDateChange() {
+            renderFilteredChart();
+        }
+
+        function renderFilteredChart() {
+            if (!currentChartData) return;
+
+            const select = document.getElementById("cycle-select");
+            const val = select.value;
+            let startDate = null;
+
+            if (val === "all") {
+                startDate = null;
+            } else if (val === "custom") {
+                startDate = document.getElementById("custom-start-date").value;
+            } else {
+                startDate = val; // "2026-07-11" 또는 이전 시작일
+            }
+
+            // 필터링 적용
+            let filteredDates = [];
+            let filteredClose = [];
+            let filteredAvg = [];
+            let filteredBuyPoints = [];
+
+            if (startDate) {
+                const startMs = new Date(startDate).getTime();
+                currentChartData.dates.forEach((d, idx) => {
+                    const dMs = new Date(d).getTime();
+                    if (dMs >= startMs) {
+                        filteredDates.push(d);
+                        filteredClose.push(currentChartData.close_prices[idx]);
+                        filteredAvg.push(currentChartData.avg_prices[idx]);
+                    }
+                });
+                
+                currentChartData.buy_points.forEach(pt => {
+                    const ptMs = new Date(pt.x).getTime();
+                    if (ptMs >= startMs) {
+                        filteredBuyPoints.push(pt);
+                    }
+                });
+            } else {
+                filteredDates = [...currentChartData.dates];
+                filteredClose = [...currentChartData.close_prices];
+                filteredAvg = [...currentChartData.avg_prices];
+                filteredBuyPoints = [...currentChartData.buy_points];
+            }
+
+            buildChart({
+                ticker: currentChartData.ticker,
+                account: currentChartData.account,
+                dates: filteredDates,
+                close_prices: filteredClose,
+                avg_prices: filteredAvg,
+                buy_points: filteredBuyPoints
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("chart-modal");
+            modal.classList.remove("active");
+            if (myChart) {
+                myChart.destroy();
+                myChart = null;
+            }
+        }
+
+        function buildChart(data) {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            const buyMap = {};
+            data.buy_points.forEach(pt => {
+                buyMap[pt.x] = pt;
+            });
+
+            const datasets = [
+                {
+                    label: '종가 (Close Price)',
+                    data: data.close_prices,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: false,
+                    pointRadius: (context) => {
+                        const index = context.dataIndex;
+                        const date = data.dates[index];
+                        return buyMap[date] ? 7 : 2;
+                    },
+                    pointBackgroundColor: (context) => {
+                        const index = context.dataIndex;
+                        const date = data.dates[index];
+                        return buyMap[date] ? '#10b981' : '#3b82f6';
+                    },
+                    pointBorderColor: (context) => {
+                        const index = context.dataIndex;
+                        const date = data.dates[index];
+                        return buyMap[date] ? '#ffffff' : '#3b82f6';
+                    },
+                    pointHoverRadius: (context) => {
+                        const index = context.dataIndex;
+                        const date = data.dates[index];
+                        return buyMap[date] ? 9 : 5;
+                    }
+                },
+                {
+                    label: '평단가 (Average Buy Price)',
+                    data: data.avg_prices,
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0
+                }
+            ];
+
+            // 기존 차트 제거
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                color: '#27272a'
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: 'JetBrains Mono'
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#27272a'
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: 'JetBrains Mono'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e4e4e7',
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const date = context.chart.data.labels[context.dataIndex];
+                                    const value = context.raw;
+                                    const label = context.dataset.label.split(' ')[0];
+                                    let text = `${label}: $${value.toFixed(2)}`;
+                                    
+                                    if (context.datasetIndex === 0 && buyMap[date]) {
+                                        const pt = buyMap[date];
+                                        text += ` (매수: +${pt.shares_added}주, 총: ${pt.total_shares}주)`;
+                                    }
+                                    return text;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

@@ -9,83 +9,109 @@ from datetime import datetime
 
 
 class MyBankScraper:
-    # 1. target_currencies 인자 추가 (기본값 설정 가능)
     def __init__(self, target_currencies=["USD", "JPY"]):
-        self.base_url = "https://www.mibank.me/exchange/bank/index.php"
+        # ★ [주소 변경] 신규 도메인으로 교체
+        self.base_url = "https://exchange.mibank.me/bank"
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
         }
 
-        # ★ 은행 코드와 이름 하드코딩 매핑
+        # 은행 코드는 그대로 유지 (마이뱅크 표준 코드)
         self.bank_mapping = {
             "005": "하나",
             "004": "국민",
             "020": "우리",
             "088": "신한"
         }
-        # 매핑된 딕셔너리의 키값들을 수집 대상 코드로 사용
         self.bank_codes = list(self.bank_mapping.keys())
-
-        # 현재 스크립트 위치에 파일 저장
         self.output_file = "exchange_rates.json"
-
-        # 대문자로 변환하여 저장 (예: ['usd', 'jpy'] -> ['USD', 'JPY'])
         self.target_currencies = [c.upper() for c in target_currencies]
 
     def parse_page(self, search_code):
-        params = {"search_code": search_code}
+        # ★ [파라미터 변경] search_code -> bank_cd 로 교체
+        params = {"bank_cd": search_code}
         try:
-            print(f">>> [{search_code}] 데이터 수집 시작... (대상: {self.target_currencies})")
+            print(f">>> [{self.bank_mapping.get(search_code)}] ({search_code}) 데이터 수집 시도...")
             response = requests.get(self.base_url, params=params, headers=self.headers, timeout=10)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # 업데이트 시각
-            update_tag = soup.select_one("h5.update")
+            # 1. 업데이트 시각 파싱 (span.date)
             update_time = "Unknown"
+            update_tag = soup.select_one("span.date")
             if update_tag:
-                match = re.search(r'(\d{4}\.\d{2}\.\d{2}\s\d{2}:\d{2})', update_tag.get_text())
-                if match: update_time = match.group(1)
+                match = re.search(r'(\d{4}[.-]\d{2}[.-]\d{2}\s\d{2}:\d{2})', update_tag.get_text())
+                if match:
+                    update_time = match.group(1).replace('-', '.')
 
-            # ★ 매핑된 딕셔너리에서 은행 이름 가져오기 (없으면 Bank_코드)
             bank_name = self.bank_mapping.get(search_code, f"Bank_{search_code}")
 
+            # 2. 테이블 탐색 (table.main_table.content)
+            target_table = soup.select_one("table.main_table.content")
+
+            if not target_table:
+                print(f"!!! [{bank_name}] 테이블을 찾지 못했습니다. URL을 확인해 주세요.")
+                return None
+
             rates = []
-            rows = soup.select("table.exchange_table tbody tr")
+            rows = target_table.find_all("tr")
 
             for row in rows:
-                cols = row.find_all("td")
-                if len(cols) < 9: continue
+                cols = row.find_all(["td", "th"])
+                if len(cols) < 5: continue
 
-                img_tag = cols[0].find("img")
-                if not img_tag: continue
-                currency_code = img_tag["src"].split("/")[-1].replace(".png", "").upper()
+                row_text = row.get_text(separator=' ', strip=True).upper()
+                if "매매기준율" in row_text or "통화" in row_text:
+                    continue
 
-                # 2. ★ 핵심 필터링: 타겟 통화가 아니면 건너뜀 (Skip)
-                if currency_code not in self.target_currencies:
+                currency_code = None
+                for tgt in self.target_currencies:
+                    if tgt in row_text:
+                        currency_code = tgt
+                        break
+
+                if not currency_code:
+                    img_tag = row.find("img")
+                    if img_tag and img_tag.get("src"):
+                        for tgt in self.target_currencies:
+                            if tgt.lower() in img_tag["src"].lower():
+                                currency_code = tgt
+                                break
+
+                if not currency_code:
                     continue
 
                 def clean_float(text):
                     cleaned = re.sub(r'[^0-9.]', '', text)
                     return float(cleaned) if cleaned else 0.0
 
+                try:
+                    # 행/열 선택 로직 (역순 인덱싱)
+                    base_rate = clean_float(cols[-1].get_text(strip=True))
+                    remittance_send = clean_float(cols[-3].get_text(strip=True))
+                    remittance_fee_rate = cols[-2].get_text(strip=True)
+                except IndexError:
+                    continue
+
                 rates.append({
                     "currency": currency_code,
-                    "base_rate": clean_float(cols[8].get_text(strip=True)),
-                    "remittance_send": clean_float(cols[6].get_text(strip=True)),
-                    "remittance_fee_rate": cols[7].get_text(strip=True)
+                    "base_rate": base_rate,
+                    "remittance_send": remittance_send,
+                    "remittance_fee_rate": remittance_fee_rate
                 })
 
-            return {
-                "bank_code": search_code,
-                "bank_name": bank_name,
-                "update_time": update_time,
-                "rates": rates
-            }
+            if rates:
+                return {
+                    "bank_code": search_code,
+                    "bank_name": bank_name,
+                    "update_time": update_time,
+                    "rates": rates
+                }
+            return None
 
         except Exception as e:
-            print(f"!!! [{search_code}] 파싱 오류: {e}")
+            print(f"!!! [{search_code}] 통신/파싱 오류: {e}")
             return None
 
     def save_to_json(self, data):
@@ -104,25 +130,26 @@ class MyBankScraper:
         try:
             with open(self.output_file, 'w', encoding='utf-8') as f:
                 json.dump(current_db, f, indent=4, ensure_ascii=False)
-            print(f"### [{data['bank_name']}] JSON 저장 완료 (대상 통화만)")
+            print(f"✅ [{data['bank_name']}] 고시 환율 업데이트 완료 ({data['update_time']})")
         except Exception as e:
             print(f"JSON 저장 실패: {e}")
 
     def run(self):
+        print("=== 🏦 마이뱅크 실시간 환율 스크래퍼 가동 (신규 URL 모드) ===")
         while True:
             for code in self.bank_codes:
                 result = self.parse_page(code)
                 if result:
                     self.save_to_json(result)
 
-                wait = random.uniform(5, 8)
+                # 사이트 부하 방지를 위한 딜레이
+                wait = random.uniform(3, 5)
                 time.sleep(wait)
 
-            print("\n[Cycle Completed] 60초 대기...\n")
-            time.sleep(5)
+            print(f"\n[대기] 한 사이클 완료. 60초 후 다시 수집합니다. ({datetime.now().strftime('%H:%M:%S')})\n")
+            time.sleep(60)
 
 
 if __name__ == "__main__":
-    # ★ 여기서 원하는 통화만 리스트 형태로 전달하시면 됩니다!
     scraper = MyBankScraper(target_currencies=["USD", "JPY"])
     scraper.run()

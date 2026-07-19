@@ -11,6 +11,7 @@ import pandas as pd
 import math
 import os
 import re
+import datetime
 
 print("\n" + "=" * 50)
 print("🔍 [디버깅] 경로 확인 시작")
@@ -38,6 +39,7 @@ except ImportError:
 
 class MarketObserver:
     def __init__(self):
+        self.base_rate_source = "HANA"
         self.last_reported_price = 0
         self.last_reported_int = 0
 
@@ -52,7 +54,7 @@ class MarketObserver:
         self.bithumb_pub = ccxt.bithumb()
 
         self.cached_macro = {
-            "usd_krw": 1460.0, "usd_krw_g": 1460.0, "usd_krw_y": 1460.0, "usd_krw_m": 1460.0,
+            "usd_krw": 1460.0, "usd_krw_g": 1460.0, "usd_krw_y": 1460.0, "usd_krw_m": 1460.0, "usd_krw_h": 1460.0,
             "jpy_krw": 9.12, "dxy": 100.0, "dxy_m": 100.0,
             "kospi": 0.0, "kospi_rate": 0.0, "kosdaq": 0.0, "kosdaq_rate": 0.0,
             "sp500_f": 0.0, "sp500_f_rate": 0.0, "nasdaq_f": 0.0, "nasdaq_f_rate": 0.0,
@@ -97,7 +99,6 @@ class MarketObserver:
 
             self.last_reported_price = current_price
 
-    # ★ [수정] 모닝 브리핑 포맷으로 텔레그램 메시지 구성
     def check_bank_updates(self):
         try:
             if not os.path.exists("exchange_rates.json"):
@@ -106,7 +107,6 @@ class MarketObserver:
             with open("exchange_rates.json", "r", encoding="utf-8") as f:
                 ex_data = json.load(f)
 
-            # 은행별 데이터 추출 헬퍼 함수
             def get_b_info(b_name):
                 for k, v in ex_data.items():
                     if isinstance(v, dict) and b_name in v.get("bank_name", ""):
@@ -138,65 +138,49 @@ class MarketObserver:
                         state["last_time"] = update_time
 
                         if not is_first_run:
-                            time_str = update_time.split(" ")[1] if " " in update_time else ""
+                            date_str, time_str = "", ""
+                            is_emergency = False
 
-                            # 아침 7시 ~ 9시 사이 고시 알림
-                            if time_str and "07:00" <= time_str <= "09:00":
-                                # 1. 트리거된 은행 가격
+                            if " " in update_time:
+                                date_str, time_str = update_time.split(" ")
+                                try:
+                                    dt_obj = datetime.datetime.strptime(date_str, "%Y.%m.%d")
+                                    is_weekend = dt_obj.weekday() >= 5
+                                    fixed_holidays = ["01-01", "03-01", "05-01", "05-05", "06-06", "08-15", "10-03",
+                                                      "10-09", "12-25"]
+                                    is_holiday = dt_obj.strftime("%m-%d") in fixed_holidays
+                                    is_emergency = is_weekend or is_holiday
+                                except:
+                                    pass
+
+                            if is_emergency or (time_str and "07:00" <= time_str <= "09:00"):
                                 usd_rate = "-"
                                 for r in data.get("rates", []):
                                     if r.get("currency") == "USD":
                                         usd_rate = f"{r.get('base_rate'):,.2f}"
                                         break
 
-                                # 2. 하나 - 국민 가격 차이 계산
                                 hana_u, _, _ = get_b_info("하나")
                                 kook_u, _, _ = get_b_info("국민")
                                 gap_str = f"{(hana_u - kook_u):+.2f}원" if (hana_u and kook_u) else "데이터 없음"
 
-                                # 3. 메시지 조립 시작
-                                msg = f"🔔 [{bank_name}] 아침 고시 업데이트\n"
+                                if is_emergency:
+                                    msg = f"🚨 [긴급] 주말/휴일 비정상 고시 감지!\n"
+                                    msg += f"🏦 [{bank_name}] 환율 업데이트\n"
+                                else:
+                                    msg = f"🔔 [{bank_name}] 아침 고시 업데이트\n"
+
                                 msg += f"⏰ {update_time}\n"
                                 msg += f"💵 고시환율: {usd_rate}원\n\n"
-
                                 msg += f"⚖️ [하나-국민 갭]: {gap_str}\n\n"
-
                                 msg += f"📊 [글로벌 환율]\n"
                                 msg += f"구글: {self.cached_macro.get('usd_krw_g', 0):,.2f}원 | 야후: {self.cached_macro.get('usd_krw_y', 0):,.2f}원\n\n"
-
                                 msg += f"🏦 [은행별 고시환율 (USD / JPY)]\n"
                                 for b in ["하나", "국민", "우리", "신한"]:
                                     bu, bj, bt = get_b_info(b)
                                     msg += f"- {b}: {bu:,.2f} / {bj:,.2f} ({bt[-5:]})\n"
-                                msg += "\n"
 
-                                # 4. 실시간 코인 & 김프 상태 조립
-                                coin_data = self.get_realtime_status()
-                                if coin_data and 'market' in coin_data:
-                                    m = coin_data['market']
-                                    up_u, up_u_k = m['upbit']['price'], m['upbit']['kimp']
-                                    bi_u, bi_u_k = m['bithumb']['price'], m['bithumb']['kimp']
-
-                                    up_b, up_b_k = m['btc']['upbit_price'], m['btc']['upbit_kimp']
-                                    bi_b, bi_b_k = m['btc']['price_kr'], m['btc']['kimp']
-
-                                    up_e, up_e_k = m['eth']['upbit_price'], m['eth']['upbit_kimp']
-                                    bi_e, bi_e_k = m['eth']['price_kr'], m['eth']['kimp']
-
-                                    up_x, up_x_k = m['xrp']['upbit_price'], m['xrp']['upbit_kimp']
-                                    bi_x, bi_x_k = m['xrp']['price_kr'], m['xrp']['kimp']
-
-                                    rsi_u = self.latest_rsi.get('rsi_usdt', 0)
-                                    rsi_b = self.latest_rsi.get('rsi_btc', 0)
-
-                                    msg += f"🪙 [코인 시세 & 김프]\n"
-                                    msg += f"( 🔵업비트 | 🟠빗썸 )\n"
-                                    msg += f"USDT: 🔵{up_u:,.0f}({up_u_k:+.2f}%) 🟠{bi_u:,.0f}({bi_u_k:+.2f}%) | RSI:{rsi_u}\n"
-                                    msg += f"BTC : 🔵{up_b / 1000:,.0f}K({up_b_k:+.2f}%) 🟠{bi_b / 1000:,.0f}K({bi_b_k:+.2f}%) | RSI:{rsi_b}\n"
-                                    msg += f"ETH : 🔵{up_e / 1000:,.0f}K({up_e_k:+.2f}%) 🟠{bi_e / 1000:,.0f}K({bi_e_k:+.2f}%)\n"
-                                    msg += f"XRP : 🔵{up_x:,.0f}({up_x_k:+.2f}%) 🟠{bi_x:,.0f}({bi_x_k:+.2f}%)\n"
-
-                                print(f"🔔 {msg}")
+                                print(f"🔔 \n{msg}")
                                 try:
                                     if 'mybot.TelegramMessenger' in sys.modules:
                                         asyncio.run(tm.send_dollar_message(msg))
@@ -204,6 +188,60 @@ class MarketObserver:
                                     pass
         except Exception as e:
             pass
+
+    def get_hana_usd_rate(self):
+        try:
+            if os.path.exists("exchange_rates.json"):
+                with open("exchange_rates.json", "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                for k, v in data.items():
+                    if isinstance(v, dict) and "하나" in v.get("bank_name", ""):
+                        for r in v.get("rates", []):
+                            if r.get("currency") == "USD":
+                                return float(r.get("base_rate", 0))
+        except Exception as e:
+            pass
+        return None
+
+    # ★ [버그 완전 수정] 15분 단위 수학적 캔들 정규화 방식
+    def save_hana_history(self, current_rate):
+        history_file = "hana_history.json"
+        now_ms = int(time.time() * 1000)
+
+        # 수학적으로 15분(900,000ms) 단위의 바닥 시간으로 내림 (예: 10:00, 10:15, 10:30)
+        candle_time = (now_ms // 900000) * 900000
+
+        history = []
+        if os.path.exists(history_file):
+            try:
+                with open(history_file, "r", encoding="utf-8") as f:
+                    history = json.load(f)
+            except:
+                pass
+
+        if history:
+            last_candle_time = history[-1][0]
+
+            if candle_time == last_candle_time:
+                # 같은 15분 구간 내에서는 시간은 건드리지 않고, 종가만 덮어씀 (타이머 리셋 방지)
+                if history[-1][1] != current_rate:
+                    history[-1] = [candle_time, current_rate]
+                    with open(history_file, "w", encoding="utf-8") as f:
+                        json.dump(history, f)
+                return
+            elif candle_time > last_candle_time:
+                # 새로운 15분 캔들 시간이 시작되었으면 새 배열로 추가
+                history.append([candle_time, current_rate])
+        else:
+            # 처음 기록할 때
+            history.append([candle_time, current_rate])
+
+        # 용량 관리를 위해 최근 500개만 남김
+        if len(history) > 500:
+            history = history[-500:]
+
+        with open(history_file, "w", encoding="utf-8") as f:
+            json.dump(history, f)
 
     def get_naver_index(self, market_code):
         try:
@@ -316,14 +354,24 @@ class MarketObserver:
             if not hist.empty:
                 usd_y = float(hist['Close'].iloc[-1])
                 self.cached_macro["usd_krw_y"] = round(usd_y, 2)
-                # self.check_volatility(usd_y)
         except:
             pass
 
-        if self.cached_macro.get("usd_krw_g", 0) > 0:
+        usd_h = self.get_hana_usd_rate()
+        if usd_h:
+            self.cached_macro["usd_krw_h"] = usd_h
+            self.save_hana_history(usd_h)
+
+        if self.base_rate_source == "HANA" and self.cached_macro.get("usd_krw_h", 0) > 0:
+            self.cached_macro["usd_krw"] = self.cached_macro["usd_krw_h"]
+        elif self.base_rate_source == "GOOGLE" and self.cached_macro.get("usd_krw_g", 0) > 0:
+            self.cached_macro["usd_krw"] = self.cached_macro["usd_krw_g"]
+        elif self.cached_macro.get("usd_krw_g", 0) > 0:
             self.cached_macro["usd_krw"] = self.cached_macro["usd_krw_g"]
         else:
             self.cached_macro["usd_krw"] = self.cached_macro["usd_krw_y"]
+
+        self.check_volatility(self.cached_macro["usd_krw"])
 
         try:
             jpy = self.get_google_price("JPY-KRW")
@@ -360,7 +408,7 @@ class MarketObserver:
                     ohlcv = []
                     for row in data['data'][-100:]:
                         ohlcv.append([
-                            int(row[0]) + 32400000,
+                            int(row[0]),
                             float(row[1]), float(row[3]), float(row[4]), float(row[2]), float(row[5])
                         ])
                     return ohlcv
@@ -374,10 +422,7 @@ class MarketObserver:
             btc_kr = self.fetch_bithumb_15m_direct('BTC/KRW')
 
             btc_us = self.binance.fetch_ohlcv('BTC/USDT', '15m', limit=100)
-            for row in btc_us: row[0] += 32400000
-
             usdt_up = self.upbit.fetch_ohlcv('USDT/KRW', '15m', limit=100)
-            for row in usdt_up: row[0] += 32400000
 
             usd_krw_chart_data = []
             try:
@@ -391,14 +436,36 @@ class MarketObserver:
                     offset = real_usd - yf_latest
 
                     for dt, row in usd_df.tail(100).iterrows():
-                        kst_ms = int(dt.timestamp() * 1000) + 32400000
+                        utc_ms = int(dt.timestamp() * 1000)
                         usd_krw_chart_data.append([
-                            kst_ms,
+                            utc_ms,
                             float(row['Open']) + offset, float(row['High']) + offset,
                             float(row['Low']) + offset, float(row['Close']) + offset, 0
                         ])
             except Exception as e:
                 pass
+
+            if self.base_rate_source == "HANA" and os.path.exists("hana_history.json"):
+                try:
+                    with open("hana_history.json", "r", encoding="utf-8") as f:
+                        hana_hist = json.load(f)
+
+                    if hana_hist:
+                        first_hana_time = hana_hist[0][0]
+                        filtered_chart = [d for d in usd_krw_chart_data if d[0] < first_hana_time]
+
+                        for h_time, h_price in hana_hist:
+                            filtered_chart.append([h_time, h_price, h_price, h_price, h_price, 0])
+
+                        # ★ 차트 선이 과거에 머물지 않고 현재 시간까지 이어지도록 꼬리 추가
+                        now_ms = int(time.time() * 1000)
+                        latest_price = hana_hist[-1][1]
+                        if now_ms - hana_hist[-1][0] > 60000:  # 1분 이상 차이나면 현재가 점 추가
+                            filtered_chart.append([now_ms, latest_price, latest_price, latest_price, latest_price, 0])
+
+                        usd_krw_chart_data = filtered_chart
+                except Exception as e:
+                    pass
 
             dxy_chart_data = []
             try:
@@ -407,9 +474,9 @@ class MarketObserver:
                     if isinstance(dxy_df.columns, pd.MultiIndex):
                         dxy_df.columns = dxy_df.columns.get_level_values(0)
                     for dt, row in dxy_df.tail(100).iterrows():
-                        kst_ms = int(dt.timestamp() * 1000) + 32400000
+                        utc_ms = int(dt.timestamp() * 1000)
                         dxy_chart_data.append([
-                            kst_ms, float(row['Open']), float(row['High']), float(row['Low']), float(row['Close']), 0
+                            utc_ms, float(row['Open']), float(row['High']), float(row['Low']), float(row['Close']), 0
                         ])
             except Exception as e:
                 pass
@@ -441,7 +508,7 @@ class MarketObserver:
                             'closing_price'])
                     p_btc_gl = self.binance.fetch_ticker('BTC/USDT')['last']
                     rt_kimp = ((p_btc_kr / (p_btc_gl * self.cached_macro['usd_krw'])) - 1) * 100
-                    kimp_15m_series.append({'time': int(time.time() * 1000) + 32400000, 'kimp': rt_kimp})
+                    kimp_15m_series.append({'time': int(time.time() * 1000), 'kimp': rt_kimp})
                 except Exception as e:
                     pass
 
@@ -473,18 +540,7 @@ class MarketObserver:
             return {"upbit": {"krw": 0, "usdt": 0}, "bithumb": {"krw": 0, "usdt": 0}}
 
     def execute_order(self, cmd):
-        try:
-            exch = self.upbit if cmd['exchange'] == 'UPBIT' else self.bithumb
-            symbol, side, amt = cmd['symbol'], cmd['side'], float(cmd['amount'])
-            if cmd['exchange'] == 'UPBIT' and side == 'buy':
-                exch.create_order(symbol, 'market', 'buy', None, price=amt)
-            elif side == 'buy':
-                exch.create_market_buy_order(symbol, amt)
-            elif side == 'sell':
-                exch.create_market_sell_order(symbol, amt)
-            print(f"✅ Executed: {cmd['exchange']} {side} {amt}")
-        except Exception as e:
-            print(f"❌ Execution Failed: {e}")
+        pass
 
     def get_realtime_status(self):
         try:
@@ -549,9 +605,30 @@ class MarketObserver:
 
 
 def run_bot():
-    print("=== 🤖 봇 시작 (모닝 브리핑 패치 완료) ===")
+    print("=== 🤖 봇 시작 (하나은행 15분 단위 DB 저장 버그 완벽 수정 완료!) ===")
     observer = MarketObserver()
     last_chart_update = 0
+
+    # Google Sheets 스냅샷 수집용 백그라운드 스레드 시작
+    try:
+        import threading
+        import sheets_snapshot
+        
+        def run_sheets_snapshot():
+            print("=== 📊 구글 시트 스냅샷 스레드 가동 시작 ===")
+            while True:
+                try:
+                    sheets_snapshot.take_snapshot()
+                except Exception as ex:
+                    print(f"❌ Snapshot Thread Error: {ex}")
+                # 3,600초 (1시간) 간격으로 수집
+                time.sleep(3600)
+                
+        t = threading.Thread(target=run_sheets_snapshot, daemon=True)
+        t.start()
+        print("🎉 구글 시트 스냅샷 스레드 활성화 완료")
+    except Exception as e:
+        print(f"❌ 구글 시트 스냅샷 스레드 시작 실패: {e}")
 
     while True:
         try:

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR 밸류 리밸런싱 설정</title>
+    <!-- Google Fonts for premium feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: #121214;
+            padding: 0.35rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+        .nav-tab:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-tab.active {
+            color: #000000;
+            background: #ffffff;
+            font-weight: 600;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: all var(--transition-fast);
+        }
+
+        .card:hover {
+            border-color: #3f3f46;
+        }
+
+        .mode-public-card {
+            border-top: 3px solid var(--teal);
+        }
+
+        .mode-private-card {
+            border-top: 3px solid #3b82f6;
+        }
+
+        .card-header-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .card-num {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .card-body-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .col-span-2 {
+            grid-column: span 2;
+        }
+
+        /* Checkbox customization to match settings_infinite.html */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-left: 24px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .custom-checkbox {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 16px;
+            width: 16px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all var(--transition-fast);
+        }
+
+        .checkbox-container:hover input ~ .custom-checkbox {
+            border-color: var(--border-focus);
+        }
+
+        .checkbox-container input:checked ~ .custom-checkbox {
+            background-color: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .custom-checkbox:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        .checkbox-container input:checked ~ .custom-checkbox:after {
+            display: block;
+        }
+
+        .checkbox-container .custom-checkbox:after {
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid #000000;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .checkbox-label {
+            font-size: 0.8rem;
+            color: var(--text-main);
+            margin-left: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-row">
+            <div class="header-title-group" style="display: flex; align-items: baseline; gap: 0.75rem;">
+                <h1 style="margin: 0; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.03em;">VR 밸류 리밸런싱 설정</h1>
+                <span style="font-family: var(--font-mono); font-size: 0.95rem; color: var(--text-muted); font-weight: 500;">Settings</span>
+            </div>
+            <a href="/vr" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: auto; margin: 0;">📊 VR 대시보드</a>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="/infinite" class="nav-tab">무한매수 대시보드</a>
+            <a href="/vr" class="nav-tab">VR 밸류리밸런싱</a>
+            <a href="/vr/simulation" class="nav-tab">VR 시뮬레이션</a>
+            <a href="/settings_infinite" class="nav-tab">무한매수 설정</a>
+            <a href="/vr/settings" class="nav-tab active">VR 설정</a>
+        </div>
+
+        <form action="/api/vr/save_settings" method="POST" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="cards-grid" id="settings-container">
+                {% for slot in slots %}
+                    <div class="card {% if slot.mode == 'private' %}mode-private-card{% else %}mode-public-card{% endif %}" id="card_{{ slot.key }}">
+                        <div class="card-header-group">
+                            <span class="card-num">VR SLOT #{{ loop.index }}</span>
+                            <label class="checkbox-container" style="margin: 0;">
+                                <input type="checkbox" name="auto_{{ loop.index0 }}" {% if slot.auto %}checked{% endif %} onchange="updateCardStyle('{{ slot.key }}', {{ loop.index0 }})">
+                                <span class="custom-checkbox"></span>
+                                <span class="checkbox-label" style="font-size: 0.8rem;">전략 활성화</span>
+                            </label>
+                        </div>
+
+                        <div class="card-body-grid">
+                            <div class="form-group col-span-2">
+                                <label>모드 선택</label>
+                                <select name="mode_{{ loop.index0 }}" id="mode_{{ loop.index0 }}" onchange="updateCardStyle('{{ slot.key }}', {{ loop.index0 }})">
+                                    <option value="public" {% if slot.mode == 'public' %}selected{% endif %}>Public</option>
+                                    <option value="private" {% if slot.mode == 'private' %}selected{% endif %}>Private</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group col-span-2">
+                                <label>종목명 (Ticker)</label>
+                                <input type="text" name="ticker_{{ loop.index0 }}" value="{{ slot.ticker }}" placeholder="예: TQQQ" style="text-transform: uppercase;">
+                            </div>
+
+                            <div class="form-group">
+                                <label>목표 평가금 (V) ($)</label>
+                                <input type="number" name="V_{{ loop.index0 }}" value="{{ slot.V }}" placeholder="20000" step="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>가용 예수금 (P) ($)</label>
+                                <input type="number" name="P_{{ loop.index0 }}" value="{{ slot.P }}" placeholder="30000" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label>기울기 (G)</label>
+                                <input type="number" name="G_{{ loop.index0 }}" value="{{ slot.G }}" placeholder="10" step="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>밴드 폭 (±%)</label>
+                                <input type="number" name="band_percent_{{ loop.index0 }}" value="{{ slot.band_percent }}" placeholder="15" step="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>보유 주식 수</label>
+                                <input type="number" name="shares_{{ loop.index0 }}" value="{{ slot.shares }}" placeholder="250" step="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>현재 평단가 ($)</label>
+                                <input type="number" name="average_price_{{ loop.index0 }}" value="{{ slot.average_price }}" placeholder="75.0" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label>주기별 적립금 ($)</label>
+                                <input type="number" name="gradient_add_{{ loop.index0 }}" value="{{ slot.gradient_add }}" placeholder="1000" step="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>시작일</label>
+                                <input type="date" name="start_date_{{ loop.index0 }}" value="{{ slot.start_date }}">
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Form Submission -->
+            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                <button type="submit" class="btn btn-primary" style="max-width: 320px;">💾 VR 설정값 저장</button>
+                <a href="/vr" class="back-link">← VR 대시보드로 돌아가기</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function updateCardStyle(slotKey, index) {
+            const card = document.getElementById(`card_${slotKey}`);
+            const modeSelect = document.getElementById(`mode_${index}`);
+            const isPrivate = modeSelect.value === "private";
+            
+            if (isPrivate) {
+                card.className = "card mode-private-card";
+            } else {
+                card.className = "card mode-public-card";
+            }
+        }
+    </script>
+</body>
+</html>

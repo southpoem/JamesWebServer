@@ -1,0 +1,60 @@
+{
+    "004": {
+        "bank_code": "004",
+        "bank_name": "환율계산기",
+        "update_time": "2026.03.07 04:54",
+        "rates": [
+            {
+                "currency": "JPY",
+                "base_rate": 940.13,
+                "remittance_send": 949.24,
+                "remittance_fee_rate": "0.97%"
+            },
+            {
+                "currency": "USD",
+                "base_rate": 1483.9,
+                "remittance_send": 1498.2,
+                "remittance_fee_rate": "0.96%"
+            }
+        ]
+    },
+    "system_last_update": "2026-03-07 17:59:18",
+    "005": {
+        "bank_code": "005",
+        "bank_name": "환율계산기",
+        "update_time": "2026.03.07 16:58",
+        "rates": [
+            {
+                "currency": "JPY",
+                "base_rate": 941.09,
+                "remittance_send": 950.31,
+                "remittance_fee_rate": "0.98%"
+            },
+            {
+                "currency": "USD",
+                "base_rate": 1485.0,
+                "remittance_send": 1499.5,
+                "remittance_fee_rate": "0.98%"
+            }
+        ]
+    },
+    "020": {
+        "bank_code": "020",
+        "bank_name": "환율계산기",
+        "update_time": "2026.03.06 23:58",
+        "rates": [
+            {
+                "currency": "JPY",
+                "base_rate": 945.09,
+                "remittance_send": 954.25,
+                "remittance_fee_rate": "0.97%"
+            },
+            {
+                "currency": "USD",
+                "base_rate": 1490.5,
+                "remittance_send": 1504.9,
+                "remittance_fee_rate": "0.97%"
+            }
+        ]
+    }
+}

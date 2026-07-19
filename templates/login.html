@@ -1,64 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
-    <!-- 모바일 대응 추가 -->
+    <title>Login - James World</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        form {
-            background-color: #1e1e1e;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #333;
-            width: 100%;
-            max-width: 400px; /* 폼이 너무 커지지 않게 제한 */
-        }
-        input {
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 15px;
-            margin: 10px 0;
-            width: 100%;
-            font-size: 16px;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #03DAC6;
-            border: none;
-            padding: 15px;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            font-size: 18px;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #018786;
-        }
-    </style>
+    <!-- Google Fonts for premium headers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-    <h1>Login</h1>
-    <form action="/login" method="post">
-        <input type="text" name="username" placeholder="Username" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
-        <button type="submit">Login</button>
-    </form>
+<body class="login-container">
+    <div class="glass-panel" style="max-width: 400px;">
+        <h1>LOG IN</h1>
+        <p class="text-center" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">
+            James World 시스템 제어판에 로그인합니다
+        </p>
+        
+        <form action="/login" method="post" class="flex-column">
+            <div class="form-group">
+                <label for="username">사용자명</label>
+                <input type="text" id="username" name="username" placeholder="Username" required autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-teal mt-4">Login</button>
+        </form>
+    </div>
 </body>
 </html>

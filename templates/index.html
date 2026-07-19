@@ -1,92 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>James World</title>
+    <title>James World - Control Center</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Fonts for premium headers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
     <style>
-        /* (여기는 기존 스타일 그대로) */
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
+        .settings-list {
+            list-style: none;
             display: flex;
             flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            padding-top: 50px;
-        }
-        h1 {
-            font-size: 32px;
-            margin-bottom: 30px;
-        }
-        form {
-            width: 100%;
-            max-width: 400px;
-            margin: 10px 0;
-        }
-        button {
-            width: 100%;
-            background-color: #BB86FC;
-            border: none;
-            padding: 15px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 18px;
+            padding: 0.8rem 1.2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
             border-radius: 8px;
+            font-size: 0.95rem;
         }
-        button:hover {
-            background-color: #3700B3;
+        .settings-key {
+            color: var(--text-muted);
+            font-weight: 500;
         }
-        a {
-            margin-top: 30px;
-            color: #03DAC6;
-            text-decoration: none;
-            font-size: 16px;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .settings-box {
-            margin-top: 40px;
-            padding: 20px;
-            background-color: #1e1e1e;
-            border-radius: 10px;
-            width: 100%;
-            max-width: 400px;
-            text-align: left;
+        .settings-val {
+            color: var(--teal);
+            font-weight: 700;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-<h1>James World</h1>
-<!-- Settings 정보 보여주기 -->
-<div class="settings-box">
-    <h3>Settings Info</h3>
-    {% if settings %}
-    <ul>
-        {% for key, value in settings.items() %}
-        <li><strong>{{ key }}</strong>: {{ value }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No settings available.</p>
-    {% endif %}
-</div>
-<form action="/run_change_base_usdt" method="post">
-    <button type="submit">환율 정보 변경</button>
-</form>
+    <div class="container" style="max-width: 480px;">
+        <h1>JAMES WORLD</h1>
+        <p class="text-center" style="color: var(--text-muted); font-size: 0.95rem; margin-top: -1.5rem; margin-bottom: 1rem;">
+            자동 매매 시스템 제어반
+        </p>
 
-<form action="/infinite" method="post" class="action-form">
-    <button type="submit" class="action-button">무한 매수</button>
-</form>
+        <!-- Settings Info Panel -->
+        <div class="glass-panel">
+            <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; font-size: 1.15rem; letter-spacing: 0.5px;">
+                ⚙️ SYSTEM CONFIGURATION
+            </h3>
+            
+            {% if settings %}
+            <ul class="settings-list">
+                {% for key, value in settings.items() %}
+                <li class="settings-item">
+                    <span class="settings-key">{{ key }}</span>
+                    <span class="settings-val">{{ value }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="color: var(--text-muted); margin-top: 1rem; text-align: center;">설정 정보가 없습니다.</p>
+            {% endif %}
+        </div>
 
-<a href="/logout">Logout</a>
+        <!-- Action Control Panel -->
+        <div class="glass-panel flex-column">
+            <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; font-size: 1.15rem; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                🎮 SYSTEM ACTIONS
+            </h3>
 
+            <form action="/run_change_base_usdt" method="post" style="margin: 0;">
+                <button type="submit" class="btn btn-secondary">🔄 환율 정보 변경</button>
+            </form>
+            
+            <form action="/infinite" method="post" style="margin: 0;">
+                <button type="submit" class="btn btn-primary">⚡ 무한매수 대시보드</button>
+            </form>
+        </div>
 
+        <!-- Footer -->
+        <div class="text-center" style="margin-top: 1rem;">
+            <a href="/logout" class="back-link" style="color: var(--red);">🔓 시스템 로그아웃</a>
+        </div>
+    </div>
 </body>
 </html>
