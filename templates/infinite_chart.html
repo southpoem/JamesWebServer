@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TQQQ / QLD / NASDAQ 하이브리드 차트 - James World</title>
+    <meta name="color-scheme" content="dark" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Chart.js & TradingView Engine CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <style>
+        .chart-control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 1rem;
+        }
+        .chart-container-panel {
+            height: 560px;
+            width: 100%;
+            padding: 1rem;
+            position: relative;
+        }
+        @media (max-width: 768px) {
+            .chart-container-panel {
+                height: 440px;
+                padding: 0.5rem;
+            }
+        }
+        #chartjs_container, #tradingview_container {
+            width: 100%;
+            height: 100%;
+        }
+        #tradingview_widget {
+            width: 100%;
+            height: 100%;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.25rem;
+        }
+        @media (max-width: 600px) {
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .stat-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .stat-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-return {
+            font-size: 1.4rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+        }
+        .stat-price {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1100px;">
+        <!-- Header -->
+        <header class="brand-header">
+            <a href="/infinite" class="brand-logo-group">
+                <div class="logo-dot"></div>
+                <div class="brand-title">
+                    차트 모니터링
+                    <span class="sub">TQQQ (3x) · QLD (2x) · NASDAQ (1x) 실시간 캔들 & 3-in-1 비교</span>
+                </div>
+            </a>
+            <div class="meta-pills">
+                <span class="pill"><span class="label">Engine:</span> <b id="chart-mode-label">수익률 규격화 (3-in-1)</b></span>
+            </div>
+        </header>
+
+        <!-- raoni.xyz Top Pill Navigation Bar -->
+        <div class="top-nav-row">
+            <nav class="top-nav">
+                <a href="/infinite" class="nav-link">대시보드</a>
+                <a href="/macro" class="nav-link">매크로 보드</a>
+                <a href="/infinite_charts" class="nav-link active">차트 모니터링</a>
+                <a href="/infinite_settings" class="nav-link">매매 설정</a>
+                <a href="/infinite_help" class="nav-link">전략 가이드</a>
+            </nav>
+        </div>
+
+        <!-- Controls Sub-Bar (Display Mode & Symbol & Timeframe Select) -->
+        <div class="chart-control-row">
+            <!-- Mode Selector Tabs -->
+            <div class="sub-nav">
+                <button type="button" class="sub-tab mode-tab active" onclick="switchMode('pct', this)">수익률 비교 (3-in-1)</button>
+                <button type="button" class="sub-tab mode-tab" onclick="switchMode('tv', this)">주가 추이 (TradingView)</button>
+            </div>
+
+            <!-- Symbol Selector Tabs (Visible in TradingView Mode) -->
+            <div class="sub-nav" id="symbol-nav-group" style="display: none;">
+                <button type="button" class="sub-tab symbol-tab active" onclick="switchSymbol('NASDAQ:TQQQ', this)">TQQQ (3x)</button>
+                <button type="button" class="sub-tab symbol-tab" onclick="switchSymbol('AMEX:QLD', this)">QLD (2x)</button>
+                <button type="button" class="sub-tab symbol-tab" onclick="switchSymbol('NASDAQ:QQQ', this)">NASDAQ (QQQ / 1x)</button>
+            </div>
+
+            <!-- Timeframe Selector Tabs -->
+            <div class="sub-nav">
+                <button type="button" class="sub-tab time-tab active" onclick="switchTimeframe('1d', this)">일봉 (1D)</button>
+                <button type="button" class="sub-tab time-tab" onclick="switchTimeframe('1w', this)">주봉 (1W)</button>
+                <button type="button" class="sub-tab time-tab" onclick="switchTimeframe('1m', this)">월봉 (1M)</button>
+                <button type="button" class="sub-tab time-tab" onclick="switchTimeframe('1y', this)">연봉 (1Y)</button>
+            </div>
+        </div>
+
+        <!-- Dual View Glass Panel Container -->
+        <div class="glass-panel chart-container-panel">
+            <!-- 1. Chart.js 3-in-1 Overlay View -->
+            <div id="chartjs_container">
+                <canvas id="overlayChart"></canvas>
+            </div>
+
+            <!-- 2. TradingView Widget View -->
+            <div id="tradingview_container" style="display: none;">
+                <div id="tradingview_widget"></div>
+            </div>
+        </div>
+
+        <!-- Summary Stat Cards -->
+        <div class="stat-grid">
+            <div class="stat-card" style="border-top: 3px solid #38BDF8;">
+                <div class="stat-name">
+                    <span>TQQQ (3배 레버리지)</span>
+                    <span class="badge badge-blue">3x</span>
+                </div>
+                <div class="stat-return" id="stat-tqqq-return">0.00%</div>
+                <div class="stat-price" id="stat-tqqq-price">$0.00</div>
+            </div>
+
+            <div class="stat-card" style="border-top: 3px solid #A855F7;">
+                <div class="stat-name">
+                    <span>QLD (2배 레버리지)</span>
+                    <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.3);">2x</span>
+                </div>
+                <div class="stat-return" id="stat-qld-return">0.00%</div>
+                <div class="stat-price" id="stat-qld-price">$0.00</div>
+            </div>
+
+            <div class="stat-card" style="border-top: 3px solid #F59E0B;">
+                <div class="stat-name">
+                    <span>NASDAQ (QQQ / 1배)</span>
+                    <span class="badge badge-yellow">1x</span>
+                </div>
+                <div class="stat-return" id="stat-qqq-return">0.00%</div>
+                <div class="stat-price" id="stat-qqq-price">$0.00</div>
+            </div>
+        </div>
+
+        <div class="text-center" style="margin-top: 1.5rem;">
+            <a href="/infinite" class="back-link">← 무한매수 현황 대시보드로 돌아가기</a>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'pct'; // 'pct' or 'tv'
+        let currentTF = '1d';
+        let currentSymbol = 'NASDAQ:TQQQ';
+        let rawData = null;
+        let chartInstance = null;
+
+        const tvIntervalMap = {
+            '1d': 'D',
+            '1w': 'W',
+            '1m': 'M',
+            '1y': '12M'
+        };
+
+        const colorMap = {
+            'TQQQ': '#38BDF8',
+            'QLD': '#A855F7',
+            'QQQ': '#F59E0B'
+        };
+
+        function fetchChartData() {
+            fetch(`/api/chart_data?tf=${currentTF}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        rawData = data;
+                        if (currentMode === 'pct') {
+                            renderChartjs();
+                        }
+                        updateStatCards();
+                    }
+                })
+                .catch(err => console.error('Error fetching chart API:', err));
+        }
+
+        function renderChartjs() {
+            if (!rawData) return;
+            const ctx = document.getElementById('overlayChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const labels = rawData.labels;
+            const datasets = [];
+
+            for (const ticker of ['TQQQ', 'QLD', 'QQQ']) {
+                const prices = rawData.series[ticker] || [];
+                const basePrice = prices[0];
+                const displaySeries = prices.map(p => basePrice > 0 ? parseFloat((((p - basePrice) / basePrice) * 100).toFixed(2)) : 0);
+
+                datasets.push({
+                    label: ticker + ' (%)',
+                    data: displaySeries,
+                    borderColor: colorMap[ticker],
+                    backgroundColor: colorMap[ticker] + '1A',
+                    borderWidth: 2.5,
+                    pointRadius: labels.length > 50 ? 0 : 3,
+                    pointHoverRadius: 6,
+                    tension: 0.2,
+                    fill: false
+                });
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#F8FAFC',
+                                font: { family: 'Inter', size: 12, weight: '600' },
+                                usePointStyle: true,
+                                padding: 16
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            borderColor: 'rgba(56, 189, 248, 0.3)',
+                            borderWidth: 1,
+                            titleColor: '#F8FAFC',
+                            titleFont: { family: 'Inter', size: 13, weight: '700' },
+                            bodyFont: { family: 'JetBrains Mono', size: 12 },
+                            padding: 12,
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.parsed.y;
+                                    return ` ${context.dataset.label}: ${val >= 0 ? '+' : ''}${val}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(248, 250, 252, 0.06)' },
+                            ticks: { color: '#94A3B8', font: { family: 'Inter', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(248, 250, 252, 0.08)' },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { family: 'JetBrains Mono', size: 11 },
+                                callback: function(val) {
+                                    return `${val >= 0 ? '+' : ''}${val}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTradingView() {
+            if (typeof TradingView === 'undefined') {
+                setTimeout(renderTradingView, 300);
+                return;
+            }
+            document.getElementById('tradingview_widget').innerHTML = '';
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": currentSymbol,
+                "interval": tvIntervalMap[currentTF] || 'D',
+                "timezone": "Asia/Seoul",
+                "theme": "dark",
+                "style": "1",
+                "locale": "kr",
+                "toolbar_bg": "#0F172A",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview_widget"
+            });
+        }
+
+        function updateStatCards() {
+            if (!rawData || !rawData.series) return;
+            for (const ticker of ['TQQQ', 'QLD', 'QQQ']) {
+                const prices = rawData.series[ticker] || [];
+                const elReturn = document.getElementById(`stat-${ticker.toLowerCase()}-return`);
+                const elPrice = document.getElementById(`stat-${ticker.toLowerCase()}-price`);
+
+                if (prices.length > 0) {
+                    const first = prices[0];
+                    const last = prices[prices.length - 1];
+                    const ret = first > 0 ? (((last - first) / first) * 100) : 0;
+
+                    elReturn.innerText = `${ret >= 0 ? '+' : ''}${ret.toFixed(2)}%`;
+                    elReturn.style.color = ret >= 0 ? '#4ADE80' : '#F87171';
+                    elPrice.innerText = `최근가: $${last.toFixed(2)}`;
+                }
+            }
+        }
+
+        function switchMode(mode, btn) {
+            document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = mode;
+
+            const cjs = document.getElementById('chartjs_container');
+            const tv = document.getElementById('tradingview_container');
+            const symNav = document.getElementById('symbol-nav-group');
+            const label = document.getElementById('chart-mode-label');
+
+            if (mode === 'pct') {
+                cjs.style.display = 'block';
+                tv.style.display = 'none';
+                symNav.style.display = 'none';
+                label.innerText = '수익률 규격화 (3-in-1)';
+                renderChartjs();
+            } else {
+                cjs.style.display = 'none';
+                tv.style.display = 'block';
+                symNav.style.display = 'inline-flex';
+                label.innerText = '주가 추이 (TradingView)';
+                renderTradingView();
+            }
+        }
+
+        function switchSymbol(sym, btn) {
+            document.querySelectorAll('.symbol-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSymbol = sym;
+            if (currentMode === 'tv') {
+                renderTradingView();
+            }
+        }
+
+        function switchTimeframe(tf, btn) {
+            document.querySelectorAll('.time-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTF = tf;
+            fetchChartData();
+            if (currentMode === 'tv') {
+                renderTradingView();
+            }
+        }
+
+        window.onload = function() {
+            fetchChartData();
+        };
+    </script>
+</body>
+</html>

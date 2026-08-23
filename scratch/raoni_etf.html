@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#061E20" />
+<title>ETF · 레버리지 NAV·괴리율 — raoni.xyz</title>
+<meta name="description" content="Hyperliquid xyz DEX 한국 종목 (삼성전자, SK하이닉스, 현대차, 코스피200, EWY) 실시간 와이드 대시보드. EWY → KOSPI 환산." />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9142744932299114"
+ crossorigin="anonymous"></script>
+<link rel="preconnect" href="https://api.hyperliquid.xyz" />
+<link rel="preconnect" href="https://api.upbit.com" />
+<style>
+  :root {
+    --hl-teal: #97FCE4;
+    --hl-teal-dim: #50D2C1;
+    --hl-teal-soft: rgba(151, 252, 228, 0.12);
+    --hl-teal-border: rgba(151, 252, 228, 0.25);
+    --bg-0: #061E20;
+    --bg-1: #0B2A2C;
+    --bg-2: #0F3537;
+    --surface: rgba(15, 53, 55, 0.55);
+    --surface-2: rgba(11, 42, 44, 0.85);
+    --text: #E8FFFA;
+    --text-dim: #7FA8A4;
+    --text-muted: #4F7773;
+    --up: #4ADE80;
+    --down: #F87171;
+    --shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: radial-gradient(ellipse at top, #0F3537 0%, #061E20 60%, #03100F 100%);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+    scrollbar-gutter: stable;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(151,252,228,0.08), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(80,210,193,0.06), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+  .logo-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--hl-teal);
+    box-shadow: 0 0 16px var(--hl-teal);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+  .brand h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .brand .sub { font-size: 12px; color: var(--text-dim); font-weight: 400; }
+
+  .meta { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(151,252,228,0.04);
+    border: 1px solid rgba(151,252,228,0.10);
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .pill b { color: var(--text); font-weight: 600; }
+  .pill .label { color: var(--text-muted); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+  #last-updated { font-size: 12px; color: var(--text-muted); }
+
+  .top-nav-row { display: flex; justify-content: flex-start; margin: -8px 0 24px; }
+  @media (max-width: 768px) { .top-nav-row { margin: 0 0 16px; justify-content: center; } }
+  .top-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(151,252,228,0.04);
+    border: 1px solid rgba(151,252,228,0.10);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .nav-link {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+  .nav-link:hover { color: var(--hl-teal); }
+  .nav-link.active {
+    color: var(--bg-0);
+    background: var(--hl-teal);
+    box-shadow: 0 0 14px rgba(151, 252, 228, 0.30);
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--hl-teal-border);
+    border-radius: 16px;
+    padding: 18px 18px 4px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow);
+  }
+  .panel h2 {
+    font-size: 14px;
+    color: var(--hl-teal);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel h2 .count {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .table-wrap { overflow-x: auto; }
+  table.wide {
+    width: auto;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  table.wide th {
+    text-align: right;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(151,252,228,0.12);
+    white-space: nowrap;
+  }
+  table.wide th:first-child, table.wide td:first-child { text-align: left; }
+  table.wide td {
+    text-align: right;
+    padding: 14px 18px 14px 12px;
+    border-bottom: 1px solid rgba(151,252,228,0.06);
+    white-space: nowrap;
+  }
+  table.wide th { padding-right: 18px; padding-left: 12px; }
+  table.wide th:last-child, table.wide td:last-child { padding-right: 12px; }
+  table.wide tr:last-child td { border-bottom: none; }
+  table.wide tr:hover td { background: rgba(151,252,228,0.03); }
+
+  .tk { display: flex; align-items: center; gap: 10px; }
+  .tk-icon {
+    min-width: 44px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--hl-teal-soft), rgba(80,210,193,0.04));
+    border: 1px solid var(--hl-teal-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--hl-teal);
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .tk-icon.kind-index { color: var(--hl-teal); }
+  .tk-icon.kind-etf {
+    color: #c8b0ff;
+    background: linear-gradient(135deg, rgba(180,140,255,0.10), rgba(180,140,255,0.03));
+    border-color: rgba(180,140,255,0.25);
+  }
+  .tk-icon.kind-stock {
+    color: #ffc375;
+    background: linear-gradient(135deg, rgba(255,180,90,0.10), rgba(255,180,90,0.03));
+    border-color: rgba(255,180,90,0.25);
+  }
+  .tk-name { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+  .tk-kr { font-weight: 600; font-size: 13px; color: var(--text); }
+  .tk-symbol { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+  .tk-symbol a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .tk-symbol a:hover { color: var(--hl-teal); }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(151,252,228,0.05);
+    border: 1px solid rgba(151,252,228,0.15);
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+  .badge.stock { color: var(--hl-teal-dim); border-color: rgba(151,252,228,0.20); }
+  .badge.index { color: #F5C26B; border-color: rgba(245,194,107,0.30); background: rgba(245,194,107,0.06); }
+  .badge.etf { color: #9F8CFF; border-color: rgba(159,140,255,0.30); background: rgba(159,140,255,0.06); }
+
+  .num { font-weight: 500; }
+  .num-strong { font-weight: 600; color: var(--text); }
+  .num-dim { color: var(--text-dim); }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .flat { color: var(--text-muted); }
+
+  .gap-cell { font-weight: 600; }
+
+  .skel {
+    display: inline-block;
+    color: transparent !important;
+    background: linear-gradient(90deg, rgba(151,252,228,0.06), rgba(151,252,228,0.14), rgba(151,252,228,0.06));
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: 4px;
+    min-width: 50px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+
+  .info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    padding: 12px 18px;
+    background: rgba(151,252,228,0.03);
+    border: 1px solid rgba(151,252,228,0.08);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .info-row b { color: var(--text); font-weight: 600; }
+  .info-row .sep { color: var(--text-muted); opacity: 0.5; }
+
+  /* === 카드형 가격 표시 (미니멀, 행 그룹) === */
+  .combined-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .pc-section { display: flex; flex-direction: column; gap: 6px; }
+  .pc-section-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding-left: 2px;
+  }
+  .pc-section .pc-row-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pc-section .pc-row-grid > .pro-card { flex: 0 0 210px; }
+  @media (max-width: 1200px) {
+    .pc-section .pc-row-grid > .pro-card { flex: 0 0 calc((100% - 32px) / 5); }
+  }
+  @media (max-width: 900px) {
+    .pc-section .pc-row-grid > .pro-card { flex: 0 0 calc((100% - 24px) / 4); }
+  }
+  @media (max-width: 700px) {
+    .pc-section .pc-row-grid > .pro-card { flex: 0 0 calc((100% - 16px) / 3); }
+  }
+  @media (max-width: 480px) {
+    .pc-section .pc-row-grid > .pro-card { flex: 1 1 100%; }
+  }
+  .pro-card {
+    background: var(--surface);
+    border: 1px solid rgba(151, 252, 228, 0.10);
+    border-radius: 10px;
+    padding: 9px 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+  }
+  .pro-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--hl-teal), transparent);
+    opacity: 0.30;
+  }
+  .pro-card .pc-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pro-card .pc-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pro-card .pc-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .pro-card .pc-nxt-tag {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    border-radius: 4px;
+    color: var(--hl-teal);
+    background: rgba(151, 252, 228, 0.12);
+    border: 1px solid var(--hl-teal-border);
+  }
+  .pro-card .pc-chg {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.05;
+  }
+  .pro-card .pc-chg.up   { color: var(--up); }
+  .pro-card .pc-chg.down { color: var(--down); }
+  .pro-card .pc-chg.flat { color: var(--text-muted); }
+
+  /* 저가-고가 위치 바 */
+  .pro-card .pc-range {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 2px;
+  }
+  .pro-card .pc-bar {
+    position: relative;
+    height: 4px;
+    background: rgba(151, 252, 228, 0.07);
+    border-radius: 2px;
+  }
+  /* 저가-현재가 구간을 옅은 색으로 (progress 느낌) */
+  .pro-card .pc-bar-range {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 0;
+    background: rgba(151, 252, 228, 0.14);
+    border-radius: 2px;
+  }
+  .pro-card .pc-bar-range.up   { background: rgba(74, 222, 128, 0.18); }
+  .pro-card .pc-bar-range.down { background: rgba(248, 113, 113, 0.18); }
+  .pro-card .pc-bar-range.flat { background: rgba(127, 168, 164, 0.14); }
+  /* 시가→현재가 구간 진한 색 */
+  .pro-card .pc-bar-fill {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: rgba(151, 252, 228, 0.35);
+    border-radius: 2px;
+  }
+  .pro-card .pc-bar-fill.up   { background: rgba(74, 222, 128, 0.45); }
+  .pro-card .pc-bar-fill.down { background: rgba(248, 113, 113, 0.45); }
+  .pro-card .pc-bar-fill.flat { background: rgba(127, 168, 164, 0.30); }
+  .pro-card .pc-bar-marker {
+    position: absolute;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--hl-teal);
+    box-shadow: 0 0 6px rgba(151, 252, 228, 0.6);
+    transform: translate(-50%, -50%);
+  }
+  .pro-card .pc-bar-marker.down { background: var(--down); box-shadow: 0 0 6px rgba(248, 113, 113, 0.6); }
+  .pro-card .pc-bar-marker.up   { background: var(--up);   box-shadow: 0 0 6px rgba(74, 222, 128, 0.6); }
+  .pro-card .pc-bar-tick {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 1px;
+    background: rgba(232, 255, 250, 0.55);
+    transform: translateX(-0.5px);
+    pointer-events: none;
+  }
+  .pro-card .pc-bar-tick.nav {
+    width: 2px;
+    background: var(--hl-teal);
+    box-shadow: 0 0 4px rgba(151, 252, 228, 0.7);
+    pointer-events: auto;
+  }
+  /* ETF 페이지 전용 — 종목별(삼성/하닉) 2열, 운용사별(KODEX/TIGER) 행 */
+  #etf-cards .etf-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 20px;
+  }
+  @media (max-width: 768px) {
+    #etf-cards .etf-grid { grid-template-columns: 1fr; gap: 12px; }
+  }
+  #etf-cards .etf-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  #etf-cards .etf-col-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--hl-teal);
+    letter-spacing: -0.01em;
+    padding: 2px 2px 0;
+  }
+  #etf-cards .etf-col-head::before {
+    content: '';
+    width: 9px; height: 9px;
+    border-radius: 2px;
+    background: var(--hl-teal);
+    box-shadow: 0 0 8px rgba(151,252,228,0.5);
+  }
+  #etf-cards .etf-col-head .u-chg {
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+  #etf-cards .etf-col-head .u-chg.up   { color: var(--up); }
+  #etf-cards .etf-col-head .u-chg.down { color: var(--down); }
+  #etf-cards .etf-col-head .u-chg.flat { color: var(--text-muted); }
+  #etf-cards .etf-col-head .uline {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0;
+    margin-left: auto;
+  }
+  #etf-cards .etf-card {
+    padding: 18px 22px 20px;
+    border-radius: 16px;
+  }
+  .etf-card .etf-card-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+  }
+  .etf-card .etf-issuer {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    padding: 3px 10px;
+    border-radius: 6px;
+    background: rgba(151,252,228,0.10);
+    border: 1px solid var(--hl-teal-border);
+    color: var(--hl-teal);
+  }
+  .etf-card .etf-issuer.tiger {
+    color: #ffc375;
+    background: rgba(255,180,90,0.10);
+    border-color: rgba(255,180,90,0.28);
+  }
+  .etf-card .etf-issuer.plus {
+    color: #ff9eb1;
+    background: rgba(255,120,150,0.10);
+    border-color: rgba(255,120,150,0.28);
+  }
+  .etf-card .etf-issuer.sol {
+    color: #8fd0ff;
+    background: rgba(110,180,255,0.10);
+    border-color: rgba(110,180,255,0.28);
+  }
+  .etf-card .etf-lev {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+  .etf-card.inv2x .etf-lev { color: #ff9eb1; }
+  .etf-card.inv2x { border-top: 1px solid rgba(255,120,150,0.22); }
+  #etf-cards .etf-card .pc-price {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+  #etf-cards .etf-card .pc-price .won {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-left: 4px;
+    letter-spacing: 0;
+  }
+  #etf-cards .etf-card .pc-chg-line {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  #etf-cards .etf-card .pc-chg-line.up   { color: var(--up); }
+  #etf-cards .etf-card .pc-chg-line.down { color: var(--down); }
+  #etf-cards .etf-card .pc-chg-line.flat { color: var(--text-muted); }
+  #etf-cards .etf-card .pc-chg-line .arrow { font-size: 12px; }
+  #etf-cards .etf-card .pc-chg-line .sep { color: var(--text-muted); font-weight: 400; opacity: 0.6; }
+  #etf-cards .etf-card .pc-chg-line .dim {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .etf-card .etf-top-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .etf-card .etf-disp {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .etf-card .etf-disp .lbl {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .etf-card .etf-disp .val {
+    font-size: 26px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .etf-card .etf-disp .val.chg.up   { color: var(--up); }
+  .etf-card .etf-disp .val.chg.down { color: var(--down); }
+  .etf-card .etf-disp .val.chg.flat { color: var(--text-muted); }
+  #etf-cards .etf-card .pc-range { margin-top: 18px; }
+  #etf-cards .etf-card .pc-bar { height: 6px; }
+  #etf-cards .etf-card .pc-bar.disp-bar { height: 8px; }
+  #etf-cards .etf-card .pc-range-labels { font-size: 11px; margin-top: 6px; }
+  .disp-bar .disp-zero {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 50%;
+    width: 1px;
+    background: rgba(232, 255, 250, 0.5);
+    transform: translateX(-0.5px);
+    pointer-events: none;
+  }
+  .pro-card .pc-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+  .pro-card .pc-range-labels .lbl { opacity: 0.55; margin-right: 3px; }
+
+  .pro-card.empty { opacity: 0.45; padding: 12px; font-size: 12px; }
+
+  @media (max-width: 480px) {
+    .combined-cards { grid-template-columns: 1fr 1fr; }
+    .pro-card .pc-price { font-size: 18px; }
+  }
+
+  footer {
+    margin-top: 32px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  footer a { color: var(--hl-teal-dim); text-decoration: none; }
+  footer a:hover { color: var(--hl-teal); }
+
+  @media (max-width: 768px) {
+    .container { padding: 20px 12px 32px; }
+    .panel { padding: 14px 12px 4px; border-radius: 12px; }
+    table.wide { font-size: 12px; }
+    table.wide td { padding: 12px 8px; }
+    table.wide th { padding: 8px; font-size: 10px; }
+    .tk-icon { width: 28px; height: 28px; font-size: 9px; }
+    .tk-symbol { font-size: 12px; }
+  }
+
+  /* Top-nav: 한글 단어 끊김 방지 + 모바일 가로 스크롤 */
+  .top-nav-row { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .top-nav-row::-webkit-scrollbar { display: none; }
+  .top-nav { flex-wrap: nowrap; }
+  .nav-link { white-space: nowrap; word-break: keep-all; flex-shrink: 0; }
+  @media (max-width: 768px) {
+    .top-nav-row { justify-content: flex-start; padding: 0 4px; }
+  }
+
+  /* 현재 시각 + 장 시간대 막대 */
+  .clock-row {
+    width: 100%;
+    margin: 0 auto 14px;
+    padding: 12px 18px 14px;
+    background: rgba(151,252,228,0.03);
+    border: 1px solid rgba(151,252,228,0.10);
+    border-radius: 14px;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+  }
+  .clock-head {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .clock-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(151,252,228,0.18);
+    color: var(--text-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.25s ease;
+    font-size: 12px;
+    padding: 0;
+  }
+  .clock-toggle:hover { background: rgba(151,252,228,0.10); color: var(--hl-teal); }
+  .clock-toggle .chev { transition: transform 0.25s ease; display: inline-block; }
+  .clock-row.collapsed .clock-toggle .chev { transform: rotate(-180deg); }
+  .clock-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.2s ease, margin-top 0.25s ease;
+    max-height: 200px;
+    opacity: 1;
+  }
+  .clock-row.collapsed .clock-body {
+    max-height: 0;
+    opacity: 0;
+    margin-top: -10px;
+  }
+  .clock-row.collapsed { padding-bottom: 12px; }
+  .clock-label { color: var(--text-dim); font-size: 12px; }
+  .clock-value { color: var(--hl-teal); font-size: 32px; font-weight: 700; letter-spacing: 0.02em; }
+  .clock-session {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .clock-session.kr { color: var(--hl-teal); border-color: rgba(151,252,228,0.30); background: rgba(151,252,228,0.08); }
+  .clock-session.us { color: #ffc375; border-color: rgba(255,180,90,0.30); background: rgba(255,180,90,0.08); }
+  .clock-session.nxt { color: #c8b0ff; border-color: rgba(180,140,255,0.30); background: rgba(180,140,255,0.08); }
+
+  .market-bar {
+    position: relative;
+    height: 14px;
+    border-radius: 7px;
+    background: rgba(255,255,255,0.04);
+    overflow: visible;
+  }
+  .market-bar .seg { position: absolute; top: 0; bottom: 0; }
+  .market-bar .seg.kr {
+    background: linear-gradient(180deg, rgba(151,252,228,0.55), rgba(151,252,228,0.30));
+    box-shadow: inset 0 0 0 1px rgba(151,252,228,0.18);
+  }
+  .market-bar .seg.us {
+    background: linear-gradient(180deg, rgba(255,180,90,0.55), rgba(255,180,90,0.30));
+    box-shadow: inset 0 0 0 1px rgba(255,180,90,0.18);
+  }
+  .market-bar .seg.nxt {
+    background: linear-gradient(180deg, rgba(180,140,255,0.45), rgba(180,140,255,0.22));
+    box-shadow: inset 0 0 0 1px rgba(180,140,255,0.18);
+  }
+  .market-bar .past-mask {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1;
+    pointer-events: none;
+    transition: width 0.6s linear;
+    border-top-left-radius: 7px;
+    border-bottom-left-radius: 7px;
+  }
+  .market-bar .seg.kr:first-of-type { border-top-left-radius: 7px; border-bottom-left-radius: 7px; }
+  .market-bar .seg.us.us-late { border-top-right-radius: 7px; border-bottom-right-radius: 7px; }
+  .market-bar .seg.us.us-early { border-top-left-radius: 7px; border-bottom-left-radius: 7px; }
+  .market-bar .marker {
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    width: 2px;
+    margin-left: -1px;
+    background: #fff;
+    border-radius: 2px;
+    transition: left 0.6s linear;
+    z-index: 2;
+    animation: markerPulse 2.2s ease-in-out infinite;
+  }
+  @keyframes markerPulse {
+    0%, 100% {
+      box-shadow: 0 0 8px rgba(255,255,255,0.9), 0 0 18px rgba(255,255,255,0.55), 0 0 32px rgba(255,255,255,0.25);
+      opacity: 1;
+    }
+    50% {
+      box-shadow: 0 0 4px rgba(255,255,255,0.5), 0 0 8px rgba(255,255,255,0.25), 0 0 14px rgba(255,255,255,0.10);
+      opacity: 0.55;
+    }
+  }
+  .market-bar .ticks {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px); height: 12px;
+    pointer-events: none;
+  }
+  .market-bar .ticks span {
+    position: absolute; transform: translateX(-50%); font-size: 10px;
+    color: var(--text-muted); font-variant-numeric: tabular-nums;
+  }
+  .clock-legend {
+    margin-top: 22px;
+    display: flex; justify-content: center; gap: 14px;
+    font-size: 11px; color: var(--text-dim);
+  }
+  .clock-legend .dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 2px; margin-right: 5px; vertical-align: middle;
+  }
+  .clock-legend .dot.kr { background: rgba(151,252,228,0.6); }
+  .clock-legend .dot.us { background: rgba(255,180,90,0.6); }
+  .clock-legend .dot.nxt { background: rgba(180,140,255,0.55); }
+  .clock-legend .dot.off { background: rgba(255,255,255,0.16); }
+  @media (max-width: 768px) {
+    .clock-row { padding: 10px 14px 12px; }
+    .clock-value { font-size: 26px; }
+    .clock-head { flex-wrap: wrap; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a class="brand" href="/">
+        <span class="logo-dot"></span>
+        <div>
+          <h1>raoni.xyz · ETF</h1>
+          <div class="sub">단일종목 레버리지·인버스 ETF · NAV · 괴리율</div>
+        </div>
+      </a>
+      <div class="meta">
+        <span id="last-updated">···</span>
+      </div>
+    </header>
+
+    <nav class="top-nav-row" data-nav></nav>
+  <script src="/assets/nav.js?v=9" defer></script>
+
+    <div class="clock-row collapsed" id="clock-row">
+      <div class="clock-head">
+        <span class="clock-label">현재 (KST)</span>
+        <span class="clock-value" id="clock-time">--:--:--</span>
+        <span class="clock-session" id="clock-session">—</span>
+        <button type="button" class="clock-toggle" id="clock-toggle" aria-label="시간 패널 펴기">
+          <span class="chev">▾</span>
+        </button>
+      </div>
+      <div class="clock-body" id="clock-body">
+        <div class="market-bar">
+          <div class="seg us us-early" id="seg-us-early"></div>
+          <div class="seg nxt" id="seg-nxt-pre"></div>
+          <div class="seg kr" id="seg-kr"></div>
+          <div class="seg nxt" id="seg-nxt-late"></div>
+          <div class="seg us us-late" id="seg-us-late"></div>
+          <div class="past-mask" id="bar-past" style="width:0"></div>
+          <div class="marker" id="bar-marker" style="left:0"></div>
+          <div class="ticks">
+            <span style="left:0%">00</span>
+            <span style="left:25%">06</span>
+            <span style="left:50%">12</span>
+            <span style="left:75%">18</span>
+            <span style="left:100%">24</span>
+          </div>
+        </div>
+        <div class="clock-legend">
+          <span><i class="dot kr"></i>KR 정규 09:00–15:30</span>
+          <span><i class="dot nxt"></i>NXT 08:00–09:00 · 15:30–20:00</span>
+          <span><i class="dot us"></i>US 정규 <span id="us-hours">22:30–05:00</span></span>
+          <span><i class="dot off"></i>휴장</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>단일종목 레버리지·인버스 ETF <span class="count">현재가 · NAV · 괴리율</span></h2>
+      <div class="combined-cards" id="etf-cards">
+        <div class="pro-card empty"><div class="num-dim">로딩 중…</div></div>
+      </div>
+    </div>
+
+    <footer>
+      <div>가격은 5초마다 갱신 · 국내 데이터: 네이버금융</div>
+      <div style="margin-top:8px; opacity:0.6">괴리율 = (시장가 − NAV) / NAV. 양수면 NAV보다 비싸게(프리미엄), 음수면 싸게(디스카운트) 거래 중입니다. 장중 NAV는 추정치(iNAV)입니다.</div>
+    </footer>
+  </div>
+
+<script>
+const ETF_API = '/api/etf';
+const REFRESH_MS = 5_000;
+
+const fmtKRW0 = (v) => v == null ? '—' : Math.round(v).toLocaleString('ko-KR');
+const fmtKRW = (v) => v == null ? '—' : v.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
+const fmtTrillion = (v) => {
+  if (v == null) return '—';
+  const tr = v / 1e12;
+  if (tr >= 100) return tr.toFixed(0) + '조';
+  if (tr >= 10) return tr.toFixed(1) + '조';
+  if (tr >= 1) return tr.toFixed(2) + '조';
+  return (v / 1e8).toFixed(0) + '억';
+};
+const fmtUSD = (v) => v == null ? '—' : '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtIdx = (v) => v == null ? '—' : v.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtPct = (v) => {
+  if (v == null || !isFinite(v)) return '—';
+  const sign = v >= 0 ? '+' : '';
+  return sign + v.toFixed(2) + '%';
+};
+const fmtCoef = (v) => v == null || !isFinite(v) ? '—' : v.toFixed(3);
+
+const klass = (v) => {
+  if (v == null || !isFinite(v) || v === 0) return 'flat';
+  return v > 0 ? 'up' : 'down';
+};
+
+function pctChange(now, prev) {
+  if (now == null || prev == null || !prev) return null;
+  return ((now - prev) / prev) * 100;
+}
+
+const KIND_LABELS = { index: '지수', etf: 'ETF', stock: '주식' };
+
+function hlHref(t) {
+  return `https://app.hyperliquid.xyz/trade/${encodeURIComponent(t)}`;
+}
+
+function badge(kind) {
+  const label = KIND_LABELS[kind] || '';
+  return `<span class="badge ${kind || ''}">${label}</span>`;
+}
+
+function renderEtfCard(it) {
+  const price = it.price ?? null;
+  const change = it.changePct ?? null;
+  const disp = it.disparity ?? null;
+  const prevClose = it.prevClose ?? null;
+  const changeAmt = (price != null && prevClose != null) ? price - prevClose : null;
+  const chgCls = klass(change);
+  const arrow = chgCls === 'up' ? '▲' : chgCls === 'down' ? '▼' : '—';
+  const issuer = (it.name || '').split(' ')[0] || 'ETF';
+  const issuerCls = issuer.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const isInv = it.type === 'inv2x';
+  const levLabel = isInv ? '단일종목 인버스 2X' : '단일종목 레버리지';
+
+  // 괴리율 막대: 0%(NAV) 중심, 좌=할인 / 우=할증 (±1% 스케일, 초과 시 끝으로 클램프)
+  let rangeHtml = '';
+  if (isFinite(disp)) {
+    const SCALE = 1;
+    const clamped = Math.max(-SCALE, Math.min(SCALE, disp));
+    const pos = 50 + (clamped / SCALE) * 50;
+    const center = 50;
+    const fillLeft = Math.min(center, pos);
+    const fillWidth = Math.abs(pos - center);
+    const cls = klass(disp);
+    const over = Math.abs(disp) > SCALE ? ' (범위 초과)' : '';
+    rangeHtml = `
+      <div class="pc-range disp-range">
+        <div class="pc-bar disp-bar">
+          <div class="pc-bar-fill ${cls}" style="left:${fillLeft.toFixed(1)}%; width:${fillWidth.toFixed(1)}%"></div>
+          <div class="disp-zero"></div>
+          <div class="pc-bar-marker ${cls}" style="left:${pos.toFixed(1)}%" title="괴리율 ${fmtPct(disp)}${over}"></div>
+        </div>
+        <div class="pc-range-labels">
+          <span><span class="lbl">할인 </span>-${SCALE}%</span>
+          <span class="lbl">0 · NAV</span>
+          <span>+${SCALE}%<span class="lbl"> 할증</span></span>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="pro-card etf-card${isInv ? ' inv2x' : ''}">
+      <div class="etf-card-head">
+        <span class="etf-issuer ${issuerCls}">${issuer}</span>
+        <span class="etf-lev">${levLabel}</span>
+      </div>
+      <div class="etf-top-row">
+        <div class="pc-price-block">
+          <div class="pc-price">₩${fmtKRW0(price)}<span class="won">원</span></div>
+          <div class="pc-chg-line ${chgCls}">
+            <span class="arrow">${arrow}</span>
+            <span class="amt">${changeAmt == null ? '—' : Math.abs(Math.round(changeAmt)).toLocaleString('ko-KR')}</span>
+            <span class="sep">|</span>
+            <span class="pct">${fmtPct(change)}</span>
+            <span class="dim">· 전일 대비</span>
+          </div>
+        </div>
+        <div class="etf-disp">
+          <span class="lbl">괴리율</span>
+          <span class="val chg ${klass(disp)}">${fmtPct(disp)}</span>
+        </div>
+      </div>
+      ${rangeHtml}
+    </div>
+  `;
+}
+
+function renderEtf(data) {
+  const root = document.getElementById('etf-cards');
+  const items = data.items || [];
+  if (!items.length) {
+    root.innerHTML = '<div class="pro-card empty"><div class="num-dim">데이터 없음</div></div>';
+    return;
+  }
+  // 종목(underlying)별로 묶어 2열 구성 — 왼쪽=삼성전자, 오른쪽=SK하이닉스
+  const groups = [];
+  const idx = {};
+  for (const it of items) {
+    const key = it.underlying || '기타';
+    if (!(key in idx)) { idx[key] = groups.length; groups.push({ underlying: key, items: [] }); }
+    groups[idx[key]].items.push(it);
+  }
+
+  const underlyings = data.underlyings || {};
+  root.innerHTML = `
+    <div class="etf-grid">
+      ${groups.map(g => {
+        const u = underlyings[g.underlying] || {};
+        const uChg = u.changePct ?? null;
+        const uCls = klass(uChg);
+        const uArrow = uCls === 'up' ? '▲' : uCls === 'down' ? '▼' : '';
+        return `
+        <div class="etf-col">
+          <div class="etf-col-head">
+            <span class="cname">${g.underlying}</span>
+            <span class="u-chg ${uCls}">${uArrow}${fmtPct(uChg)}</span>
+            <span class="uline">레버리지 · 인버스 ETF</span>
+          </div>
+          ${g.items.map(renderEtfCard).join('')}
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderMeta(data) {
+  const ts = data.ts ? new Date(data.ts) : new Date();
+  document.getElementById('last-updated').textContent =
+    '마지막 갱신 ' + ts.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+let inflight = false;
+async function refresh() {
+  if (inflight) return;
+  inflight = true;
+  try {
+    const r = await fetch(ETF_API, { cache: 'no-store' });
+    const data = await r.json();
+    if (!data?.ok) {
+      console.warn('etf api error', data?.error);
+      return;
+    }
+    renderMeta(data);
+    renderEtf(data);
+  } catch (e) {
+    console.warn('refresh failed', e);
+  } finally {
+    inflight = false;
+  }
+}
+
+refresh();
+setInterval(refresh, REFRESH_MS);
+
+// 현재 시각 + 장 시간대 막대
+(function setupClock() {
+  const timeEl = document.getElementById('clock-time');
+  const sessionEl = document.getElementById('clock-session');
+  const markerEl = document.getElementById('bar-marker');
+  const pastEl = document.getElementById('bar-past');
+  const segKr = document.getElementById('seg-kr');
+  const segUsLate = document.getElementById('seg-us-late');
+  const segUsEarly = document.getElementById('seg-us-early');
+  const segNxtPre = document.getElementById('seg-nxt-pre');
+  const segNxtLate = document.getElementById('seg-nxt-late');
+  const usHoursEl = document.getElementById('us-hours');
+  if (!timeEl) return;
+
+  function nyInDst(d = new Date()) {
+    const utc = d.getTime();
+    const ny = new Date(d.toLocaleString('en-US', { timeZone: 'America/New_York' })).getTime();
+    const offsetH = Math.round((ny - utc) / 3600000);
+    return offsetH === -4;
+  }
+  function usMarketHoursKst() {
+    const dst = nyInDst();
+    return dst
+      ? { startH: 22.5, endH: 29.0, label: '22:30–05:00' }
+      : { startH: 23.5, endH: 30.0, label: '23:30–06:00' };
+  }
+
+  const KR_START = 9.0, KR_END = 15.5;
+  const NXT_PRE_START = 8.0, NXT_PRE_END = 9.0;
+  const NXT_LATE_START = 15.5, NXT_LATE_END = 20.0;
+  function pctH(h) { return (h / 24) * 100; }
+
+  function layoutSegments() {
+    segKr.style.left = pctH(KR_START) + '%';
+    segKr.style.width = pctH(KR_END - KR_START) + '%';
+    segNxtPre.style.left = pctH(NXT_PRE_START) + '%';
+    segNxtPre.style.width = pctH(NXT_PRE_END - NXT_PRE_START) + '%';
+    segNxtLate.style.left = pctH(NXT_LATE_START) + '%';
+    segNxtLate.style.width = pctH(NXT_LATE_END - NXT_LATE_START) + '%';
+    const us = usMarketHoursKst();
+    const usLateStart = pctH(us.startH);
+    segUsLate.style.left = usLateStart + '%';
+    segUsLate.style.width = (100 - usLateStart) + '%';
+    segUsEarly.style.left = '0%';
+    segUsEarly.style.width = pctH(us.endH - 24) + '%';
+    if (usHoursEl) usHoursEl.textContent = us.label;
+  }
+
+  function currentSessionInfo(kstHours) {
+    if (kstHours >= KR_START && kstHours < KR_END) return { cls: 'kr', label: 'KR 정규' };
+    if ((kstHours >= NXT_PRE_START && kstHours < NXT_PRE_END) ||
+        (kstHours >= NXT_LATE_START && kstHours < NXT_LATE_END)) return { cls: 'nxt', label: 'NXT' };
+    const us = usMarketHoursKst();
+    if (kstHours >= us.startH || kstHours < (us.endH - 24)) return { cls: 'us', label: 'US 정규' };
+    return { cls: '', label: '휴장' };
+  }
+
+  function update() {
+    const now = new Date();
+    const kstMs = (now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds()) * 1000 + 9 * 3600000;
+    const kstSec = Math.floor((kstMs % 86400000) / 1000);
+    const hh = Math.floor(kstSec / 3600);
+    const mm = Math.floor((kstSec % 3600) / 60);
+    const ss = kstSec % 60;
+    timeEl.textContent =
+      String(hh).padStart(2, '0') + ':' +
+      String(mm).padStart(2, '0') + ':' +
+      String(ss).padStart(2, '0');
+    const kstHours = kstSec / 3600;
+    const frac = (kstHours / 24) * 100;
+    markerEl.style.left = frac + '%';
+    if (pastEl) pastEl.style.width = frac + '%';
+    const sess = currentSessionInfo(kstHours);
+    sessionEl.className = 'clock-session ' + sess.cls;
+    sessionEl.textContent = sess.label;
+  }
+
+  layoutSegments();
+  update();
+  setInterval(update, 1000);
+  setInterval(layoutSegments, 3600_000);
+
+  // 접기/펴기 — 기본 접힘
+  const clockRow = document.getElementById('clock-row');
+  const toggleBtn = document.getElementById('clock-toggle');
+  const STORE_KEY = 'raoni:clock-expanded';
+  if (clockRow && toggleBtn) {
+    if (localStorage.getItem(STORE_KEY) === '1') clockRow.classList.remove('collapsed');
+    toggleBtn.setAttribute(
+      'aria-label',
+      clockRow.classList.contains('collapsed') ? '시간 패널 펴기' : '시간 패널 접기'
+    );
+    toggleBtn.addEventListener('click', () => {
+      const collapsed = clockRow.classList.toggle('collapsed');
+      toggleBtn.setAttribute('aria-label', collapsed ? '시간 패널 펴기' : '시간 패널 접기');
+      try { localStorage.setItem(STORE_KEY, collapsed ? '0' : '1'); } catch {}
+    });
+  }
+})();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a28571270fade38e',t:'MTc4NjI2NDY3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4c7f809668034ce9845bd56fe18de384","r":1}' crossorigin="anonymous"></script>
+</body>
+</html>

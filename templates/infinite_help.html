@@ -3,135 +3,174 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>매매 전략 버전별 요약</title>
+    <title>매매 전략 버전별 요약 - James World</title>
+    <meta name="color-scheme" content="dark" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
     <style>
-        body {
-          background-color: #121212;
-          color: #ffffff;
-          font-family: Arial, sans-serif;
-          padding: 20px;
+        .help-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
         }
-
-        h2 {
-          text-align: center;
-          margin-bottom: 30px;
-          color: #B388FF;
+        .help-card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-
-        .card {
-          background-color: #1e1e1e;
-          border: 1px solid #333;
-          border-radius: 10px;
-          padding: 20px;
-          margin-bottom: 20px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        .help-card-title a {
+            color: var(--hl-blue);
+            text-decoration: none;
+            transition: all var(--transition-fast);
         }
-
-        .card h3 {
-          margin-top: 0;
-          color: #B388FF;
+        .help-card-title a:hover {
+            color: var(--text);
+            text-decoration: underline;
         }
-
-        .card p {
-          margin: 8px 0;
-          line-height: 1.5;
-          white-space: pre-line;
-          font-size: 12px; /* 원하는 크기로 조정 (예: 12px, 14px, 16px 등) */
-
+        .help-desc {
+            font-size: 0.85rem;
+            line-height: 1.65;
+            color: var(--text-main);
+            white-space: pre-line;
+            font-family: var(--font-sans);
+        }
+        .highlight-tag {
+            font-family: var(--font-mono);
+            color: var(--hl-blue);
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
-<h2>매매 전략 버전별 요약</h2>
+    <div class="container" style="max-width: 800px;">
+        <!-- Header -->
+        <header class="brand-header">
+            <a href="/infinite" class="brand-logo-group">
+                <div class="logo-dot"></div>
+                <div class="brand-title">
+                    매매 전략 가이드
+                    <span class="sub">라오어 무한매수법 버전별 가이드라인</span>
+                </div>
+            </a>
+            <div class="meta-pills">
+                <span class="pill"><span class="label">Guide:</span> <b>V1.0 ~ V3.0</b></span>
+            </div>
+        </header>
 
-<div class="card">
-    <h3>
-        <a href="https://cafe.naver.com/infinitebuying/59826"
-           target="_blank"
-           style="color: #B388FF; text-decoration: none;">
-            V3.0 (20분할, 수익률 강화)
-        </a>
-    </h3>
-    <p>
-        - 대상: TQQQ/SOXL
-        - 전반전 (진행률 < 50%)
-        매수: V2.2와 동일
-        매도: TQQQ +15%, SOXL +20%에 75% AFTER지정가
-        분할매도2: [⭐%]에 25% LOC매도
-        - 후반전 (진행률 ≥ 50%)
-        매수: V2.2와 동일
-        큰수LOC 매수: [⭐%] vs [현재가+15%] → 작은값에 1회치
-        매도 및 분할매도2 동일
-    </p>
-</div>
+        <!-- raoni.xyz Top Pill Navigation Bar -->
+        <div class="top-nav-row">
+            <nav class="top-nav">
+                <a href="/infinite" class="nav-link">대시보드</a>
+                <a href="/macro" class="nav-link">매크로 보드</a>
+                <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
+                <a href="/infinite_settings" class="nav-link">매매 설정</a>
+                <a href="/infinite_help" class="nav-link active">전략 가이드</a>
+            </nav>
+        </div>
 
-<div class="card">
+        <!-- Strategy Cards Container -->
+        <div class="help-grid">
+            <!-- V3.0 -->
+            <div class="glass-panel">
+                <div class="help-card-title">
+                    <a href="https://cafe.naver.com/infinitebuying/59826" target="_blank">
+                        🚀 V3.0 (20분할, 수익률 강화) ↗
+                    </a>
+                    <span class="badge badge-blue">추천 전략</span>
+                </div>
+                <div class="help-desc">
+                    • <b>대상 종목</b>: TQQQ / SOXL
+                    • <b>전반전 (진행률 &lt; 50%)</b>
+                      - 매수: V2.2와 동일 (평단LOC & 큰수LOC)
+                      - 매도: TQQQ +15%, SOXL +20%에 75% AFTER 지정가 매도
+                      - 분할매도2: [⭐%]에 25% LOC 매도
+                    • <b>후반전 (진행률 ≥ 50%)</b>
+                      - 매수: V2.2와 동일
+                      - 큰수LOC 매수: [⭐%] vs [현재가+15%] → 작은값에 1회치
+                      - 매도 및 분할매도2 동일
+                </div>
+            </div>
 
-    <h3><a href="https://cafe.naver.com/infinitebuying/52930"
-           target="_blank"
-           style="color: #B388FF; text-decoration: none;">
-        V2.2 (기본 전략)
-    </a></h3>
-    <p>
-        - 전반전 (진행률 < 50%)
-        평단LOC 매수: [평단] vs [현재가+15%] → 작은값 0.5회치
-        큰수LOC 매수: [⭐%] vs [현재가+15%] → 작은값 0.5회치
-        매도: 평단 +10%에 75% AFTER지정가
-        분할매도2: [⭐%]에 25% LOC매도
-        - 후반전 (진행률 ≥ 50%)
-        큰수LOC 매수 1회치 / 매도 동일
-    </p>
-</div>
+            <!-- V2.2 -->
+            <div class="glass-panel">
+                <div class="help-card-title">
+                    <a href="https://cafe.naver.com/infinitebuying/52930" target="_blank">
+                        ⚡ V2.2 (기본 표준 전략) ↗
+                    </a>
+                    <span class="badge badge-blue">표준 전략</span>
+                </div>
+                <div class="help-desc">
+                    • <b>전반전 (진행률 &lt; 50%)</b>
+                      - 평단LOC 매수: [평단] vs [현재가+15%] → 작은값 0.5회치
+                      - 큰수LOC 매수: [⭐%] vs [현재가+15%] → 작은값 0.5회치
+                      - 매도: 평단 +10%에 75% AFTER 지정가 매도
+                      - 분할매도2: [⭐%]에 25% LOC 매도
+                    • <b>후반전 (진행률 ≥ 50%)</b>
+                      - 큰수LOC 매수 1회치 / 매도 동일
+                </div>
+            </div>
 
-<div class="card">
-    <h3><a href="https://cafe.naver.com/infinitebuying/21554"
-           target="_blank"
-           style="color: #B388FF; text-decoration: none;">
-        V2.1 (기본 방식, 구버전)
-    </a></h3>
-    <p>
-        - 전반전 (진행률 < 50%)
-        평단LOC / 큰수LOC 각각 0.5회치
-        매도: 평단+10% 75% AFTER
-        분할매도1: +5% 25% LOC
-        - 후반전 (진행률 ≥ 50%)
-        평단LOC 1회치
-        매도: +10% 50% AFTER
-        분할매도1: +5% 25% AFTER
-        분할매도2: +0% 25% LOC
-    </p>
-</div>
+            <!-- V2.1 -->
+            <div class="glass-panel">
+                <div class="help-card-title">
+                    <a href="https://cafe.naver.com/infinitebuying/21554" target="_blank">
+                        📖 V2.1 (구버전 기본 방식) ↗
+                    </a>
+                </div>
+                <div class="help-desc">
+                    • <b>전반전 (진행률 &lt; 50%)</b>
+                      - 평단LOC / 큰수LOC 각각 0.5회치 매수
+                      - 매도: 평단 +10%에 75% AFTER 지정가
+                      - 분할매도1: +5%에 25% LOC 매도
+                    • <b>후반전 (진행률 ≥ 50%)</b>
+                      - 평단LOC 1회치
+                      - 매도: +10% 50% AFTER 지정가 / +5% 25% AFTER / +0% 25% LOC
+                </div>
+            </div>
 
-<div class="card">
-    <h3><a href="https://cafe.naver.com/infinitebuying/7398"
-           target="_blank"
-           style="color: #B388FF; text-decoration: none;">
-        V2.0
-    </a></h3>
+            <!-- V2.0 -->
+            <div class="glass-panel">
+                <div class="help-card-title">
+                    <a href="https://cafe.naver.com/infinitebuying/7398" target="_blank">
+                        🔹 V2.0 ↗
+                    </a>
+                </div>
+                <div class="help-desc">
+                    • 매수는 V2.1과 동일
+                    • 전반전: +10%에 전체 AFTER 지정가 매도
+                    • 후반전: +10%에 50% AFTER, +5%에 50% AFTER 지정가 매도
+                </div>
+            </div>
 
-    <p>
-        - 매수는 V2.1과 동일
-        - 전반전: +10%에 전체 AFTER
-        - 후반전: +10%에 50% AFTER, +5%에 50% AFTER
-    </p>
-</div>
+            <!-- V1.0 -->
+            <div class="glass-panel">
+                <div class="help-card-title">
+                    <a href="https://cafe.naver.com/infinitebuying/1975" target="_blank">
+                        🔹 V1.0 ↗
+                    </a>
+                </div>
+                <div class="help-desc">
+                    • 매도: 평단 +10%에 전체 AFTER 지정가 매도
+                </div>
+            </div>
 
-<div class="card">
-    <h3><a href="https://cafe.naver.com/infinitebuying/1975"
-           target="_blank"
-           style="color: #B388FF; text-decoration: none;">
-        V1.0
-    </a></h3>
-    <p>
-        - 매도: 평단 +10%에 전체 AFTER 지정가 매도
-    </p>
-</div>
+            <!-- 지니님 RPA 소개 -->
+            <div class="glass-panel text-center">
+                <a href="https://fragilememor.gitbook.io/genie-rpa/detail" target="_blank" class="btn btn-secondary" style="display: inline-flex; width: auto; padding: 0.6rem 1.5rem;">
+                    🔗 지니님 RPA 매매 자동화 소개 페이지 ↗
+                </a>
+            </div>
+        </div>
 
-<div class="card">
-    <a href="https://fragilememor.gitbook.io/genie-rpa/detail"
-       target="_blank"
-       style="color: #B388FF; text-decoration: none;">
-        지니님 RPA 소개 페이지
-    </a></div>
+        <div class="text-center" style="margin-top: 1.5rem;">
+            <a href="/infinite" class="back-link">← 무한매수 현황 대시보드로 돌아가기</a>
+        </div>
+    </div>
 </body>
 </html>

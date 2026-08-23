@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자산 상세 조회 - James World</title>
+    <meta name="color-scheme" content="dark" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .summary-card { background: rgba(30,30,40,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; text-align: center; }
+        .summary-card h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: #888; }
+        .summary-card .value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+        .summary-card .up { color: #00e676; }
+        .summary-card .down { color: #ff5252; }
+        .data-tables { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+        table { width: 100%; border-collapse: collapse; background: rgba(30,30,40,0.8); border-radius: 12px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { background: rgba(255,255,255,0.05); font-weight: 600; color: #aaa; text-align: center; }
+        td.text-left { text-align: left; }
+        .nav-link { display: inline-block; margin-bottom: 1rem; color: #4facfe; text-decoration: none; font-weight: 600; }
+        .nav-link:hover { text-decoration: underline; }
+        
+        .header-with-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .header-with-btn h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 1.25rem;
+        }
+        .toggle-btn {
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.4);
+            color: #4facfe;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .toggle-btn:hover {
+            background: rgba(79, 172, 254, 0.2);
+        }
+        .chart-container {
+            display: none; /* hidden by default */
+            background: rgba(30,30,40,0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <a href="/infinite" class="nav-link">← 메인 대시보드로 돌아가기</a>
+        <div class="header-with-btn">
+            <h1 style="color: #fff; margin: 0;">📊 일간 자산 추적 대시보드</h1>
+            <button class="toggle-btn" onclick="toggleChart('trendChartContainer')">📈 변동 차트 보기</button>
+        </div>
+
+        {% if error %}
+            <div style="color: #ff5252; margin-bottom: 1rem;">{{ error }}</div>
+        {% elif not data %}
+            <div style="color: #888;">데이터가 없습니다. HTS 매크로를 실행하여 데이터를 수집해주세요.</div>
+        {% else %}
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>총 평가 금액 ({{ data.today_str }})</h3>
+                    <div class="value">₩{{ "{:,.0f}".format(data.total_today) }}</div>
+                </div>
+                <div class="summary-card">
+                    <h3>일간 증감 (Yesterday)</h3>
+                    <div class="value {% if data.change_1d > 0 %}up{% elif data.change_1d < 0 %}down{% endif %}">
+                        {{ "▲" if data.change_1d > 0 else "▼" if data.change_1d < 0 else "" }} 
+                        ₩{{ "{:,.0f}".format(data.change_1d|abs) }}
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <h3>주간 증감 (7 Days)</h3>
+                    <div class="value {% if data.change_7d > 0 %}up{% elif data.change_7d < 0 %}down{% endif %}">
+                        {{ "▲" if data.change_7d > 0 else "▼" if data.change_7d < 0 else "" }} 
+                        ₩{{ "{:,.0f}".format(data.change_7d|abs) }}
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <h3>월간 증감 (30 Days)</h3>
+                    <div class="value {% if data.change_30d > 0 %}up{% elif data.change_30d < 0 %}down{% endif %}">
+                        {{ "▲" if data.change_30d > 0 else "▼" if data.change_30d < 0 else "" }} 
+                        ₩{{ "{:,.0f}".format(data.change_30d|abs) }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Asset Trend Chart (Hidden by default) -->
+            <div id="trendChartContainer" class="chart-container">
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="assetChart"></canvas>
+                </div>
+            </div>
+
+            <div class="data-tables">
+                <!-- 계좌별 요약 -->
+                <div>
+                    <div class="header-with-btn">
+                        <h2>💳 계좌별 자산 현황</h2>
+                        <button class="toggle-btn" onclick="toggleChart('accountPieChartContainer')">🥧 자산별 차트 보기</button>
+                    </div>
+                    
+                    <!-- Account Pie Chart (Hidden by default) -->
+                    <div id="accountPieChartContainer" class="chart-container" style="margin-bottom: 1rem;">
+                        <div style="height: 300px; width: 100%; display: flex; justify-content: center;">
+                            <canvas id="accountPieChart"></canvas>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>증권사</th>
+                                <th>계좌 유형</th>
+                                <th>계좌 번호</th>
+                                <th>총 매수 금액</th>
+                                <th>총 평가 금액</th>
+                                <th>평가 손익</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for acc in data.account_summary %}
+                            <tr>
+                                <td class="text-left" style="text-align: center;">{{ acc.broker }}</td>
+                                <td class="text-left">{{ acc.account_type }}</td>
+                                <td class="text-left">{{ acc.account_num }}</td>
+                                <td>₩{{ "{:,.0f}".format(acc.total_investment) }}</td>
+                                <td>₩{{ "{:,.0f}".format(acc.total_evaluation) }}</td>
+                                <td class="{% if acc.profit_loss > 0 %}up{% elif acc.profit_loss < 0 %}down{% endif %}" style="color: {{ '#00e676' if acc.profit_loss > 0 else '#ff5252' if acc.profit_loss < 0 else '#fff' }}">
+                                    ₩{{ "{:,.0f}".format(acc.profit_loss) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 종목별 요약 -->
+                <div>
+                    <h2 style="color: #fff; font-size: 1.25rem; margin-bottom: 1rem;">📦 종목별 자산 현황</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>종목명</th>
+                                <th>보유 수량</th>
+                                <th>총 평가 금액</th>
+                                <th>평가 손익</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tk in data.ticker_summary %}
+                            <tr>
+                                <td class="text-left">{{ tk.ticker }}</td>
+                                <td>{{ "{:,.2f}".format(tk.quantity) }}</td>
+                                <td>₩{{ "{:,.0f}".format(tk.total_evaluation) }}</td>
+                                <td style="color: {{ '#00e676' if tk.profit_loss > 0 else '#ff5252' if tk.profit_loss < 0 else '#fff' }}">
+                                    ₩{{ "{:,.0f}".format(tk.profit_loss) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 계좌별 상세 주식 현황 -->
+            <div style="margin-top: 2rem;">
+                <h2 style="color: #fff; font-size: 1.25rem; margin-bottom: 1rem;">🔎 계좌별 주식 상세 현황</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>계좌 정보</th>
+                            <th>종목명</th>
+                            <th>보유 수량</th>
+                            <th>평균 단가</th>
+                            <th>현재가</th>
+                            <th>매수 금액</th>
+                            <th>평가 금액</th>
+                            <th>평가 손익</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data.detailed_list %}
+                        <tr>
+                            <td class="text-left" style="color:#aaa;">{{ row.broker }} | {{ row.account_type }}<br><small>{{ row.account_num }}</small></td>
+                            <td class="text-left" style="font-weight:600; color:#fff;">{{ row.ticker }}</td>
+                            <td>{{ "{:,.2f}".format(row.quantity) }}</td>
+                            <td>₩{{ "{:,.0f}".format(row.average_price) }}</td>
+                            <td>₩{{ "{:,.0f}".format(row.current_price) }}</td>
+                            <td>₩{{ "{:,.0f}".format(row.total_investment) }}</td>
+                            <td>₩{{ "{:,.0f}".format(row.total_evaluation) }}</td>
+                            <td style="color: {{ '#00e676' if row.profit_loss > 0 else '#ff5252' if row.profit_loss < 0 else '#fff' }}">
+                                ₩{{ "{:,.0f}".format(row.profit_loss) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <script>
+                // Chart Toggle Logic
+                function toggleChart(containerId) {
+                    const el = document.getElementById(containerId);
+                    if (el.style.display === 'none' || el.style.display === '') {
+                        el.style.display = 'block';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+
+                // --- 1. Total Asset Trend Chart ---
+                const trendCtx = document.getElementById('assetChart').getContext('2d');
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ data.chart_dates | tojson }},
+                        datasets: [{
+                            label: '총 자산 평가 금액',
+                            data: {{ data.chart_totals | tojson }},
+                            borderColor: '#4facfe',
+                            backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#fff',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#aaa' } },
+                            y: { 
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: { 
+                                    color: '#aaa',
+                                    callback: function(value) { return '₩' + value.toLocaleString(); }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // --- 2. Account Asset Distribution Pie Chart ---
+                const accountData = {{ data.account_summary | tojson }};
+                const pieLabels = accountData.map(acc => acc.account_type + ' (' + acc.broker + ')');
+                const pieValues = accountData.map(acc => acc.total_evaluation);
+                
+                const pieCtx = document.getElementById('accountPieChart').getContext('2d');
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: pieLabels,
+                        datasets: [{
+                            data: pieValues,
+                            backgroundColor: [
+                                '#4facfe', '#00f2fe', '#f093fb', '#f5576c', 
+                                '#43e97b', '#38f9d7', '#fa709a', '#fee140'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { color: '#fff', font: { size: 12 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) { label += ': '; }
+                                        label += '₩' + context.raw.toLocaleString();
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            </script>
+        {% endif %}
+    </div>
+</body>
+</html>

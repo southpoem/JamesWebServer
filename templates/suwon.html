@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수원 삼성 블루윙즈 - 2026 매치 센터</title>
+    <meta name="description" content="수원 삼성 블루윙즈의 2026 시즌 실시간 K리그2 순위표 및 경기 결과/일정 안내. 호버 시 득점자 정보 수록.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Nanum+Gothic:wght@400;700;800&family=Jua&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --suwon-blue: #0054A6;
+            --suwon-white: #FFFFFF;
+            --suwon-red: #EF3E36;
+            --bg-dark: #0A0F1D;
+            --card-bg: #151D35;
+            --card-hover: #1D2849;
+            --border-color: #242F50;
+            --text-light: #F8FAFC;
+            --text-muted: #94A3B8;
+            --win-color: #00E676;
+            --draw-color: #B0BEC5;
+            --loss-color: #FF1744;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', 'Montserrat', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* 헤더 스타일 */
+        header.suwon-header {
+            background: linear-gradient(180deg, rgba(0, 84, 166, 0.4) 0%, rgba(10, 15, 29, 0) 100%);
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        /* 청백적 디자인을 형상화한 상단 라인 */
+        .color-strip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            display: flex;
+        }
+        .strip-blue { flex: 1; background-color: var(--suwon-blue); }
+        .strip-white { flex: 1; background-color: var(--suwon-white); }
+        .strip-red { flex: 1; background-color: var(--suwon-red); }
+
+        .logo-container {
+            margin-bottom: 15px;
+        }
+        
+        /* 수원 엠블럼을 본뜬 세련된 CSS 도형 로고 */
+        .suwon-emblem {
+            width: 70px;
+            height: 70px;
+            background-color: var(--suwon-blue);
+            border: 4px solid var(--suwon-white);
+            border-radius: 50% 50% 0 50%;
+            transform: rotate(-45deg);
+            display: inline-block;
+            box-shadow: 0 0 20px rgba(0, 84, 166, 0.6);
+            position: relative;
+        }
+        .suwon-emblem::before {
+            content: '🔵';
+            position: absolute;
+            transform: rotate(45deg);
+            font-size: 1.8rem;
+            top: 14px;
+            left: 14px;
+        }
+
+        header.suwon-header h1 {
+            font-family: 'Montserrat', 'Jua', sans-serif;
+            font-size: 2.2rem;
+            margin: 10px 0 5px 0;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #FFF 40%, #A5C9FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header.suwon-header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin: 0;
+            font-weight: bold;
+        }
+
+        /* 메인 콘텐츠 컨테이너 */
+        .main-container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            box-sizing: border-box;
+        }
+
+        /* 섹션 제목 */
+        .section-title {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.6rem;
+            color: var(--text-light);
+            border-left: 5px solid var(--suwon-blue);
+            padding-left: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ==================== 순위표 스타일 ==================== */
+        .standing-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+        }
+
+        .standing-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .standing-table th {
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 14px 10px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .standing-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(36, 47, 80, 0.5);
+            font-weight: bold;
+        }
+
+        /* 수원 삼성 하이라이트 행 */
+        .standing-table tr.suwon-row {
+            background: linear-gradient(90deg, rgba(0, 84, 166, 0.25) 0%, rgba(239, 62, 54, 0.05) 100%);
+            border-left: 4px solid var(--suwon-blue);
+            box-shadow: inset 0 0 10px rgba(0, 84, 166, 0.1);
+        }
+        
+        .standing-table tr.suwon-row td {
+            color: #FFF;
+        }
+
+        .suwon-badge-small {
+            background-color: var(--suwon-blue);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+        }
+
+        .rank-number {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+        
+        tr.suwon-row .rank-number {
+            color: #FFE082;
+            text-shadow: 0 0 8px rgba(255, 224, 130, 0.5);
+        }
+
+        .points {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            color: #00E676;
+        }
+
+        /* ==================== 경기 일정 및 결과 리스트 ==================== */
+        .matches-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .match-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: 0.8fr 1.5fr 2.2fr 1.2fr;
+            align-items: center;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .match-card:hover {
+            transform: translateX(5px);
+            background-color: var(--card-hover);
+            border-color: var(--suwon-blue);
+            box-shadow: 0 5px 15px rgba(0, 84, 166, 0.2);
+        }
+
+        /* 라운드 정보 */
+        .match-round {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--suwon-blue);
+        }
+
+        /* 경기 날짜 및 경기장 */
+        .match-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .match-date {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .match-stadium {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* 대진 팀 정보 */
+        .match-teams {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+        .away-indicator {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background-color: rgba(255, 255, 255, 0.08);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        /* 매치 스코어 */
+        .match-score-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .match-score {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+        
+        /* 결과 뱃지 */
+        .result-badge {
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-align: center;
+            width: 50px;
+            display: inline-block;
+        }
+        .badge-win {
+            background-color: rgba(0, 230, 118, 0.15);
+            color: var(--win-color);
+            border: 1px solid var(--win-color);
+        }
+        .badge-draw {
+            background-color: rgba(176, 190, 197, 0.15);
+            color: var(--draw-color);
+            border: 1px solid var(--draw-color);
+        }
+        .badge-loss {
+            background-color: rgba(255, 23, 68, 0.15);
+            color: var(--loss-color);
+            border: 1px solid var(--loss-color);
+        }
+        .badge-bye {
+            background-color: rgba(36, 47, 80, 0.4);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+        .badge-upcoming {
+            background-color: rgba(36, 47, 80, 0.5);
+            color: var(--text-muted);
+            border: 1px dashed var(--text-muted);
+            width: 70px;
+        }
+
+        /* 득점 정보 팁 아이콘 */
+        .hover-tip-icon {
+            display: none !important;
+        }
+
+        /* ==================== 득점 정보 호버 툴팁 카드 ==================== */
+        .match-details-tooltip {
+            position: absolute;
+            top: 50%;
+            left: calc(100% + 15px);
+            transform: translateY(-50%) scale(0.95);
+            width: 330px;
+            background-color: #121A30;
+            border: 2px solid var(--suwon-blue);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 99;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        /* 툴팁 화살표 */
+        .match-details-tooltip::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 100%;
+            transform: translateY(-50%);
+            border-width: 8px;
+            border-style: solid;
+            border-color: transparent var(--suwon-blue) transparent transparent;
+        }
+
+        /* 호버 시 활성화 */
+        .match-card:hover .match-details-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) scale(1);
+        }
+
+        .tooltip-title {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.15rem;
+            color: #FFD54F;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scorers-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .scorer-team {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .scorer-team-name {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .scorer-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.88rem;
+        }
+
+        .scorer-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+        
+        .scorer-item .time {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--suwon-blue);
+            font-weight: bold;
+        }
+
+        /* 매치 스탯 바 그래픽 */
+        .stats-section {
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        .stat-bar-container {
+            height: 6px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .stat-bar-home {
+            background-color: var(--suwon-blue);
+            height: 100%;
+        }
+
+        .stat-bar-away {
+            background-color: var(--suwon-red);
+            height: 100%;
+            margin-left: auto;
+        }
+
+        .match-comment {
+            font-size: 0.78rem;
+            color: #81C784;
+            background-color: rgba(129, 199, 132, 0.08);
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            line-height: 1.3;
+        }
+
+        /* ==================== 반응형 스타일 ==================== */
+        @media (max-width: 992px) {
+            /* 스크린이 작을 때는 툴팁이 밑에 배치되도록 설정 */
+            .match-card {
+                grid-template-columns: 1fr 1.5fr;
+                gap: 15px;
+                padding: 20px;
+            }
+            .match-meta, .match-score-container, .hover-tip-icon {
+                grid-column: span 1;
+            }
+            .match-round {
+                grid-column: span 2;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 5px;
+            }
+            .match-teams {
+                grid-column: span 2;
+            }
+
+            .match-details-tooltip {
+                position: static;
+                transform: none !important;
+                width: 100%;
+                opacity: 1;
+                visibility: visible;
+                display: none;
+                margin-top: 15px;
+                grid-column: span 2;
+                box-shadow: none;
+                border-color: var(--border-color);
+                background-color: rgba(10, 15, 29, 0.5);
+            }
+            .match-details-tooltip::before {
+                display: none;
+            }
+            .match-card:hover .match-details-tooltip {
+                display: block;
+            }
+            .hover-tip-icon {
+                grid-column: span 2;
+                text-align: center;
+                justify-content: center;
+                border-top: 1px solid var(--border-color);
+                padding-top: 8px;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="color-strip">
+        <div class="strip-blue"></div>
+        <div class="strip-white"></div>
+        <div class="strip-red"></div>
+    </div>
+
+    <header class="suwon-header">
+        <div class="logo-container">
+            <div class="suwon-emblem"></div>
+        </div>
+        <h1>SUWON SAMSUNG BLUEWINGS</h1>
+        <p>🔵⚪🔴 2026 K리그2 경기 센터 & 순위표 (이정효호)</p>
+    </header>
+
+    <div class="main-container">
+        
+        <!-- 실시간 순위표 섹션 -->
+        <section>
+            <h2 class="section-title">📊 2026 K리그2 실시간 순위 (7월 26일 현재 기준)</h2>
+            <div class="standing-card">
+                <table class="standing-table">
+                    <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>구단명</th>
+                            <th>경기수</th>
+                            <th>승점</th>
+                            <th>승</th>
+                            <th>무</th>
+                            <th>패</th>
+                            <th>득점</th>
+                            <th>실점</th>
+                            <th>득실차</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="rank-number">1</td>
+                            <td style="text-align: left; padding-left: 20px;">🔴 부산 아이파크</td>
+                            <td>18</td>
+                            <td class="points">36</td>
+                            <td>11</td>
+                            <td>3</td>
+                            <td>4</td>
+                            <td>36</td>
+                            <td>25</td>
+                            <td>+11</td>
+                        </tr>
+                        <!-- 2위 수원 삼성 (공동 선두) -->
+                        <tr class="suwon-row">
+                            <td class="rank-number">2</td>
+                            <td style="text-align: left; padding-left: 20px;">
+                                🔵 수원 삼성 블루윙즈
+                                <span class="suwon-badge-small">공동 선두</span>
+                            </td>
+                            <td>18</td>
+                            <td class="points">36</td>
+                            <td>11</td>
+                            <td>3</td>
+                            <td>4</td>
+                            <td>26</td>
+                            <td>15</td>
+                            <td>+11</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">3</td>
+                            <td style="text-align: left; padding-left: 20px;">🟡 수원 FC</td>
+                            <td>18</td>
+                            <td class="points">33</td>
+                            <td>9</td>
+                            <td>6</td>
+                            <td>3</td>
+                            <td>38</td>
+                            <td>24</td>
+                            <td>+14</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">4</td>
+                            <td style="text-align: left; padding-left: 20px;">⚪ 서울 이랜드 FC</td>
+                            <td>18</td>
+                            <td class="points">33</td>
+                            <td>10</td>
+                            <td>3</td>
+                            <td>5</td>
+                            <td>34</td>
+                            <td>24</td>
+                            <td>+10</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">5</td>
+                            <td style="text-align: left; padding-left: 20px;">🔵 대구 FC</td>
+                            <td>18</td>
+                            <td class="points">32</td>
+                            <td>9</td>
+                            <td>5</td>
+                            <td>4</td>
+                            <td>37</td>
+                            <td>25</td>
+                            <td>+12</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">6</td>
+                            <td style="text-align: left; padding-left: 20px;">🟠 화성 FC</td>
+                            <td>18</td>
+                            <td class="points">31</td>
+                            <td>9</td>
+                            <td>4</td>
+                            <td>5</td>
+                            <td>29</td>
+                            <td>21</td>
+                            <td>+8</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">7</td>
+                            <td style="text-align: left; padding-left: 20px;">🟢 김포 FC</td>
+                            <td>17</td>
+                            <td class="points">25</td>
+                            <td>6</td>
+                            <td>7</td>
+                            <td>4</td>
+                            <td>20</td>
+                            <td>19</td>
+                            <td>+1</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">8</td>
+                            <td style="text-align: left; padding-left: 20px;">🟡 충남 아산 FC</td>
+                            <td>18</td>
+                            <td class="points">24</td>
+                            <td>6</td>
+                            <td>6</td>
+                            <td>6</td>
+                            <td>26</td>
+                            <td>23</td>
+                            <td>+3</td>
+                        </tr>
+                        <tr>
+                            <td class="rank-number">9</td>
+                            <td style="text-align: left; padding-left: 20px;">🔴 경남 FC</td>
+                            <td>18</td>
+                            <td class="points">24</td>
+                            <td>6</td>
+                            <td>6</td>
+                            <td>6</td>
+                            <td>26</td>
+                            <td>26</td>
+                            <td>0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 경기 일정 및 결과 섹션 -->
+        <section>
+            <h2 class="section-title">📅 2026 K리그2 라운드별 경기 결과 (18R/19R 진행 완료)</h2>
+            <div class="matches-grid">
+
+                <!-- 1라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 01</div>
+                    <div class="match-meta">
+                        <span class="match-date">02.28 (토) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>서울 이랜드</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">2 - 1</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R1</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>박현빈</span><span class="time">41'</span></li>
+                                    <li class="scorer-item"><span>강현묵</span><span class="time">73'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">⚪ 서울 이랜드</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>박재용</span><span class="time">19'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>52% : 48%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 52%"></div>
+                                    <div class="stat-bar-away" style="width: 48%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>14 (6) : 9 (4)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 61%"></div>
+                                    <div class="stat-bar-away" style="width: 39%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">2026 K리그2 개막전 최다 관중(24,071명) 돌파! 박현빈과 강현묵의 골로 짜릿한 역전극을 연출합니다.</div>
+                    </div>
+                </div>
+
+                <!-- 2라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 02</div>
+                    <div class="match-meta">
+                        <span class="match-date">03.07 (토) 14:00</span>
+                        <span class="match-stadium">파주스타디움 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>파주 프런티어</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 1</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R2</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔴 파주 프런티어</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>김지현</span><span class="time">45+1'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>41% : 59%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 59%"></div>
+                                    <div class="stat-bar-home" style="width: 41%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>6 (2) : 13 (7)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 68%"></div>
+                                    <div class="stat-bar-home" style="width: 32%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">강현묵의 정밀 어시스트를 받아 김지현이 전반 막판 선제골을 꽂아넣으며 2연승을 챙겼습니다.</div>
+                    </div>
+                </div>
+
+                <!-- 3라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 03</div>
+                    <div class="match-meta">
+                        <span class="match-date">03.14 (토) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>전남 드래곤즈</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">2 - 0</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R3</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>헤이스</span><span class="time">47'</span></li>
+                                    <li class="scorer-item"><span>김민우</span><span class="time">89'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟡 전남 드래곤즈</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>56% : 44%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 56%"></div>
+                                    <div class="stat-bar-away" style="width: 44%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>12 (7) : 5 (2)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 71%"></div>
+                                    <div class="stat-bar-away" style="width: 29%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">이정효 감독 전술이 완벽히 가동되며 정호연의 명품 패스로 기회를 만들고 2-0 깔끔한 무실점 승리!</div>
+                    </div>
+                </div>
+
+                <!-- 4라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 04</div>
+                    <div class="match-meta">
+                        <span class="match-date">03.21 (토) 14:00</span>
+                        <span class="match-stadium">김해종합운동장 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>김해 FC</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 3</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R4</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟢 김해 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>김지현</span><span class="time">35'</span></li>
+                                    <li class="scorer-item"><span>일류첸코</span><span class="time">65'</span></li>
+                                    <li class="scorer-item"><span>브루노 실바</span><span class="time">85'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>39% : 61%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 61%"></div>
+                                    <div class="stat-bar-home" style="width: 39%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>5 (2) : 16 (9)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 76%"></div>
+                                    <div class="stat-bar-home" style="width: 24%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">일류첸코와 브루노 실바의 폭발적인 시너지로 김해 원정에서 3-0 완승을 따냅니다.</div>
+                    </div>
+                </div>
+
+                <!-- 5라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 05</div>
+                    <div class="match-meta">
+                        <span class="match-date">03.28 (토) 14:00</span>
+                        <span class="match-stadium">용인미르스타디움 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>용인 FC</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 1</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R5</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔴 용인 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>페신</span><span class="time">55'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>45% : 55%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 55%"></div>
+                                    <div class="stat-bar-home" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>7 (3) : 11 (5)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 61%"></div>
+                                    <div class="stat-bar-home" style="width: 39%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">브루노 실바의 어시스트를 페신이 결승골로 마무리지으며 개막 5연승 단독 선두 질주!</div>
+                    </div>
+                </div>
+
+                <!-- 6라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 06</div>
+                    <div class="match-meta">
+                        <span class="match-date">04.05 (일) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>충북 청주</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 0</span>
+                        <span class="result-badge badge-draw">무승부</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--draw-color)">R6</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 충북 청주</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>58% : 42%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 58%"></div>
+                                    <div class="stat-bar-away" style="width: 42%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>10 (4) : 5 (2)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 67%"></div>
+                                    <div class="stat-bar-away" style="width: 33%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">청주의 단단한 육탄 방어막을 허물지 못해 득점 없이 시즌 첫 무승부를 기록합니다.</div>
+                    </div>
+                </div>
+
+                <!-- 7라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 07</div>
+                    <div class="match-meta">
+                        <span class="match-date">04.12 (일) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>김포 FC</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 1</span>
+                        <span class="result-badge badge-loss">패배</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--loss-color)">R7</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟢 김포 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>이시헌</span><span class="time">60'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>55% : 45%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 55%"></div>
+                                    <div class="stat-bar-away" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>12 (5) : 7 (3)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 63%"></div>
+                                    <div class="stat-bar-away" style="width: 37%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">시종일관 공격을 퍼부었으나 김포 이시헌의 역습 골에 당해 아쉬운 시즌 첫 패배를 당합니다.</div>
+                    </div>
+                </div>
+
+                <!-- 8라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 08</div>
+                    <div class="match-meta">
+                        <span class="match-date">04.18 (토) 14:00</span>
+                        <span class="match-stadium">창원축구센터 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>경남 FC</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 1</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R8</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔴 경남 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>박지원</span><span class="time">55'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>43% : 57%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 57%"></div>
+                                    <div class="stat-bar-home" style="width: 43%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>8 (3) : 12 (6)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 60%"></div>
+                                    <div class="stat-bar-home" style="width: 40%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">일류첸코의 도움을 박지원이 강력한 오른발 슛으로 꽂아 넣으며 다시 연승 시동을 겁니다.</div>
+                    </div>
+                </div>
+
+                <!-- 9라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 09</div>
+                    <div class="match-meta">
+                        <span class="match-date">04.25 (토) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>부산 아이파크</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">3 - 2</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R9</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>헤이스</span><span class="time">12', 85'</span></li>
+                                    <li class="scorer-item"><span>김도연</span><span class="time">49'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔴 부산 아이파크</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>김희승</span><span class="time">30'</span></li>
+                                    <li class="scorer-item"><span>전성진</span><span class="time">70'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>51% : 49%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 51%"></div>
+                                    <div class="stat-bar-away" style="width: 49%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>15 (8) : 12 (6)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 56%"></div>
+                                    <div class="stat-bar-away" style="width: 44%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">역대급 대결! 헤이스의 기가 막힌 선제골 및 극적인 후반 결승골로 리그 1위를 굳힙니다.</div>
+                    </div>
+                </div>
+
+                <!-- 10라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 10</div>
+                    <div class="match-meta">
+                        <span class="match-date">05.03 (일) 14:00</span>
+                        <span class="match-stadium">수원종합운동장 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 FC</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">3 - 1</span>
+                        <span class="result-badge badge-loss">패배</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--loss-color)">R10</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟡 수원 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>프리조</span><span class="time">15'</span></li>
+                                    <li class="scorer-item"><span>최기윤</span><span class="time">45'</span></li>
+                                    <li class="scorer-item"><span>이시영</span><span class="time">78'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>고승범</span><span class="time">33'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>48% : 52%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 52%"></div>
+                                    <div class="stat-bar-home" style="width: 48%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>13 (7) : 9 (4)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 59%"></div>
+                                    <div class="stat-bar-away" style="width: 41%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">K리그2에서 마주한 '수원 더비'. 선제 실점 후 고승범이 동점을 만들었으나 역습 세 골에 무너집니다.</div>
+                    </div>
+                </div>
+
+                <!-- 11라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 11</div>
+                    <div class="match-meta">
+                        <span class="match-date">05.09 (토) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>대구 FC</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 0</span>
+                        <span class="result-badge badge-draw">무승부</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--draw-color)">R11</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 대구 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>50% : 50%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 50%"></div>
+                                    <div class="stat-bar-away" style="width: 50%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>9 (3) : 8 (3)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 53%"></div>
+                                    <div class="stat-bar-away" style="width: 47%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">김준홍 골키퍼의 선방 활약 속에 한 끝 차이로 득점 기회를 살리지 못해 0:0 무승부로 끝났습니다.</div>
+                    </div>
+                </div>
+
+                <!-- 12라운드 (휴식) -->
+                <div class="match-card" style="opacity: 0.7;">
+                    <div class="match-round">ROUND 12</div>
+                    <div class="match-meta">
+                        <span class="match-date">05.16 ~ 05.17</span>
+                        <span class="match-stadium">K리그2 휴식 라운드</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">-</span>
+                        <span>BYE (휴식)</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">-</span>
+                        <span class="result-badge badge-bye">휴식</span>
+                    </div>
+                    <div class="hover-tip-icon" style="opacity: 0;">-</div>
+                </div>
+
+                <!-- 13라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 13</div>
+                    <div class="match-meta">
+                        <span class="match-date">05.25 (월) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>천안 시티</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">3 - 2</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R13</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>송주훈</span><span class="time">20'</span></li>
+                                    <li class="scorer-item"><span>김도연</span><span class="time">45'</span></li>
+                                    <li class="scorer-item"><span>일류첸코</span><span class="time">73'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 천안 시티</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>이상준</span><span class="time">40'</span></li>
+                                    <li class="scorer-item"><span>이준호</span><span class="time">88'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>54% : 46%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 54%"></div>
+                                    <div class="stat-bar-away" style="width: 46%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>14 (6) : 9 (4)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 61%"></div>
+                                    <div class="stat-bar-away" style="width: 39%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">천안의 거센 추격을 뿌리치고 후반 73분 일류첸코의 화끈한 골로 3:2 격전의 승리를 장식합니다.</div>
+                    </div>
+                </div>
+
+                <!-- 14라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 14</div>
+                    <div class="match-meta">
+                        <span class="match-date">06.07 (일) 14:00</span>
+                        <span class="match-stadium">이순신종합운동장 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>충남 아산</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">2 - 1</span>
+                        <span class="result-badge badge-loss">패배</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--loss-color)">R14</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟡 충남 아산</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>데니손</span><span class="time">15'</span></li>
+                                    <li class="scorer-item"><span>은고이</span><span class="time">62'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>헤이스</span><span class="time">45'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>45% : 55%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 55%"></div>
+                                    <div class="stat-bar-home" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>9 (4) : 12 (5)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 57%"></div>
+                                    <div class="stat-bar-home" style="width: 43%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">헤이스의 헤더 동점골에도 불구, 후반 상대 역습 해결사 은고이에게 뼈아픈 실점을 헌납합니다.</div>
+                    </div>
+                </div>
+
+                <!-- 15라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 15</div>
+                    <div class="match-meta">
+                        <span class="match-date">06.14 (일) 14:00</span>
+                        <span class="match-stadium">화성종합경기타운 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>화성 FC</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">1 - 2</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R15</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟠 화성 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>플라나</span><span class="time">30'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>강현묵</span><span class="time">45'</span></li>
+                                    <li class="scorer-item"><span>일류첸코</span><span class="time">70'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>47% : 53%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 53%"></div>
+                                    <div class="stat-bar-home" style="width: 47%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>8 (3) : 11 (6)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 58%"></div>
+                                    <div class="stat-bar-home" style="width: 42%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">플라나에게 선제 실점했으나, 전반 강현묵의 골과 후반 일류첸코의 역전 폭격 골로 2-1 역전승을 거둡니다.</div>
+                    </div>
+                </div>
+
+                <!-- 16라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 16</div>
+                    <div class="match-meta">
+                        <span class="match-date">06.21 (일) 14:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>성남 FC</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">1 - 0</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R16</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>헤이스</span><span class="time">58'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟢 성남 FC</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>53% : 47%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 53%"></div>
+                                    <div class="stat-bar-away" style="width: 47%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>11 (5) : 6 (2)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 65%"></div>
+                                    <div class="stat-bar-away" style="width: 35%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">성남과의 '마계대전'. 헤이스의 통쾌한 오른발 중거리 슛이 골망을 가르며 승리했습니다.</div>
+                    </div>
+                </div>
+
+                <!-- 17라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 17</div>
+                    <div class="match-meta">
+                        <span class="match-date">06.28 (일) 14:00</span>
+                        <span class="match-stadium">안산와스타디움 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>안산 그리너스</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">2 - 1</span>
+                        <span class="result-badge badge-loss">패배</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--loss-color)">R17</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🟢 안산 그리너스</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>가브리엘 리마</span><span class="time">25'</span></li>
+                                    <li class="scorer-item"><span>김인성</span><span class="time">80'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>김정현</span><span class="time">45'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>40% : 60%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 60%"></div>
+                                    <div class="stat-bar-home" style="width: 40%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>6 (3) : 14 (5)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 70%"></div>
+                                    <div class="stat-bar-home" style="width: 30%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">안산 원정에서 아쉽게 패하며 1위 자리 경쟁에서 잠시 밀려나게 됩니다.</div>
+                    </div>
+                </div>
+
+                <!-- 18라운드 -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 18</div>
+                    <div class="match-meta">
+                        <span class="match-date">07.19 (일) 19:00</span>
+                        <span class="match-stadium">수원월드컵경기장 (홈)</span>
+                    </div>
+                    <div class="match-teams">
+                        <span>수원 삼성</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>파주 프런티어</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">0 - 0</span>
+                        <span class="result-badge badge-draw">무승부</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--draw-color)">R18</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔴 파주 프런티어</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>득점 없음</span><span class="time">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>57% : 43%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 57%"></div>
+                                    <div class="stat-bar-away" style="width: 43%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>13 (4) : 5 (1)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-home" style="width: 72%"></div>
+                                    <div class="stat-bar-away" style="width: 28%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">상대 골키퍼의 철벽 선방 릴레이에 모든 슈팅이 무력화되며 0:0 승점 1점에 그쳤습니다.</div>
+                    </div>
+                </div>
+
+                <!-- 19라운드 (가장 최근 경기) -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 19</div>
+                    <div class="match-meta">
+                        <span class="match-date">07.25 (토) 19:30</span>
+                        <span class="match-stadium">구덕운동장 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>부산 아이파크</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">1 - 4</span>
+                        <span class="result-badge badge-win">승리</span>
+                    </div>
+                    <div class="hover-tip-icon">골/기록 보기</div>
+
+                    <div class="match-details-tooltip">
+                        <div class="tooltip-title">
+                            <span>⚽ 득점 이력</span>
+                            <span style="font-size:0.75rem; color:var(--win-color)">R19</span>
+                        </div>
+                        <div class="scorers-section">
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔴 부산 아이파크</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>박혜성</span><span class="time">80'</span></li>
+                                </ul>
+                            </div>
+                            <div class="scorer-team">
+                                <span class="scorer-team-name">🔵 수원 삼성</span>
+                                <ul class="scorer-list">
+                                    <li class="scorer-item"><span>김도연</span><span class="time">25'</span></li>
+                                    <li class="scorer-item"><span>페신</span><span class="time">45'</span></li>
+                                    <li class="scorer-item"><span>일류첸코</span><span class="time">60'</span></li>
+                                    <li class="scorer-item"><span>이건희</span><span class="time">85'</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="stats-section">
+                            <div class="stat-row">
+                                <div class="stat-label"><span>점유율</span><span>44% : 56%</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 56%"></div>
+                                    <div class="stat-bar-home" style="width: 44%"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-label"><span>슈팅 (유효)</span><span>8 (4) : 17 (9)</span></div>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar-away" style="width: 68%"></div>
+                                    <div class="stat-bar-home" style="width: 32%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="match-comment">어제 치러진 1위 부산과의 선두 쟁탈전! 4골을 폭발시키는 무시무시한 화력 쇼로 4:1 승리, 공동 1위 탈환!</div>
+                    </div>
+                </div>
+
+                <!-- 20라운드 (경기 예정) -->
+                <div class="match-card">
+                    <div class="match-round">ROUND 20</div>
+                    <div class="match-meta">
+                        <span class="match-date">08.01 (토) 19:00</span>
+                        <span class="match-stadium">청주종합운동장 <span class="away-indicator">원정</span></span>
+                    </div>
+                    <div class="match-teams">
+                        <span>충북 청주</span>
+                        <span style="color:var(--text-muted)">vs</span>
+                        <span>수원 삼성</span>
+                    </div>
+                    <div class="match-score-container">
+                        <span class="match-score">vs</span>
+                        <span class="result-badge badge-upcoming">경기 예정</span>
+                    </div>
+                    <div class="hover-tip-icon" style="opacity: 0.5;">대기 중</div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

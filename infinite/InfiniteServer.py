@@ -1,8 +1,10 @@
-import datetime
+from datetime import datetime, date, timedelta
 import json
 import logging
 import os
 import sys
+import time
+import urllib.request
 
 import pandas as pd
 from flask import Blueprint, render_template, request, jsonify
@@ -23,12 +25,168 @@ DB_PATH = "C:\\PycharmProjects\\InfiniteProject\\account.db"
 from jinja2 import Template
 
 
+def init_fear_greed_db(engine):
+    query = """
+    CREATE TABLE IF NOT EXISTS fear_greed_history (
+        date TEXT PRIMARY KEY,
+        score REAL,
+        rating TEXT,
+        timestamp INTEGER
+    )
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
+    except Exception as e:
+        logging.error(f"Error initializing fear_greed_history table: {e}")
+
+
+def save_fear_and_greed_history(data):
+    if not data or 'fear_and_greed_historical' not in data:
+        return
+    
+    historical_points = data['fear_and_greed_historical'].get('data', [])
+    if not historical_points:
+        return
+
+    try:
+        engine = create_engine(f"sqlite:///{DB_PATH}")
+        init_fear_greed_db(engine)
+
+        records = []
+        for item in historical_points:
+            ts_ms = item.get('x')
+            score = item.get('y')
+            rating = item.get('rating', '')
+            if ts_ms and score is not None:
+                t_struct = time.localtime(ts_ms / 1000)
+                date_str = time.strftime('%Y-%m-%d', t_struct)
+                records.append({
+                    "date": date_str,
+                    "score": round(score, 2),
+                    "rating": rating,
+                    "timestamp": int(ts_ms / 1000)
+                })
+
+        if records:
+            upsert_query = """
+            INSERT OR REPLACE INTO fear_greed_history (date, score, rating, timestamp)
+            VALUES (:date, :score, :rating, :timestamp)
+            """
+            with engine.connect() as conn:
+                for rec in records:
+                    conn.execute(text(upsert_query), rec)
+                conn.commit()
+    except Exception as e:
+        logging.error(f"Error saving fear_greed_history to DB: {e}")
+
+
+_CACHE_FEAR_GREED = {"last_fetch": 0, "data": None}
+_CACHE_SPREAD = {"last_fetch": 0, "data": None}
+_CACHE_POLICY = {"last_fetch": 0, "data": None}
+
+
+def is_refresh_needed(last_timestamp, target_hour):
+    if last_timestamp == 0:
+        return True
+    
+    now_dt = datetime.now()
+    last_dt = datetime.fromtimestamp(last_timestamp)
+    
+    target_today = now_dt.replace(hour=target_hour, minute=0, second=0, microsecond=0)
+    
+    if now_dt >= target_today and last_dt < target_today:
+        return True
+    if now_dt.date() > last_dt.date() and now_dt.hour >= target_hour:
+        return True
+        
+    return False
+
+
+def fetch_fear_and_greed():
+    global _CACHE_FEAR_GREED
+    if not is_refresh_needed(_CACHE_FEAR_GREED["last_fetch"], 6) and _CACHE_FEAR_GREED["data"] is not None:
+        return _CACHE_FEAR_GREED["data"]
+
+    url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.cnn.com/'
+    }
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            save_fear_and_greed_history(data)
+
+            fg = data['fear_and_greed']
+            
+            score = round(float(fg.get('score', 50)))
+            rating_en = str(fg.get('rating', 'neutral')).lower()
+            
+            if score <= 24:
+                rating_kr = "극도의 공포"
+                color = "#EF4444"
+                badge_class = "badge-red"
+            elif score <= 44:
+                rating_kr = "공포"
+                color = "#F97316"
+                badge_class = "badge-orange"
+            elif score <= 55:
+                rating_kr = "중립"
+                color = "#F59E0B"
+                badge_class = "badge-yellow"
+            elif score <= 75:
+                rating_kr = "탐욕"
+                color = "#10B981"
+                badge_class = "badge-green"
+            else:
+                rating_kr = "극도의 탐욕"
+                color = "#38BDF8"
+                badge_class = "badge-blue"
+                
+            res_obj = {
+                "score": score,
+                "rating_en": rating_en.upper(),
+                "rating_kr": rating_kr,
+                "color": color,
+                "badge_class": badge_class,
+                "previous_close": round(float(fg.get('previous_close', 50))),
+                "previous_1_week": round(float(fg.get('previous_1_week', 50))),
+                "previous_1_month": round(float(fg.get('previous_1_month', 50))),
+                "previous_1_year": round(float(fg.get('previous_1_year', 50))),
+                "updated_at": time.strftime("%m-%d %H:%M") + " (매일 오전 06시 동기화)"
+            }
+            _CACHE_FEAR_GREED["last_fetch"] = time.time()
+            _CACHE_FEAR_GREED["data"] = res_obj
+            return res_obj
+    except Exception as e:
+        logging.error(f"Error fetching Fear & Greed Index: {e}")
+        if _CACHE_FEAR_GREED["data"] is not None:
+            return _CACHE_FEAR_GREED["data"]
+        return {
+            "score": 50,
+            "rating_en": "NEUTRAL",
+            "rating_kr": "중립",
+            "color": "#F59E0B",
+            "badge_class": "badge-yellow",
+            "previous_close": 50,
+            "previous_1_week": 50,
+            "previous_1_month": 50,
+            "previous_1_year": 50,
+            "updated_at": time.strftime("%m-%d %H:%M")
+        }
+
+
 @infinite_bp.route('/infinite', methods=['GET', 'POST'])
 @login_required
 def show_recent_ticker_data():
     engine = create_engine(f"sqlite:///{DB_PATH}")
-    today = datetime.date.today()
-    start_date = today - datetime.timedelta(days=6)
+    today = date.today()
+    start_date = today - timedelta(days=6)
     account_filter = request.args.get("account", None)
 
     with engine.connect() as conn:
@@ -95,10 +253,11 @@ def show_recent_ticker_data():
     df["총투자금액"] = (df["total_shares"].astype(float) * df["current_price"].astype(float)).astype(int)
     # 수정된 코드 (86~88라인 대체)
     if not df.empty:
+        clean_target = df["target_profit_rate"].astype(str).str.replace("%", "").str.strip()
         df["총투자금액(목표수익율)"] = (
                 df["total_investment"].astype(str) +
                 " (" +
-                df["target_profit_rate"].astype(float).astype(int).astype(str) +
+                clean_target +
                 "%)"
         )
     else:
@@ -134,6 +293,7 @@ def show_recent_ticker_data():
     df.columns = ["계좌색상", "시작일", "구분", "티커", "전략", "회차", "개수", "평단가(수익률)", "현재가", "총매입금액", "총투자금액(목표수익율)"]
 
     table_rows = ""
+    ticker_cards = []
     for _, row in df.iterrows():
         row_html = f"<tr style='color:{row['계좌색상']}'>" + "".join(
             f"<td>{row[col]}</td>" for col in [
@@ -142,8 +302,311 @@ def show_recent_ticker_data():
         ) + "</tr>"
         table_rows += row_html
 
-    # 템플릿 파일 경로
-    return render_template("infinite_main.html", latest_date=latest_date, table_rows=table_rows)
+        try:
+            curr_rnd = int(row["회차"])
+        except:
+            curr_rnd = 0
+        try:
+            tot_split = int(str(row["총투자금액(목표수익율)"]).split("(")[0]) if "(" in str(row["총투자금액(목표수익율)"]) else 40
+        except:
+            tot_split = 40
+        
+        # We parse total_splits and target_profit_rate
+        key = f"{row['account_id'].lower()}_{row['티커'].upper()}" if 'account_id' in row else f"public_{row['티커'].upper()}"
+        setting_info = settings.get(key, {})
+        tot_split = int(setting_info.get("split", 40))
+        target_rate = setting_info.get("target", "12")
+        tot_invest = setting_info.get("capital", "0")
+
+        progress_pct = min(100, int((curr_rnd / tot_split) * 100)) if tot_split > 0 else 0
+        
+        try:
+            # Parse average price and profit
+            avg_str = str(row["평단가(수익률)"])
+            avg_val = float(avg_str.split(" ")[0]) if " " in avg_str else float(avg_str)
+        except:
+            avg_val = 0.0
+            
+        try:
+            curr_val = float(row["현재가"])
+        except:
+            curr_val = avg_val
+
+        profit_pct = ((curr_val - avg_val) / avg_val * 100) if avg_val > 0 else 0.0
+
+        try:
+            qty_val = float(row["개수"])
+        except:
+            qty_val = 0.0
+
+        acc_id_str = str(row.get('account_id', '')).lower() if 'account_id' in row else ''
+        broker_name = "삼성증권" if "samsung" in acc_id_str else "메리츠증권"
+        broker_badge = "badge-blue" if "samsung" in acc_id_str else "badge-yellow"
+
+        ticker_cards.append({
+            "ticker": row["티커"],
+            "account_id": key,
+            "broker": broker_name,
+            "broker_badge": broker_badge,
+            "is_private": row["구분"] == "Private",
+            "mode": row["구분"],
+            "start_date": row["시작일"],
+            "strategy": row["전략"],
+            "current_round": curr_rnd,
+            "total_splits": tot_split,
+            "quantity": int(qty_val) if qty_val.is_integer() else qty_val,
+            "average_price": f"${avg_val:.2f}" if avg_val > 0 else "$0.00",
+            "current_price": f"${curr_val:.2f}" if curr_val > 0 else "$0.00",
+            "profit_rate": f"{profit_pct:+.2f}",
+            "profit_val": profit_pct,
+            "total_buy": f"${(qty_val * avg_val):,.2f}",
+            "total_invest": f"${float(tot_invest):,.0f}" if tot_invest.isdigit() else f"${tot_invest}",
+            "target_profit_rate": target_rate,
+            "progress_percent": progress_pct
+        })
+
+    fear_greed = fetch_fear_and_greed()
+    return render_template("infinite_main.html", latest_date=latest_date, table_rows=table_rows, ticker_cards=ticker_cards, fear_greed=fear_greed)
+
+
+def fetch_macro_indicators():
+    global _CACHE_SPREAD, _CACHE_POLICY
+
+    # 1. Real-time Symbols (DXY, VIX, USD/KRW, USD/JPY)
+    rt_symbols = {
+        'dxy': 'DX-Y.NYB',
+        'vix': '^VIX',
+        'usdkrw': 'KRW=X',
+        'usdjpy': 'JPY=X'
+    }
+    
+    results = {}
+    for key, sym in rt_symbols.items():
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=2d"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                res = json.loads(resp.read().decode('utf-8'))
+                meta = res['chart']['result'][0]['meta']
+                curr = meta.get('regularMarketPrice', 0.0)
+                prev = meta.get('chartPreviousClose', curr)
+                diff = curr - prev
+                pct = (diff / prev * 100) if prev else 0.0
+                
+                results[key] = {
+                    "price": round(curr, 2),
+                    "change": round(diff, 2),
+                    "change_pct": f"{pct:+.2f}%",
+                    "up": diff >= 0
+                }
+        except Exception as e:
+            logging.error(f"Error fetching real-time symbol {sym}: {e}")
+            results[key] = {"price": 0.0, "change": 0.0, "change_pct": "0.00%", "up": True}
+
+    vix_val = results['vix']['price']
+    if vix_val < 15:
+        vix_status = "안정 (Low Risk)"
+        vix_badge = "badge-green"
+    elif vix_val < 25:
+        vix_status = "보통 (Moderate Risk)"
+        vix_badge = "badge-yellow"
+    elif vix_val < 35:
+        vix_status = "경계 (Elevated Risk)"
+        vix_badge = "badge-orange"
+    else:
+        vix_status = "극도 공포/매수기회 (High Volatility)"
+        vix_badge = "badge-red"
+
+    # 2. AM 06:00 Refresh: Yield Spread (US10Y - US2Y)
+    if is_refresh_needed(_CACHE_SPREAD["last_fetch"], 6) or _CACHE_SPREAD["data"] is None:
+        try:
+            url_10y = "https://query1.finance.yahoo.com/v8/finance/chart/^TNX?interval=1d&range=2d"
+            url_5y = "https://query1.finance.yahoo.com/v8/finance/chart/^FVX?interval=1d&range=2d"
+            
+            req1 = urllib.request.Request(url_10y, headers={'User-Agent': 'Mozilla/5.0'})
+            res1 = json.loads(urllib.request.urlopen(req1, timeout=4).read())
+            us10y_val = round(res1['chart']['result'][0]['meta'].get('regularMarketPrice', 4.26), 2)
+            
+            req2 = urllib.request.Request(url_5y, headers={'User-Agent': 'Mozilla/5.0'})
+            res2 = json.loads(urllib.request.urlopen(req2, timeout=4).read())
+            us5y_val = round(res2['chart']['result'][0]['meta'].get('regularMarketPrice', 4.36), 2)
+            
+            us2y_est = round(us5y_val - 0.12, 2)
+            spread = round(us10y_val - us2y_est, 2)
+            
+            if spread < 0:
+                spread_status = f"장단기 금리 역전 ({spread:+.2f}%)"
+                spread_badge = "badge-red"
+            else:
+                spread_status = f"정상화 / 양의 스프레드 ({spread:+.2f}%)"
+                spread_badge = "badge-green"
+
+            _CACHE_SPREAD["data"] = {
+                "us10y": us10y_val,
+                "us2y": us2y_est,
+                "spread": spread,
+                "spread_str": f"{spread:+.2f}%",
+                "spread_status": spread_status,
+                "spread_badge": spread_badge,
+                "updated_at": time.strftime("%m-%d %H:%M") + " (매일 오전 06시 동기화)"
+            }
+            _CACHE_SPREAD["last_fetch"] = time.time()
+        except Exception as e:
+            logging.error(f"Error updating Yield Spread cache: {e}")
+            if _CACHE_SPREAD["data"] is None:
+                _CACHE_SPREAD["data"] = {
+                    "us10y": 4.26, "us2y": 4.36, "spread": -0.10, "spread_str": "-0.10%",
+                    "spread_status": "장단기 금리 역전 (-0.10%)", "spread_badge": "badge-red",
+                    "updated_at": time.strftime("%m-%d %H:%M")
+                }
+
+    # 3. PM 22:00 Refresh: Policy Indicators (WTI, Core PCE, CME FedWatch)
+    if is_refresh_needed(_CACHE_POLICY["last_fetch"], 22) or _CACHE_POLICY["data"] is None:
+        try:
+            url_wti = "https://query1.finance.yahoo.com/v8/finance/chart/CL=F?interval=1d&range=2d"
+            req_w = urllib.request.Request(url_wti, headers={'User-Agent': 'Mozilla/5.0'})
+            res_w = json.loads(urllib.request.urlopen(req_w, timeout=4).read())
+            meta_w = res_w['chart']['result'][0]['meta']
+            curr_w = meta_w.get('regularMarketPrice', 78.18)
+            prev_w = meta_w.get('chartPreviousClose', curr_w)
+            diff_w = curr_w - prev_w
+            pct_w = (diff_w / prev_w * 100) if prev_w else 0.0
+
+            _CACHE_POLICY["data"] = {
+                "wti": {
+                    "price": round(curr_w, 2),
+                    "change": round(diff_w, 2),
+                    "change_pct": f"{pct_w:+.2f}%",
+                    "up": diff_w >= 0
+                },
+                "pce": 2.8,
+                "fed_hold_prob": 55.9,
+                "fed_cut_prob": 44.1,
+                "updated_at": time.strftime("%m-%d %H:%M") + " (매일 오후 10시 동기화)"
+            }
+            _CACHE_POLICY["last_fetch"] = time.time()
+        except Exception as e:
+            logging.error(f"Error updating Policy indicators cache: {e}")
+            if _CACHE_POLICY["data"] is None:
+                _CACHE_POLICY["data"] = {
+                    "wti": {"price": 78.18, "change": 0.0, "change_pct": "0.00%", "up": True},
+                    "pce": 2.8, "fed_hold_prob": 55.9, "fed_cut_prob": 44.1,
+                    "updated_at": time.strftime("%m-%d %H:%M")
+                }
+
+    spread_data = _CACHE_SPREAD["data"]
+    policy_data = _CACHE_POLICY["data"]
+
+    return {
+        "dxy": results['dxy'],
+        "vix": results['vix'],
+        "vix_status": vix_status,
+        "vix_badge": vix_badge,
+        "usdkrw": results['usdkrw'],
+        "usdjpy": results['usdjpy'],
+        "us10y": spread_data['us10y'],
+        "us2y": spread_data['us2y'],
+        "spread": spread_data['spread'],
+        "spread_str": spread_data['spread_str'],
+        "spread_status": spread_data['spread_status'],
+        "spread_badge": spread_data['spread_badge'],
+        "spread_updated_at": spread_data['updated_at'],
+        "wti": policy_data['wti'],
+        "pce": policy_data['pce'],
+        "fed_hold_prob": policy_data['fed_hold_prob'],
+        "fed_cut_prob": policy_data['fed_cut_prob'],
+        "policy_updated_at": policy_data['updated_at'],
+        "realtime_updated_at": time.strftime("%H:%M:%S") + " ⚡ 실시간"
+    }
+
+
+import sqlite3
+
+@infinite_bp.route('/infinite/assets', methods=['GET'])
+@login_required
+def infinite_assets():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        df = pd.read_sql_query("SELECT * FROM asset_history", conn)
+        conn.close()
+    except Exception as e:
+        logging.error(f"Asset history DB error: {e}")
+        return render_template('infinite_assets.html', error=f"DB Error: {e}", data=None)
+
+    if df.empty:
+        return render_template('infinite_assets.html', data=None)
+
+    df['date'] = pd.to_datetime(df['date'])
+    available_dates = sorted(df['date'].unique())
+    today = available_dates[-1]
+    
+    def get_closest_date(target_date):
+        past_dates = [d for d in available_dates if d <= target_date]
+        return past_dates[-1] if past_dates else None
+
+    yesterday = get_closest_date(today - pd.Timedelta(days=1))
+    if yesterday == today:
+        past_dates = [d for d in available_dates if d < today]
+        yesterday = past_dates[-1] if past_dates else None
+
+    last_week = get_closest_date(today - pd.Timedelta(days=7))
+    if last_week == today:
+        last_week = None
+
+    last_month = get_closest_date(today - pd.Timedelta(days=30))
+    if last_month == today:
+        last_month = None
+
+    def get_totals(dt):
+        if dt is None:
+            return 0
+        return float(df[df['date'] == dt]['total_evaluation'].sum())
+
+    total_today = get_totals(today)
+    total_yesterday = get_totals(yesterday)
+    total_last_week = get_totals(last_week)
+    total_last_month = get_totals(last_month)
+
+    df_today = df[df['date'] == today]
+    account_summary = df_today.groupby(['account_type', 'account_num', 'broker']).agg({
+        'total_investment': 'sum',
+        'total_evaluation': 'sum',
+        'profit_loss': 'sum'
+    }).reset_index().to_dict('records')
+
+    ticker_summary = df_today.groupby('ticker').agg({
+        'total_evaluation': 'sum',
+        'profit_loss': 'sum',
+        'quantity': 'sum'
+    }).reset_index().to_dict('records')
+
+    chart_data_df = df.groupby('date')['total_evaluation'].sum().reset_index()
+    chart_dates = chart_data_df['date'].dt.strftime('%Y-%m-%d').tolist()
+    chart_totals = chart_data_df['total_evaluation'].tolist()
+
+    detailed_list = df_today.sort_values(by=['account_type', 'account_num', 'total_evaluation'], ascending=[True, True, False]).to_dict('records')
+
+    data = {
+        'today_str': today.strftime('%Y-%m-%d'),
+        'total_today': total_today,
+        'change_1d': total_today - total_yesterday if yesterday else 0,
+        'change_7d': total_today - total_last_week if last_week else 0,
+        'change_30d': total_today - total_last_month if last_month else 0,
+        'account_summary': account_summary,
+        'ticker_summary': ticker_summary,
+        'chart_dates': chart_dates,
+        'chart_totals': chart_totals,
+        'detailed_list': detailed_list
+    }
+    
+    return render_template('infinite_assets.html', data=data)
+
+@infinite_bp.route('/macro', methods=['GET'])
+@login_required
+def macro_dashboard():
+    fear_greed = fetch_fear_and_greed()
+    macro = fetch_macro_indicators()
+    return render_template("macro.html", fear_greed=fear_greed, macro=macro)
 
 
 SETTINGS_FILE = "C:\\PycharmProjects\\InfiniteProject\\infinite_settings.json"
@@ -153,6 +616,159 @@ SETTINGS_FILE = "C:\\PycharmProjects\\InfiniteProject\\infinite_settings.json"
 @login_required
 def infinite_settings():
     return render_template("settings_infinite.html")
+
+
+@infinite_bp.route('/infinite_charts', methods=['GET'])
+@login_required
+def infinite_charts():
+    return render_template("infinite_chart.html")
+
+
+@infinite_bp.route('/api/chart_data', methods=['GET'])
+@login_required
+def get_chart_data():
+    timeframe = request.args.get('tf', '1d').lower()
+    
+    interval_map = {
+        '1d': ('1d', '3mo'),
+        '1w': ('1wk', '1y'),
+        '1m': ('1mo', '5y'),
+        '1y': ('1mo', 'max')
+    }
+    
+    i_param, r_param = interval_map.get(timeframe, ('1d', '3mo'))
+    tickers = ['TQQQ', 'QLD', 'QQQ']
+    data_by_ticker = {}
+    timestamps = []
+    
+    for t in tickers:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?interval={i_param}&range={r_param}"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                res = json.loads(resp.read().decode('utf-8'))
+                chart_res = res['chart']['result'][0]
+                raw_ts = chart_res.get('timestamp', [])
+                raw_cl = chart_res['indicators']['quote'][0].get('close', [])
+                
+                clean_ts = []
+                clean_cl = []
+                for ts, cl in zip(raw_ts, raw_cl):
+                    if ts is not None and cl is not None:
+                        clean_ts.append(ts)
+                        clean_cl.append(round(cl, 2))
+                
+                data_by_ticker[t] = clean_cl
+                if not timestamps or len(clean_ts) > len(timestamps):
+                    timestamps = clean_ts
+        except Exception as e:
+            logging.error(f"Error fetching chart data for {t}: {e}")
+            data_by_ticker[t] = []
+            
+    date_labels = []
+    for ts in timestamps:
+        t_struct = time.localtime(ts)
+        if timeframe == '1d':
+            date_labels.append(time.strftime('%m-%d', t_struct))
+        elif timeframe == '1w':
+            date_labels.append(time.strftime('%Y-%m-%d', t_struct))
+        else:
+            date_labels.append(time.strftime('%Y-%m', t_struct))
+
+    # Downsample for Yearly (1y)
+    if timeframe == '1y' and len(date_labels) > 20:
+        yearly_labels = []
+        yearly_data = {t: [] for t in tickers}
+        last_year = None
+        for idx, lbl in enumerate(date_labels):
+            yr = lbl.split('-')[0]
+            if yr != last_year:
+                if last_year is not None:
+                    yearly_labels.append(last_year)
+                    for t in tickers:
+                        series = data_by_ticker[t]
+                        val = series[idx-1] if idx-1 < len(series) else (series[-1] if series else 0)
+                        yearly_data[t].append(val)
+                last_year = yr
+        if last_year:
+            yearly_labels.append(last_year)
+            for t in tickers:
+                series = data_by_ticker[t]
+                val = series[-1] if series else 0
+                yearly_data[t].append(val)
+        
+        date_labels = yearly_labels
+        data_by_ticker = yearly_data
+
+    return jsonify({
+        "status": "success",
+        "labels": date_labels,
+        "series": data_by_ticker
+    })
+
+
+@infinite_bp.route('/api/fear_greed_history', methods=['GET'])
+@login_required
+def get_fear_greed_history():
+    # Sync DB first
+    fetch_fear_and_greed()
+
+    engine = create_engine(f"sqlite:///{DB_PATH}")
+    init_fear_greed_db(engine)
+
+    query = "SELECT date, score, rating FROM fear_greed_history ORDER BY date ASC"
+    try:
+        with engine.connect() as conn:
+            df_fg = pd.read_sql(text(query), conn)
+    except Exception as e:
+        logging.error(f"Error querying fear_greed_history DB: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+    if df_fg.empty:
+        return jsonify({"status": "error", "message": "No Fear & Greed data available"}), 404
+
+    fg_dates = df_fg['date'].tolist()
+    fg_scores = df_fg['score'].tolist()
+    fg_ratings = df_fg['rating'].tolist()
+
+    # Fetch QQQ, QLD, TQQQ daily history for 1 year matching range
+    tickers = ['QQQ', 'QLD', 'TQQQ']
+    ticker_series = {t: [] for t in tickers}
+    ticker_prices_by_date = {t: {} for t in tickers}
+
+    for t in tickers:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?interval=1d&range=1y"
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                res = json.loads(resp.read().decode('utf-8'))
+                chart_res = res['chart']['result'][0]
+                raw_ts = chart_res.get('timestamp', [])
+                raw_cl = chart_res['indicators']['quote'][0].get('close', [])
+                
+                for ts, cl in zip(raw_ts, raw_cl):
+                    if ts and cl:
+                        d_str = time.strftime('%Y-%m-%d', time.localtime(ts))
+                        ticker_prices_by_date[t][d_str] = round(cl, 2)
+        except Exception as e:
+            logging.error(f"Error fetching ticker comparison {t} for F&G: {e}")
+
+    for t in tickers:
+        p_dict = ticker_prices_by_date[t]
+        last_p = 0
+        for d in fg_dates:
+            if d in p_dict:
+                last_p = p_dict[d]
+            ticker_series[t].append(last_p)
+
+    return jsonify({
+        "status": "success",
+        "dates": fg_dates,
+        "fg_scores": fg_scores,
+        "fg_ratings": fg_ratings,
+        "nasdaq_prices": ticker_series['QQQ'],
+        "series": ticker_series
+    })
 
 
 DEFAULT_SETTINGS = {

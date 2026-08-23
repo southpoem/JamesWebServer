@@ -3,545 +3,623 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>무한매수법 계좌 대시보드</title>
-    <!-- Google Fonts for premium feel -->
+    <title>무한매수법 계좌 대시보드 - James World</title>
+    <meta name="color-scheme" content="dark" />
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .nav-tabs {
+        .header-meta {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            background: #121214;
-            padding: 0.35rem;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
-        }
-        .nav-tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all var(--transition-fast);
-        }
-        .nav-tab:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .nav-tab.active {
-            color: #000000;
-            background: #ffffff;
-            font-weight: 600;
-        }
-        .header-row {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-        .header-title-group {
-            display: flex;
-            align-items: baseline;
-            gap: 0.75rem;
-        }
-        .date-badge {
-            font-family: var(--font-mono);
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            font-weight: 500;
+            gap: 12px;
         }
         .btn-sm {
-            padding: 0.4rem 0.8rem;
-            font-size: 0.8rem;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.75rem;
             width: auto;
-            margin: 0;
         }
-        .dashboard-buttons {
+        .exec-btn {
+            width: auto;
+            padding: 0.5rem 1.1rem;
+            font-size: 0.8rem;
+        }
+        .pro-ticker-card {
+            cursor: pointer;
+        }
+        .history-stat-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-            margin-top: 1.5rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
         }
         @media (max-width: 600px) {
-            .dashboard-buttons {
-                grid-template-columns: 1fr;
+            .history-stat-grid {
+                grid-template-columns: 1fr 1fr;
             }
         }
-        tbody tr {
-            cursor: pointer;
+        .history-table-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(56, 189, 248, 0.15);
+            border-radius: var(--radius-sm);
+            margin-top: 0.5rem;
         }
-        .modal-overlay {
-            position: fixed;
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .history-table th {
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-dim);
+            padding: 8px 12px;
+            text-align: left;
+            position: sticky;
             top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(9, 9, 11, 0.8);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.25s ease, visibility 0.25s ease;
-        }
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            width: 90%;
-            max-width: 700px;
-            padding: 1.5rem;
-            position: relative;
-            transform: scale(0.9);
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-        }
-        .modal-overlay.active .modal-card {
-            transform: scale(1);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
-        .modal-title {
-            font-family: var(--font-heading);
-            font-size: 1.2rem;
             font-weight: 600;
-            color: var(--text-title);
         }
-        .close-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color var(--transition-fast);
-            padding: 0.2rem 0.5rem;
-            line-height: 1;
-        }
-        .close-btn:hover {
-            color: var(--text-main);
-        }
-        .chart-wrapper {
-            position: relative;
-            width: 100%;
-            height: 380px;
+        .history-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(248, 250, 252, 0.05);
+            font-family: var(--font-mono);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Dashboard Header -->
-        <div class="header-row">
-            <div class="header-title-group">
-                <h2>무한매수법 현황</h2>
-                <span class="date-badge">기준일자: {{ latest_date }}</span>
+        <!-- Dashboard Brand Header -->
+        <header class="brand-header">
+            <a href="/infinite" class="brand-logo-group">
+                <div class="logo-dot"></div>
+                <div class="brand-title">
+                    무한매수법 현황
+                    <span class="sub">실시간 계좌 종목 모니터링</span>
+                </div>
+            </a>
+            <div class="header-meta">
+                <span class="pill"><span class="label">기준일자:</span> <b>{{ latest_date }}</b></span>
+                <form action="/run_infinite_account" method="post" style="margin: 0;">
+                    <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
+                </form>
             </div>
-            
-            <form action="/run_infinite_account" method="post" style="margin: 0;">
-                <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
-            </form>
+        </header>
+
+        <!-- raoni.xyz Top Pill Navigation Bar -->
+        <div class="top-nav-row">
+            <nav class="top-nav">
+                <a href="/infinite" class="nav-link active">대시보드</a>
+                <a href="/macro" class="nav-link">매크로 보드</a>
+                <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
+                <a href="/infinite_settings" class="nav-link">매매 설정</a>
+                <a href="/infinite/assets" class="nav-link" style="color: #4facfe;">자산 추적</a>
+                <a href="/infinite_help" class="nav-link">전략 가이드</a>
+            </nav>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="nav-tabs">
-            <a href="/infinite" class="nav-tab active">무한매수 대시보드</a>
-            <a href="/vr" class="nav-tab">VR 밸류리밸런싱</a>
-            <a href="/vr/simulation" class="nav-tab">VR 시뮬레이션</a>
-            <a href="/settings_infinite" class="nav-tab">무한매수 설정</a>
-            <a href="/vr/settings" class="nav-tab">VR 설정</a>
-        </div>
-
-        <!-- Dashboard Table -->
-        <div class="glass-panel" style="padding: 1.25rem;">
-            <div class="table-container" style="margin-bottom: 0;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>시작일</th>
-                            <th>구분</th>
-                            <th>종목</th>
-                            <th>전략</th>
-                            <th>회차</th>
-                            <th>개수</th>
-                            <th>평단가(수익률)</th>
-                            <th>현재가</th>
-                            <th>총매입금액($)</th>
-                            <th>총투자금액$(목표)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{ table_rows | safe }}
-                    </tbody>
-                </table>
+        <!-- Account Filter Sub-Tabs & Action Bar -->
+        <div class="sub-nav-row">
+            <div class="sub-nav">
+                <button type="button" class="sub-tab active" onclick="filterAccountTab('all', this)">전체 계좌</button>
+                <button type="button" class="sub-tab" onclick="filterAccountTab('Public', this)">Public 계좌</button>
+                <button type="button" class="sub-tab" onclick="filterAccountTab('Private', this)">Private 계좌</button>
             </div>
-        </div>
 
-        <!-- Action Buttons -->
-        <div class="dashboard-buttons">
-            <form action="/infinite_settings" method="get" style="margin: 0;">
-                <button type="submit" class="btn btn-secondary">⚙️ 매매 설정</button>
-            </form>
-            
             <form action="/run_infinite_buying" method="post" style="margin: 0;">
-                <button type="submit" class="btn btn-primary">⚡ 무한매수 실행</button>
+                <button type="submit" class="btn btn-primary exec-btn">⚡ 무한매수 실행</button>
             </form>
-            
-            <form action="/infinite_help" method="get" style="margin: 0;">
-                <button type="submit" class="btn btn-secondary">📖 전략 설명</button>
-            </form>
+        </div>
+
+        <!-- Image 2 Style Ticker Cards Grid -->
+        <div class="ticker-grid" id="ticker-grid">
+            {% if ticker_cards %}
+                {% for card in ticker_cards %}
+                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" data-mode="{{ card.mode }}" onclick="openTradeHistoryModal('{{ card.mode|lower }}', '{{ card.ticker }}')">
+                    <!-- Card Header -->
+                    <div class="pro-card-head">
+                        <div class="pro-card-title">
+                            {{ card.ticker }}
+                            <span class="pro-card-sub">{{ card.strategy }}</span>
+                        </div>
+                        <div class="pro-card-actions">
+                            <span class="badge {{ card.broker_badge }}" style="margin-right: 4px;">
+                                {{ card.broker }}
+                            </span>
+                            <span class="badge {% if card.is_private %}badge-yellow{% else %}badge-blue{% endif %}">
+                                {{ card.mode }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Main Price & Change -->
+                    <div class="pro-card-main-price">
+                        <div class="price-num">{{ card.current_price }}</div>
+                        <div class="chg-badge {% if card.profit_val >= 0 %}up{% else %}down{% endif %}">
+                            {% if card.profit_val >= 0 %}▲{% else %}▼{% endif %} {{ card.profit_rate }}%
+                        </div>
+                    </div>
+
+                    <!-- Dashed Divider -->
+                    <div class="card-dashed-sep"></div>
+
+                    <!-- Metric Grid -->
+                    <div class="card-metric-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">회차 / 분할</span>
+                            <span class="metric-val">{{ card.current_round }} / {{ card.total_splits }}회차</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">보유 수량</span>
+                            <span class="metric-val">{{ card.quantity }}개</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">평단가</span>
+                            <span class="metric-val">{{ card.average_price }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">총 매입금액</span>
+                            <span class="metric-val">{{ card.total_buy }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">목표 수익률</span>
+                            <span class="metric-val">{{ card.target_profit_rate }}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">총 가용 예산</span>
+                            <span class="metric-val">{{ card.total_invest }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Dashed Divider -->
+                    <div class="card-dashed-sep"></div>
+
+                    <!-- Round Progress Bar -->
+                    <div class="progress-wrap">
+                        <div class="progress-header">
+                            <span>분할 진행률 (클릭하여 히스토리 보기)</span>
+                            <span>{{ card.progress_percent }}%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: {{ card.progress_percent }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass-panel text-center" style="grid-column: 1 / -1; padding: 2.5rem;">
+                    <p style="color: var(--text-muted);">등록되거나 조회된 종목 데이터가 없습니다.</p>
+                </div>
+            {% endif %}
         </div>
 
         <div class="text-center" style="margin-top: 1.5rem;">
-            <a href="/" class="back-link">← 제어반 메인으로 돌아가기</a>
+            <a href="/logout" class="back-link" style="color: var(--down);">🔓 로그아웃</a>
         </div>
     </div>
-    <!-- Chart Modal Overlay -->
-    <div id="chart-modal" class="modal-overlay">
-        <div class="modal-card">
+
+    <!-- Trade History Glass Modal Overlay -->
+    <div class="modal-overlay" id="historyModal" onclick="handleModalOverlayClick(event)">
+        <div class="modal-window">
             <div class="modal-header">
-                <span id="modal-title-text" class="modal-title">매매 이력 차트</span>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            
-            <!-- Cycle Selection Controls -->
-            <div class="filter-controls" style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem;">
-                <label for="cycle-select" style="font-size: 0.8rem; text-transform: none; font-weight: 500; letter-spacing: 0; color: var(--text-muted);">회차(기간) 선택:</label>
-                <select id="cycle-select" onchange="handleCycleChange()" style="padding: 0.4rem 0.6rem; font-size: 0.85rem; width: auto; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-title); border-radius: var(--radius-sm); outline: none; cursor: pointer;">
-                    <!-- Dynamically populated options -->
-                </select>
-                <div id="custom-date-container" style="display: none; align-items: center; gap: 0.5rem;">
-                    <label for="custom-start-date" style="font-size: 0.8rem; text-transform: none; font-weight: 500; letter-spacing: 0; color: var(--text-muted);">시작일:</label>
-                    <input type="date" id="custom-start-date" onchange="handleCustomDateChange()" style="padding: 0.35rem 0.5rem; font-size: 0.85rem; width: auto; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-title); border-radius: var(--radius-sm); outline: none; cursor: pointer;">
+                <div class="modal-title">
+                    <div class="logo-dot"></div>
+                    <span id="modal-title-text">TQQQ (Public 계좌) 매매 히스토리</span>
                 </div>
+                <button type="button" class="modal-close" onclick="closeTradeHistoryModal()">&times;</button>
             </div>
 
-            <div class="chart-wrapper">
-                <canvas id="historyChart"></canvas>
+            <div class="modal-body">
+                <!-- Summary Meta Cards -->
+                <div class="history-stat-grid">
+                    <div class="pill flex-column" style="align-items: flex-start; padding: 8px 12px;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">시작일자</span>
+                        <b id="modal-stat-start" style="font-family: var(--font-mono);">-</b>
+                    </div>
+                    <div class="pill flex-column" style="align-items: flex-start; padding: 8px 12px;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">총 매수 횟수</span>
+                        <b id="modal-stat-buys" style="font-family: var(--font-mono); color: var(--up);">-</b>
+                    </div>
+                    <div class="pill flex-column" style="align-items: flex-start; padding: 8px 12px;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">현재 평단가</span>
+                        <b id="modal-stat-avg" style="font-family: var(--font-mono); color: var(--yellow);">-</b>
+                    </div>
+                    <div class="pill flex-column" style="align-items: flex-start; padding: 8px 12px;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">보유 수량</span>
+                        <b id="modal-stat-shares" style="font-family: var(--font-mono); color: var(--hl-blue);">-</b>
+                    </div>
+                </div>
+
+                <!-- History Chart Canvas -->
+                <div class="modal-chart-box">
+                    <canvas id="historyChart"></canvas>
+                </div>
+
+                <!-- Buy Execution History Log Table -->
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px;">
+                        📜 매수 체결 이력 타임라인
+                    </div>
+                    <div class="history-table-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>체결일자</th>
+                                    <th>매수 수량</th>
+                                    <th>누적 보유량</th>
+                                    <th>당시 주가</th>
+                                    <th>당시 평단가</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-history-tbody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-muted);">데이터 로딩 중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let myChart = null;
-        let currentChartData = null;
+        let historyChartInstance = null;
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const rows = document.querySelectorAll("tbody tr");
-            rows.forEach(row => {
-                row.addEventListener("click", () => {
-                    const cells = row.querySelectorAll("td");
-                    if (cells.length >= 3) {
-                        const accountType = cells[1].innerText.trim(); // "Public" or "Private"
-                        const ticker = cells[2].innerText.trim();      // e.g. "TQQQ"
-                        openChartModal(accountType, ticker);
-                    }
-                });
-            });
+        function filterAccountTab(mode, btn) {
+            document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
 
-            // ESC closes modal
-            document.addEventListener("keydown", (e) => {
-                if (e.key === "Escape") {
-                    closeModal();
+            const cards = document.querySelectorAll('.pro-ticker-card');
+            cards.forEach(card => {
+                const cardMode = card.getAttribute('data-mode');
+                if (mode === 'all' || cardMode === mode) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
                 }
             });
+        }
 
-            // Background click closes modal
-            const modal = document.getElementById("chart-modal");
-            modal.addEventListener("click", (e) => {
-                if (e.target === modal) {
-                    closeModal();
-                }
-            });
-        });
+        function openTradeHistoryModal(accountMode, ticker) {
+            const modal = document.getElementById('historyModal');
+            document.getElementById('modal-title-text').innerText = `${ticker} (${accountMode.toUpperCase()} 계좌) 매매 히스토리`;
+            modal.classList.add('active');
 
-        function openChartModal(accountType, ticker) {
-            const modal = document.getElementById("chart-modal");
-            const titleText = document.getElementById("modal-title-text");
-            titleText.innerText = `${accountType} ${ticker} 매매 이력 및 평단가 추이`;
+            // Reset table
+            document.getElementById('modal-history-tbody').innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">데이터 조회 중...</td></tr>`;
 
-            fetch(`/api/ticker_history?account=${accountType.toLowerCase()}&ticker=${ticker.toUpperCase()}`)
+            fetch(`/api/ticker_history?account=${accountMode}&ticker=${ticker}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.status === "error") {
-                        alert(data.message);
-                        return;
-                    }
-                    currentChartData = data;
-                    
-                    // 1. 회차 목록 구성
-                    populateCycleDropdown(data);
-                    
-                    // 2. 기본값(2026-07-11 시작)으로 차트 렌더링
-                    renderFilteredChart();
-                    
-                    modal.classList.add("active");
+                    renderHistoryChart(data);
+                    renderHistoryMetaAndTable(data);
                 })
                 .catch(err => {
-                    console.error("Error fetching ticker history:", err);
-                    alert("차트 데이터를 불러오는 도중 오류가 발생했습니다.");
+                    console.error('Error fetching ticker history:', err);
+                    document.getElementById('modal-history-tbody').innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--down);">매매 이력을 불러오는 중 오류가 발생했습니다.</td></tr>`;
                 });
         }
 
-        function populateCycleDropdown(data) {
-            const select = document.getElementById("cycle-select");
-            select.innerHTML = "";
-
-            // 1. 이번 회차 (기본값)
-            const optCurrent = document.createElement("option");
-            optCurrent.value = "2026-07-11";
-            optCurrent.innerText = "이번 회차 (2026-07-11 ~ 현재)";
-            select.appendChild(optCurrent);
-
-            // 2. 과거 회차 탐색 (buy_points에서 shares_added == total_shares 인 날 탐색)
-            const prevStarts = [];
-            data.buy_points.forEach(pt => {
-                if (pt.shares_added === pt.total_shares && pt.x !== "2026-07-11") {
-                    prevStarts.push(pt.x);
-                }
-            });
-
-            // 내림차순 정렬하여 가장 최근 회차를 위로 배치
-            prevStarts.sort().reverse();
-
-            prevStarts.forEach(start => {
-                const optPrev = document.createElement("option");
-                optPrev.value = start;
-                optPrev.innerText = `이전 회차 (${start} ~ )`;
-                select.appendChild(optPrev);
-            });
-
-            // 3. 전체 기간
-            const optAll = document.createElement("option");
-            optAll.value = "all";
-            optAll.innerText = "전체 기간";
-            select.appendChild(optAll);
-
-            // 4. 직접 선택
-            const optCustom = document.createElement("option");
-            optCustom.value = "custom";
-            optCustom.innerText = "직접 날짜 선택...";
-            select.appendChild(optCustom);
-
-            // 초기 커스텀 날짜 선택창 감춤
-            document.getElementById("custom-date-container").style.display = "none";
+        function closeTradeHistoryModal() {
+            document.getElementById('historyModal').classList.remove('active');
         }
 
-        function handleCycleChange() {
-            const select = document.getElementById("cycle-select");
-            const val = select.value;
-            const customDateContainer = document.getElementById("custom-date-container");
-
-            if (val === "custom") {
-                customDateContainer.style.display = "inline-flex";
-                const dateInput = document.getElementById("custom-start-date");
-                if (!dateInput.value) {
-                    dateInput.value = "2026-07-11";
-                }
-            } else {
-                customDateContainer.style.display = "none";
-            }
-            renderFilteredChart();
-        }
-
-        function handleCustomDateChange() {
-            renderFilteredChart();
-        }
-
-        function renderFilteredChart() {
-            if (!currentChartData) return;
-
-            const select = document.getElementById("cycle-select");
-            const val = select.value;
-            let startDate = null;
-
-            if (val === "all") {
-                startDate = null;
-            } else if (val === "custom") {
-                startDate = document.getElementById("custom-start-date").value;
-            } else {
-                startDate = val; // "2026-07-11" 또는 이전 시작일
-            }
-
-            // 필터링 적용
-            let filteredDates = [];
-            let filteredClose = [];
-            let filteredAvg = [];
-            let filteredBuyPoints = [];
-
-            if (startDate) {
-                const startMs = new Date(startDate).getTime();
-                currentChartData.dates.forEach((d, idx) => {
-                    const dMs = new Date(d).getTime();
-                    if (dMs >= startMs) {
-                        filteredDates.push(d);
-                        filteredClose.push(currentChartData.close_prices[idx]);
-                        filteredAvg.push(currentChartData.avg_prices[idx]);
-                    }
-                });
-                
-                currentChartData.buy_points.forEach(pt => {
-                    const ptMs = new Date(pt.x).getTime();
-                    if (ptMs >= startMs) {
-                        filteredBuyPoints.push(pt);
-                    }
-                });
-            } else {
-                filteredDates = [...currentChartData.dates];
-                filteredClose = [...currentChartData.close_prices];
-                filteredAvg = [...currentChartData.avg_prices];
-                filteredBuyPoints = [...currentChartData.buy_points];
-            }
-
-            buildChart({
-                ticker: currentChartData.ticker,
-                account: currentChartData.account,
-                dates: filteredDates,
-                close_prices: filteredClose,
-                avg_prices: filteredAvg,
-                buy_points: filteredBuyPoints
-            });
-        }
-
-        function closeModal() {
-            const modal = document.getElementById("chart-modal");
-            modal.classList.remove("active");
-            if (myChart) {
-                myChart.destroy();
-                myChart = null;
+        function handleModalOverlayClick(e) {
+            if (e.target.id === 'historyModal') {
+                closeTradeHistoryModal();
             }
         }
 
-        function buildChart(data) {
+        function renderHistoryChart(data) {
             const ctx = document.getElementById('historyChart').getContext('2d');
-            
+            if (historyChartInstance) {
+                historyChartInstance.destroy();
+            }
+
+            const dates = data.dates || [];
+            const closePrices = data.close_prices || [];
+            const avgPrices = data.avg_prices || [];
+            const buyPoints = data.buy_points || [];
+
+            // Map buy point dates to indices for green markers
             const buyMap = {};
-            data.buy_points.forEach(pt => {
+            buyPoints.forEach(pt => {
                 buyMap[pt.x] = pt;
             });
 
-            const datasets = [
-                {
-                    label: '종가 (Close Price)',
-                    data: data.close_prices,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: false,
-                    pointRadius: (context) => {
-                        const index = context.dataIndex;
-                        const date = data.dates[index];
-                        return buyMap[date] ? 7 : 2;
-                    },
-                    pointBackgroundColor: (context) => {
-                        const index = context.dataIndex;
-                        const date = data.dates[index];
-                        return buyMap[date] ? '#10b981' : '#3b82f6';
-                    },
-                    pointBorderColor: (context) => {
-                        const index = context.dataIndex;
-                        const date = data.dates[index];
-                        return buyMap[date] ? '#ffffff' : '#3b82f6';
-                    },
-                    pointHoverRadius: (context) => {
-                        const index = context.dataIndex;
-                        const date = data.dates[index];
-                        return buyMap[date] ? 9 : 5;
-                    }
-                },
-                {
-                    label: '평단가 (Average Buy Price)',
-                    data: data.avg_prices,
-                    borderColor: '#f59e0b',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0
-                }
-            ];
+            const pointRadius = dates.map(d => buyMap[d] ? 6 : 0);
+            const pointBg = dates.map(d => buyMap[d] ? '#4ADE80' : '#38BDF8');
 
-            // 기존 차트 제거
-            if (myChart) {
-                myChart.destroy();
-            }
-
-            myChart = new Chart(ctx, {
+            historyChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: data.dates,
-                    datasets: datasets
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: '현재가 ($)',
+                            data: closePrices,
+                            borderColor: '#38BDF8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                            borderWidth: 2,
+                            pointRadius: pointRadius,
+                            pointBackgroundColor: pointBg,
+                            pointBorderColor: '#0F172A',
+                            pointBorderWidth: 1.5,
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: '매수 평단가 ($)',
+                            data: avgPrices,
+                            borderColor: '#F59E0B',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            grid: {
-                                color: '#27272a'
-                            },
-                            ticks: {
-                                color: '#71717a',
-                                font: {
-                                    family: 'JetBrains Mono'
-                                }
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: '#27272a'
-                            },
-                            ticks: {
-                                color: '#71717a',
-                                font: {
-                                    family: 'JetBrains Mono'
-                                }
-                            }
-                        }
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
                     },
                     plugins: {
                         legend: {
                             labels: {
-                                color: '#e4e4e7',
-                                font: {
-                                    family: 'Inter'
-                                }
+                                color: '#F8FAFC',
+                                font: { family: 'Inter', size: 12, weight: '600' },
+                                usePointStyle: true
                             }
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            borderColor: 'rgba(56, 189, 248, 0.3)',
+                            borderWidth: 1,
+                            titleColor: '#F8FAFC',
+                            bodyFont: { family: 'JetBrains Mono', size: 12 },
+                            padding: 10,
                             callbacks: {
-                                label: function(context) {
-                                    const date = context.chart.data.labels[context.dataIndex];
-                                    const value = context.raw;
-                                    const label = context.dataset.label.split(' ')[0];
-                                    let text = `${label}: $${value.toFixed(2)}`;
-                                    
-                                    if (context.datasetIndex === 0 && buyMap[date]) {
-                                        const pt = buyMap[date];
-                                        text += ` (매수: +${pt.shares_added}주, 총: ${pt.total_shares}주)`;
+                                afterBody: function(items) {
+                                    const idx = items[0].dataIndex;
+                                    const dateStr = dates[idx];
+                                    const buy = buyMap[dateStr];
+                                    if (buy) {
+                                        return `\n⚡ 매수 체결: +${buy.shares_added}주 (누적 ${buy.total_shares}주)`;
                                     }
-                                    return text;
+                                    return '';
                                 }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(248, 250, 252, 0.06)' },
+                            ticks: { color: '#94A3B8', font: { family: 'Inter', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(248, 250, 252, 0.08)' },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { family: 'JetBrains Mono', size: 11 },
+                                callback: val => `$${val}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderHistoryMetaAndTable(data) {
+            document.getElementById('modal-stat-start').innerText = data.start_date || '-';
+            
+            const buyPoints = data.buy_points || [];
+            document.getElementById('modal-stat-buys').innerText = `${buyPoints.length}회`;
+
+            const latestAvg = data.avg_prices && data.avg_prices.length > 0 ? data.avg_prices[data.avg_prices.length - 1] : 0;
+            document.getElementById('modal-stat-avg').innerText = `$${latestAvg.toFixed(2)}`;
+
+            const latestBuy = buyPoints.length > 0 ? buyPoints[buyPoints.length - 1] : null;
+            document.getElementById('modal-stat-shares').innerText = latestBuy ? `${latestBuy.total_shares}개` : '-';
+
+            const tbody = document.getElementById('modal-history-tbody');
+            if (buyPoints.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">매수 체결 내역이 없거나 기록되지 않았습니다.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            // Render in reverse chronological order
+            const reversed = [...buyPoints].reverse();
+            reversed.forEach(pt => {
+                html += `
+                    <tr>
+                        <td>${pt.x}</td>
+                        <td style="color: var(--up);">+${pt.shares_added}주</td>
+                        <td>${pt.total_shares}주</td>
+                        <td>$${pt.y.toFixed(2)}</td>
+                        <td style="color: var(--yellow);">$${pt.avg_price.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        /* Fear & Greed History Modal Logic */
+        let fgChartInstance = null;
+
+        function openFearGreedHistoryModal() {
+            const modal = document.getElementById('fearGreedModal');
+            modal.classList.add('active');
+
+            fetch('/api/fear_greed_history')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderFGDualChart(data);
+                    }
+                })
+                .catch(err => console.error('Error loading F&G history:', err));
+        }
+
+        function closeFearGreedHistoryModal() {
+            document.getElementById('fearGreedModal').classList.remove('active');
+        }
+
+        function handleFGModalOverlayClick(e) {
+            if (e.target.id === 'fearGreedModal') {
+                closeFearGreedHistoryModal();
+            }
+        }
+
+        function renderFGDualChart(data) {
+            const ctx = document.getElementById('fgHistoryChartCanvas').getContext('2d');
+            if (fgChartInstance) {
+                fgChartInstance.destroy();
+            }
+
+            const dates = data.dates || [];
+            const scores = data.fg_scores || [];
+            const nasdaq = data.nasdaq_prices || [];
+
+            const sentimentBandsPlugin = {
+                id: 'sentimentBands',
+                beforeDraw(chart) {
+                    const { ctx, chartArea: { top, bottom, left, right }, scales: { y_fg } } = chart;
+                    if (!y_fg) return;
+
+                    const getY = (val) => y_fg.getPixelForValue(val);
+
+                    const bands = [
+                        { yMin: 0,  yMax: 25,  color: 'rgba(239, 68, 68, 0.10)', label: '25 극도의 공포 (Extreme Fear)', textColor: '#EF4444' },
+                        { yMin: 25, yMax: 45,  color: 'rgba(249, 115, 22, 0.07)', label: '45 공포 (Fear)', textColor: '#F97316' },
+                        { yMin: 45, yMax: 55,  color: 'rgba(245, 158, 11, 0.05)', label: '55 중립 (Neutral)', textColor: '#F59E0B' },
+                        { yMin: 55, yMax: 75,  color: 'rgba(16, 185, 129, 0.07)', label: '75 탐욕 (Greed)', textColor: '#10B981' },
+                        { yMin: 75, yMax: 100, color: 'rgba(56, 189, 248, 0.10)', label: '100 극도의 탐욕 (Extreme Greed)', textColor: '#38BDF8' }
+                    ];
+
+                    ctx.save();
+                    bands.forEach(b => {
+                        const yTop = getY(b.yMax);
+                        const yBottom = getY(b.yMin);
+                        ctx.fillStyle = b.color;
+                        ctx.fillRect(left, yTop, right - left, yBottom - yTop);
+
+                        if (b.yMax < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(left, yTop);
+                            ctx.lineTo(right, yTop);
+                            ctx.strokeStyle = 'rgba(248, 250, 252, 0.20)';
+                            ctx.setLineDash([4, 4]);
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+
+                        ctx.fillStyle = b.textColor;
+                        ctx.font = '600 10px Inter';
+                        ctx.fillText(b.label, left + 8, yTop + 14);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            fgChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Fear & Greed Index (0~100)',
+                            data: scores,
+                            borderColor: '#38BDF8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y_fg',
+                            tension: 0.2,
+                            fill: true
+                        },
+                        {
+                            label: 'NASDAQ Index (QQQ $)',
+                            data: nasdaq,
+                            borderColor: '#F59E0B',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y_nasdaq',
+                            tension: 0.2,
+                            fill: false
+                        }
+                    ]
+                },
+                plugins: [sentimentBandsPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#F8FAFC',
+                                font: { family: 'Inter', size: 12, weight: '600' },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            borderColor: 'rgba(56, 189, 248, 0.3)',
+                            borderWidth: 1,
+                            titleColor: '#F8FAFC',
+                            bodyFont: { family: 'JetBrains Mono', size: 12 },
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(248, 250, 252, 0.06)' },
+                            ticks: { color: '#94A3B8', font: { family: 'Inter', size: 10 } }
+                        },
+                        y_fg: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(248, 250, 252, 0.08)' },
+                            ticks: {
+                                color: '#38BDF8',
+                                font: { family: 'JetBrains Mono', size: 11 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Fear & Greed Index (0~100)',
+                                color: '#38BDF8'
+                            }
+                        },
+                        y_nasdaq: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: '#F59E0B',
+                                font: { family: 'JetBrains Mono', size: 11 },
+                                callback: val => `$${val}`
+                            },
+                            title: {
+                                display: true,
+                                text: 'NASDAQ Index ($)',
+                                color: '#F59E0B'
                             }
                         }
                     }
@@ -549,5 +627,27 @@
             });
         }
     </script>
+
+    <!-- Fear & Greed History Glass Modal Overlay -->
+    <div class="modal-overlay" id="fearGreedModal" onclick="handleFGModalOverlayClick(event)">
+        <div class="modal-window" style="max-width: 920px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <div class="logo-dot"></div>
+                    <span>🔥 CNN Fear & Greed Index (1년 히스토리 & 나스닥 지수 융합 차트)</span>
+                </div>
+                <button type="button" class="modal-close" onclick="closeFearGreedHistoryModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-chart-box" style="height: 420px;">
+                    <canvas id="fgHistoryChartCanvas"></canvas>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-top: -0.25rem;">
+                    💡 <b>좌측 Y축 (0~100)</b>: Fear & Greed Index (공포 탐욕 지수) | <b>우측 Y축 ($)</b>: NASDAQ 지수 (QQQ)
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

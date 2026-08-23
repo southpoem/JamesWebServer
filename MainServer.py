@@ -36,7 +36,7 @@ def login():
         # 간단한 사용자 인증 (하드코딩 예시)
         if username == Secret.id and password == Secret.password:
             session['logged_in'] = True
-            return redirect(url_for('index'))
+            return redirect(url_for('infinite.show_recent_ticker_data'))
         else:
             return "Login Failed. Please try again."
 
@@ -47,8 +47,7 @@ def login():
 @app.route('/')
 @login_required
 def index():
-    settings = Settings.load_settings()  # settings.json 불러오기
-    return render_template('index.html', settings=settings)
+    return redirect(url_for('infinite.show_recent_ticker_data'))
 
 
 # 스크립트1 실행
@@ -100,6 +99,12 @@ def history_timeline():
 @app.route('/history/chronicle/<era_id>')
 def history_chronicle(era_id):
     return render_template('chronicle.html', era_id=era_id)
+
+
+# 수원 삼성 블루윙즈 2026 경기 센터 페이지
+@app.route('/suwon')
+def suwon_match_center():
+    return render_template('suwon.html')
 
 
 if __name__ == '__main__':

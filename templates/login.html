@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Login - James World</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark" />
     <!-- Google Fonts for premium headers -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,11 +12,14 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="login-container">
-    <div class="glass-panel" style="max-width: 400px;">
-        <h1>LOG IN</h1>
-        <p class="text-center" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">
-            James World 시스템 제어판에 로그인합니다
-        </p>
+    <div class="glass-panel" style="max-width: 380px;">
+        <div class="brand-logo-group" style="justify-content: center; margin-bottom: 1.5rem; gap: 12px;">
+            <div class="logo-dot"></div>
+            <div class="brand-title">
+                JAMES WORLD
+                <span class="sub">시스템 제어반 로그온</span>
+            </div>
+        </div>
         
         <form action="/login" method="post" class="flex-column">
             <div class="form-group">
@@ -28,7 +32,7 @@
                 <input type="password" id="password" name="password" placeholder="Password" required>
             </div>
             
-            <button type="submit" class="btn btn-teal mt-4">Login</button>
+            <button type="submit" class="btn btn-primary mt-4">Login System</button>
         </form>
     </div>
 </body>

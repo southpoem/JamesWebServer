@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매크로 보드 - 거시 경제 지표 분석</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 900px) {
+            .macro-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .macro-card {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(248, 250, 252, 0.08);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .macro-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+        .macro-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .macro-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .macro-metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 10px;
+        }
+        .macro-stat-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(248, 250, 252, 0.06);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .macro-stat-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .macro-stat-val {
+            font-size: 1.2rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        .macro-commentary {
+            font-size: 0.78rem;
+            color: #94A3B8;
+            line-height: 1.5;
+            background: rgba(15, 23, 42, 0.4);
+            border-left: 3px solid var(--hl-blue);
+            padding: 8px 12px;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1100px;">
+        <!-- Header -->
+        <header class="brand-header">
+            <a href="/infinite" class="brand-logo-group">
+                <div class="logo-dot"></div>
+                <div class="brand-title">
+                    매크로 보드
+                    <span class="sub">글로벌 거시 경제 & 시장 심리 통합 분석</span>
+                </div>
+            </a>
+            <div class="meta-pills">
+                <span class="pill"><span class="label">Macro Engine:</span> <b>5대 글로벌 지표</b></span>
+            </div>
+        </header>
+
+        <!-- raoni.xyz Top Pill Navigation Bar -->
+        <div class="top-nav-row">
+            <nav class="top-nav">
+                <a href="/infinite" class="nav-link">대시보드</a>
+                <a href="/macro" class="nav-link active">매크로 보드</a>
+                <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
+                <a href="/infinite_settings" class="nav-link">매매 설정</a>
+                <a href="/infinite_help" class="nav-link">전략 가이드</a>
+            </nav>
+        </div>
+
+        <!-- 5 Core Macro Indicator Modules 2-Column Grid -->
+        <div class="macro-grid">
+
+            <!-- 1. CNN Fear & Greed Index Card -->
+            {% if fear_greed %}
+            <div class="macro-card" style="cursor: pointer;" onclick="openFearGreedHistoryModal()">
+                <div class="macro-header">
+                    <div class="macro-title">
+                        🔥 Fear & Greed Index
+                    </div>
+                    <span class="badge {{ fear_greed.badge_class }}">{{ fear_greed.rating_kr }} ({{ fear_greed.score }}) ↗</span>
+                </div>
+
+                <!-- Gauge & Score -->
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: baseline; gap: 4px;">
+                        <span style="font-size: 2rem; font-weight: 800; font-family: var(--font-mono); color: {{ fear_greed.color }}; text-shadow: 0 0 14px {{ fear_greed.color }}40;">
+                            {{ fear_greed.score }}
+                        </span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">/ 100</span>
+                    </div>
+
+                    <div style="flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="height: 8px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #EF4444 0%, #F97316 25%, #F59E0B 50%, #10B981 75%, #38BDF8 100%); position: relative; overflow: hidden;">
+                            <div style="position: absolute; top: 0; bottom: 0; left: calc({{ fear_greed.score }}% - 2px); width: 4px; background: #FFFFFF; box-shadow: 0 0 6px #FFFFFF;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text-muted); font-weight: 600;">
+                            <span>0 (공포)</span>
+                            <span>50</span>
+                            <span>100 (탐욕)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Period Comparison Grid -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                    <div class="macro-stat-box" style="padding: 6px 8px;">
+                        <span class="macro-stat-label" style="font-size: 0.65rem;">어제</span>
+                        <span class="macro-stat-val" style="font-size: 0.95rem;">{{ fear_greed.previous_close }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="padding: 6px 8px;">
+                        <span class="macro-stat-label" style="font-size: 0.65rem;">1주전</span>
+                        <span class="macro-stat-val" style="font-size: 0.95rem;">{{ fear_greed.previous_1_week }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="padding: 6px 8px;">
+                        <span class="macro-stat-label" style="font-size: 0.65rem;">1달전</span>
+                        <span class="macro-stat-val" style="font-size: 0.95rem;">{{ fear_greed.previous_1_month }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="padding: 6px 8px;">
+                        <span class="macro-stat-label" style="font-size: 0.65rem;">1년전</span>
+                        <span class="macro-stat-val" style="font-size: 0.95rem;">{{ fear_greed.previous_1_year }}</span>
+                    </div>
+                </div>
+
+                <div class="macro-commentary">
+                    💡 CNN 공식 시장 심리 지수. 카드 클릭 시 <b>1년 간의 F&G 히스토리 및 나스닥 지수 융합 차트</b>가 모달로 팝업됩니다.
+                </div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-align: right; margin-top: -4px;">⏰ {{ fear_greed.updated_at }}</div>
+            </div>
+            {% endif %}
+
+            <!-- 2. 글로벌 통화 흐름 (DXY & USD/KRW & USD/JPY) -->
+            <div class="macro-card">
+                <div class="macro-header">
+                    <div class="macro-title">
+                        💵 글로벌 통화 흐름
+                    </div>
+                    <a href="https://kr.tradingview.com/symbols/TVC-DXY/" target="_blank" class="badge badge-blue" style="text-decoration: none;">TradingView ↗</a>
+                </div>
+
+                <div class="macro-metrics-row">
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-DXY/', '_blank')">
+                        <span class="macro-stat-label">달러 인덱스 (DXY) ↗</span>
+                        <span class="macro-stat-val" style="color: var(--hl-blue);">{{ macro.dxy.price }}</span>
+                        <span style="font-size: 0.68rem; color: {% if macro.dxy.up %}var(--up){% else %}var(--down){% endif %}; font-weight: 600;">{{ macro.dxy.change_pct }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/FX_IDC-USDKRW/', '_blank')">
+                        <span class="macro-stat-label">달러 / 원 (USD/KRW) ↗</span>
+                        <span class="macro-stat-val">₩{{ macro.usdkrw.price }}</span>
+                        <span style="font-size: 0.68rem; color: {% if macro.usdkrw.up %}var(--up){% else %}var(--down){% endif %}; font-weight: 600;">{{ macro.usdkrw.change_pct }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/FX-USDJPY/', '_blank')">
+                        <span class="macro-stat-label">달러 / 엔 (USD/JPY) ↗</span>
+                        <span class="macro-stat-val">¥{{ macro.usdjpy.price }}</span>
+                        <span style="font-size: 0.68rem; color: {% if macro.usdjpy.up %}var(--up){% else %}var(--down){% endif %}; font-weight: 600;">{{ macro.usdjpy.change_pct }}</span>
+                    </div>
+                </div>
+
+                <div class="macro-commentary">
+                    💡 <b>달러/원 환율</b>과 함께 보면 달러 자체가 강한 것인지, 아니면 원화가 상대적으로 약한 것인지 명확히 분별할 수 있습니다. 엔화(JPY) 등 이종 통화와의 흐름을 파악하거나 글로벌 시장에서 달러의 절대적인 체급을 확인하는 필수 지표입니다.
+                </div>
+                <div style="font-size: 0.68rem; color: var(--hl-blue); text-align: right; margin-top: -4px;">⚡ {{ macro.realtime_updated_at }}</div>
+            </div>
+
+            <!-- 3. 투자 시점 고도화 (VIX 변동성 지수) -->
+            <div class="macro-card">
+                <div class="macro-header">
+                    <div class="macro-title">
+                        📊 투자 시점 고도화 (VIX)
+                    </div>
+                    <a href="https://kr.tradingview.com/symbols/TVC-VIX/" target="_blank" class="badge {{ macro.vix_badge }}" style="text-decoration: none;">{{ macro.vix_status }} ↗</a>
+                </div>
+
+                <div class="macro-metrics-row">
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-VIX/', '_blank')">
+                        <span class="macro-stat-label">VIX (변동성 지수) ↗</span>
+                        <span class="macro-stat-val" style="color: var(--yellow);">{{ macro.vix.price }}</span>
+                        <span style="font-size: 0.68rem; color: {% if macro.vix.up %}var(--up){% else %}var(--down){% endif %}; font-weight: 600;">{{ macro.vix.change_pct }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-VIX/', '_blank')">
+                        <span class="macro-stat-label">위험 단계</span>
+                        <span class="macro-stat-val" style="font-size: 0.95rem;">{{ macro.vix_status.split(' ')[0] }}</span>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">S&P500 옵션 기반</span>
+                    </div>
+                </div>
+
+                <div class="macro-commentary">
+                    💡 <b>Fear & Greed 지수</b>를 객관적으로 보완해 주는 데이터입니다. S&P 500 옵션 가격 기반 시장의 단기 불안감을 수치화합니다. 시장 급락 시 VIX가 크게 튀어 오르는 구간은 기계적 분할 매수나 가치 리밸런싱 시스템이 가장 효율적으로 작동하는 진입 조건입니다.
+                </div>
+                <div style="font-size: 0.68rem; color: var(--hl-blue); text-align: right; margin-top: -4px;">⚡ {{ macro.realtime_updated_at }}</div>
+            </div>
+
+            <!-- 4. 사이클 전환 시그널 (장단기 금리차) -->
+            <div class="macro-card">
+                <div class="macro-header">
+                    <div class="macro-title">
+                        📈 사이클 전환 시그널 (금리차)
+                    </div>
+                    <a href="https://kr.tradingview.com/symbols/TVC-US10Y/" target="_blank" class="badge {{ macro.spread_badge }}" style="text-decoration: none;">{{ macro.spread_badge.replace('badge-red','역전 경고').replace('badge-green','스프레드 정상') }} ↗</a>
+                </div>
+
+                <div class="macro-metrics-row">
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-US10Y/', '_blank')">
+                        <span class="macro-stat-label">미국 10년물 금리 ↗</span>
+                        <span class="macro-stat-val">{{ macro.us10y }}%</span>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">US10Y Benchmark</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-US02Y/', '_blank')">
+                        <span class="macro-stat-label">미국 2년물 금리 ↗</span>
+                        <span class="macro-stat-val">{{ macro.us2y }}%</span>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">US02Y Est</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-US10Y/', '_blank')">
+                        <span class="macro-stat-label">장단기 금리차 (10Y-2Y) ↗</span>
+                        <span class="macro-stat-val" style="color: {% if macro.spread >= 0 %}var(--up){% else %}var(--down){% endif %};">{{ macro.spread_str }}</span>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">스프레드 격차</span>
+                    </div>
+                </div>
+
+                <div class="macro-commentary">
+                    💡 미국 채권을 모니터링하실 때 개별 금리의 절대적 수치뿐만 아니라 두 채권 금리의 <b>'격차(스프레드)'</b>를 추적하는 것이 좋습니다. 장단기 금리가 역전되었다가 다시 정상화되는 시점은 거시 경제 사이클 전환 및 유동성 환경의 강력한 신호입니다.
+                </div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-align: right; margin-top: -4px;">⏰ {{ macro.spread_updated_at }}</div>
+            </div>
+
+            <!-- 5. 정책 방향성 확인 (WTI / Core PCE / CME FedWatch) -->
+            <div class="macro-card">
+                <div class="macro-header">
+                    <div class="macro-title">
+                        🏛️ 정책 방향성 확인 (Fed & 물가)
+                    </div>
+                    <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" class="badge badge-blue" style="text-decoration: none;">CME FedWatch ↗</a>
+                </div>
+
+                <div class="macro-metrics-row">
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://kr.tradingview.com/symbols/TVC-USOIL/', '_blank')">
+                        <span class="macro-stat-label">WTI 원유 유가 ↗</span>
+                        <span class="macro-stat-val">${{ macro.wti.price }}</span>
+                        <span style="font-size: 0.68rem; color: {% if macro.wti.up %}var(--up){% else %}var(--down){% endif %}; font-weight: 600;">{{ macro.wti.change_pct }}</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://www.bea.gov/data/personal-consumption-expenditures-price-index', '_blank')">
+                        <span class="macro-stat-label">Core PCE 근원물가 ↗</span>
+                        <span class="macro-stat-val" style="color: var(--hl-blue);">{{ macro.pce }}%</span>
+                        <span style="font-size: 0.68rem; color: var(--text-muted);">BEA 최신 발표치 (목표 2.0%)</span>
+                    </div>
+                    <div class="macro-stat-box" style="cursor: pointer;" onclick="window.open('https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html', '_blank')">
+                        <span class="macro-stat-label">CME FedWatch 금리 ↗</span>
+                        <span class="macro-stat-val" style="font-size: 0.9rem; color: var(--yellow);">동결 {{ macro.fed_hold_prob }}%</span>
+                        <span style="font-size: 0.68rem; color: var(--up);">인하 {{ macro.fed_cut_prob }}% (FOMC)</span>
+                    </div>
+                </div>
+
+                <div class="macro-commentary">
+                    💡 WTI 유가가 인플레이션의 원자재 측면을 대변한다면, <b>Core PCE(근원 개인소비지출)</b>는 연준(Fed)이 금리를 결정할 때 가장 신뢰하는 실물 물가 데이터입니다. 실시간 <b>CME FedWatch</b>를 함께 확인하여 금리와 환율 방향성을 명확히 읽어냅니다.
+                </div>
+                <div style="font-size: 0.68rem; color: var(--text-muted); text-align: right; margin-top: -4px;">⏰ {{ macro.policy_updated_at }}</div>
+            </div>
+            </div>
+
+        </div>
+
+        <div class="text-center" style="margin-top: 2rem;">
+            <a href="/logout" class="back-link" style="color: var(--down);">🔓 로그아웃</a>
+        </div>
+    </div>
+
+    <!-- Fear & Greed History Glass Modal Overlay -->
+    <div class="modal-overlay" id="fearGreedModal" onclick="handleFGModalOverlayClick(event)">
+        <div class="modal-window" style="max-width: 920px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <div class="logo-dot"></div>
+                    <span>🔥 CNN Fear & Greed Index (1년 히스토리 & 나스닥 지수 융합 차트)</span>
+                </div>
+                <button type="button" class="modal-close" onclick="closeFearGreedHistoryModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Ticker Comparison Toggle Buttons -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 10px;">
+                    <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">
+                        비교 지수 종목 선택:
+                    </div>
+                    <div class="sub-nav" style="gap: 6px;">
+                        <button type="button" class="sub-tab active" id="fg-btn-QQQ" onclick="switchFGTicker('QQQ', this)">QQQ (1x)</button>
+                        <button type="button" class="sub-tab" id="fg-btn-QLD" onclick="switchFGTicker('QLD', this)">QLD (2x)</button>
+                        <button type="button" class="sub-tab" id="fg-btn-TQQQ" onclick="switchFGTicker('TQQQ', this)">TQQQ (3x)</button>
+                    </div>
+                </div>
+
+                <div class="modal-chart-box" style="height: 400px;">
+                    <canvas id="fgHistoryChartCanvas"></canvas>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-top: 0.25rem;">
+                    💡 <b>좌측 Y축 (0~100)</b>: Fear & Greed Index | <b>우측 Y축 ($)</b>: <span id="fg-active-ticker-label" style="color: var(--yellow); font-weight: 600;">QQQ (1x) 주가</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fgChartInstance = null;
+        let globalFGData = null;
+        let activeFGTicker = 'QQQ';
+
+        function openFearGreedHistoryModal() {
+            const modal = document.getElementById('fearGreedModal');
+            modal.classList.add('active');
+
+            fetch('/api/fear_greed_history')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        globalFGData = data;
+                        renderFGDualChart(data, activeFGTicker);
+                    }
+                })
+                .catch(err => console.error('Error loading F&G history:', err));
+        }
+
+        function closeFearGreedHistoryModal() {
+            document.getElementById('fearGreedModal').classList.remove('active');
+        }
+
+        function handleFGModalOverlayClick(e) {
+            if (e.target.id === 'fearGreedModal') {
+                closeFearGreedHistoryModal();
+            }
+        }
+
+        function switchFGTicker(tickerSymbol, btnElem) {
+            activeFGTicker = tickerSymbol;
+            document.querySelectorAll('#fearGreedModal .sub-tab').forEach(b => b.classList.remove('active'));
+            if (btnElem) btnElem.classList.add('active');
+
+            const labelElem = document.getElementById('fg-active-ticker-label');
+            if (labelElem) {
+                const titleMap = { 'QQQ': 'QQQ (1x)', 'QLD': 'QLD (2x)', 'TQQQ': 'TQQQ (3x)' };
+                labelElem.innerText = `${titleMap[tickerSymbol] || tickerSymbol} 주가`;
+            }
+
+            if (globalFGData) {
+                renderFGDualChart(globalFGData, tickerSymbol);
+            }
+        }
+
+        function renderFGDualChart(data, targetTicker = 'QQQ') {
+            const ctx = document.getElementById('fgHistoryChartCanvas').getContext('2d');
+            if (fgChartInstance) {
+                fgChartInstance.destroy();
+            }
+
+            const dates = data.dates || [];
+            const scores = data.fg_scores || [];
+            
+            let tickerPrices = [];
+            if (data.series && data.series[targetTicker]) {
+                tickerPrices = data.series[targetTicker];
+            } else {
+                tickerPrices = data.nasdaq_prices || [];
+            }
+
+            const tickerColorMap = {
+                'QQQ': '#F59E0B',   // Gold
+                'QLD': '#10B981',   // Emerald Green
+                'TQQQ': '#EC4899'   // Neon Pink
+            };
+            const activeColor = tickerColorMap[targetTicker] || '#F59E0B';
+
+            const sentimentBandsPlugin = {
+                id: 'sentimentBands',
+                beforeDraw(chart) {
+                    const { ctx, chartArea: { top, bottom, left, right }, scales: { y_fg } } = chart;
+                    if (!y_fg) return;
+
+                    const getY = (val) => y_fg.getPixelForValue(val);
+
+                    const bands = [
+                        { yMin: 0,  yMax: 25,  color: 'rgba(239, 68, 68, 0.10)', label: '25 극도의 공포 (Extreme Fear)', textColor: '#EF4444' },
+                        { yMin: 25, yMax: 45,  color: 'rgba(249, 115, 22, 0.07)', label: '45 공포 (Fear)', textColor: '#F97316' },
+                        { yMin: 45, yMax: 55,  color: 'rgba(245, 158, 11, 0.05)', label: '55 중립 (Neutral)', textColor: '#F59E0B' },
+                        { yMin: 55, yMax: 75,  color: 'rgba(16, 185, 129, 0.07)', label: '75 탐욕 (Greed)', textColor: '#10B981' },
+                        { yMin: 75, yMax: 100, color: 'rgba(56, 189, 248, 0.10)', label: '100 극도의 탐욕 (Extreme Greed)', textColor: '#38BDF8' }
+                    ];
+
+                    ctx.save();
+                    bands.forEach(b => {
+                        const yTop = getY(b.yMax);
+                        const yBottom = getY(b.yMin);
+                        ctx.fillStyle = b.color;
+                        ctx.fillRect(left, yTop, right - left, yBottom - yTop);
+
+                        if (b.yMax < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(left, yTop);
+                            ctx.lineTo(right, yTop);
+                            ctx.strokeStyle = 'rgba(248, 250, 252, 0.20)';
+                            ctx.setLineDash([4, 4]);
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+
+                        ctx.fillStyle = b.textColor;
+                        ctx.font = '600 10px Inter';
+                        ctx.fillText(b.label, left + 8, yTop + 14);
+                    });
+                    ctx.restore();
+                }
+            };
+
+            fgChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Fear & Greed Index (0~100)',
+                            data: scores,
+                            borderColor: '#38BDF8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y_fg',
+                            tension: 0.2,
+                            fill: true
+                        },
+                        {
+                            label: `${targetTicker} Price ($)`,
+                            data: tickerPrices,
+                            borderColor: activeColor,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            yAxisID: 'y_ticker',
+                            tension: 0.2,
+                            fill: false
+                        }
+                    ]
+                },
+                plugins: [sentimentBandsPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#F8FAFC',
+                                font: { family: 'Inter', size: 12, weight: '600' },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            borderColor: 'rgba(56, 189, 248, 0.3)',
+                            borderWidth: 1,
+                            titleColor: '#F8FAFC',
+                            bodyFont: { family: 'JetBrains Mono', size: 12 },
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(248, 250, 252, 0.06)' },
+                            ticks: { color: '#94A3B8', font: { family: 'Inter', size: 10 } }
+                        },
+                        y_fg: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            min: 0,
+                            max: 100,
+                            grid: { color: 'rgba(248, 250, 252, 0.08)' },
+                            ticks: {
+                                color: '#38BDF8',
+                                font: { family: 'JetBrains Mono', size: 11 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Fear & Greed Index (0~100)',
+                                color: '#38BDF8'
+                            }
+                        },
+                        y_ticker: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: activeColor,
+                                font: { family: 'JetBrains Mono', size: 11 },
+                                callback: val => `$${val}`
+                            },
+                            title: {
+                                display: true,
+                                text: `${targetTicker} Price ($)`,
+                                color: activeColor
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

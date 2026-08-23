@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>매매 설정 입력 - James World</title>
+    <meta name="color-scheme" content="dark" />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,35 +22,50 @@
             }
         }
         .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
+            background: var(--surface);
+            border: 1px solid rgba(56, 189, 248, 0.15);
             border-radius: var(--radius-md);
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
             transition: all var(--transition-fast);
         }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--hl-blue), transparent);
+            opacity: 0.25;
+        }
         .card.mode-public-card {
-            border-color: var(--border-color);
+            border-color: rgba(56, 189, 248, 0.22);
         }
         .card.mode-private-card {
-            border-color: rgba(245, 158, 11, 0.45);
-            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.03);
+            border-color: rgba(245, 158, 11, 0.35);
+            box-shadow: 0 4px 24px rgba(245, 158, 11, 0.04);
+        }
+        .card.mode-private-card::before {
+            background: linear-gradient(90deg, transparent, var(--yellow), transparent);
         }
         .card-header-group {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.10);
             padding-bottom: 0.5rem;
             margin-bottom: 0.25rem;
         }
         .card-num {
-            font-family: var(--font-heading);
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--text-dim);
+            letter-spacing: 0.04em;
         }
         .mode-private-card .card-num {
             color: var(--yellow);
@@ -67,11 +83,28 @@
 <body>
     <div class="container">
         <!-- Header -->
-        <div style="text-align: center; margin-bottom: 0.5rem;">
-            <h2>자동 매매 설정 관리</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
-                각 종목에 적용할 무한매수법 세부 파라미터를 입력합니다
-            </p>
+        <header class="brand-header">
+            <a href="/infinite" class="brand-logo-group">
+                <div class="logo-dot"></div>
+                <div class="brand-title">
+                    매매 설정 관리
+                    <span class="sub">수정 및 파라미터 셋업</span>
+                </div>
+            </a>
+            <div class="meta-pills">
+                <span class="pill"><span class="label">Slots:</span> <b>4 슬롯</b></span>
+            </div>
+        </header>
+
+        <!-- raoni.xyz Top Pill Navigation Bar -->
+        <div class="top-nav-row">
+            <nav class="top-nav">
+                <a href="/infinite" class="nav-link">대시보드</a>
+                <a href="/macro" class="nav-link">매크로 보드</a>
+                <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
+                <a href="/infinite_settings" class="nav-link active">매매 설정</a>
+                <a href="/infinite_help" class="nav-link">전략 가이드</a>
+            </nav>
         </div>
 
         <!-- Dynamic Settings Container -->
@@ -109,7 +142,7 @@
                     <label class="checkbox-container" style="margin: 0;">
                         <input type="checkbox" name="auto_${index}" ${auto}>
                         <span class="custom-checkbox"></span>
-                        <span class="checkbox-label" style="font-size: 0.8rem;">자동매매 활성화</span>
+                        <span class="checkbox-label" style="font-size: 0.75rem;">자동매매 활성화</span>
                     </label>
                 </div>
 
@@ -122,16 +155,13 @@
                         </select>
                     </div>
 
-                     <div class="form-group col-span-2">
-                         <label>전략 선택</label>
-                         <select name="strategy_${index}">
-                             <option value="v1"${strategy === "v1" ? " selected" : ""}>무한매수법 v1</option>
-                             <option value="v2.1"${strategy === "v2.1" ? " selected" : ""}>무한매수법 v2.1</option>
-                             <option value="v2.2"${strategy === "v2.2" ? " selected" : ""}>무한매수법 v2.2</option>
-                             <option value="v3"${strategy === "v3" ? " selected" : ""}>무한매수법 v3</option>
-                             <option value="only_buying"${strategy === "only_buying" ? " selected" : ""}>Only Buying (매수 전용)</option>
-                         </select>
-                     </div>
+                    <div class="form-group col-span-2">
+                        <label>전략 선택</label>
+                        <select name="strategy_${index}">
+                            <option value="v2.2"${strategy === "v2.2" ? " selected" : ""}>무한매수법 v2.2</option>
+                            <option value="only_buying"${strategy === "only_buying" ? " selected" : ""}>Only Buying (매수 전용)</option>
+                        </select>
+                    </div>
 
                     <div class="form-group col-span-2">
                         <label>종목명 (Ticker)</label>
@@ -151,11 +181,6 @@
                     <div class="form-group col-span-2">
                         <label>목표 수익률 (%)</label>
                         <input type="text" name="target_${index}" value="${data.target || ""}" placeholder="12.0">
-                    </div>
-
-                    <div class="form-group col-span-2">
-                        <label>이번 회차 시작일</label>
-                        <input type="date" name="start_date_${index}" value="${data.start_date || "2026-07-11"}">
                     </div>
                 </div>
             `;
@@ -196,10 +221,9 @@
                 const split = document.querySelector(`[name=split_${i}]`).value;
                 const target = document.querySelector(`[name=target_${i}]`).value;
                 const strategy = document.querySelector(`[name=strategy_${i}]`).value;
-                const startDate = document.querySelector(`[name=start_date_${i}]`).value;
 
-                const key = `${mode}_ticker`; // Wait, this key should be `${mode}_${ticker}`! Let's write `${mode}_${ticker}`.
-                settings[`${mode}_${ticker}`] = { mode, auto, ticker, capital, split, target, strategy, start_date: startDate };
+                const key = `${mode}_${ticker}`;
+                settings[key] = { mode, auto, ticker, capital, split, target, strategy };
             }
 
             fetch("/infinite_save_settings", {
