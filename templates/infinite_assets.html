@@ -85,6 +85,47 @@
         .blur-target {
             transition: filter 0.3s ease, opacity 0.3s ease;
         }
+
+        /* Switch Toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .25s ease;
+            border-radius: 26px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #f8fafc;
+            transition: .25s ease;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .switch input:checked + .slider {
+            background-color: #3b82f6;
+            border-color: #60a5fa;
+        }
+        .switch input:checked + .slider:before {
+            transform: translateX(22px);
+        }
     </style>
 </head>
 <body class="blur-active">
@@ -331,7 +372,80 @@
                 </div>
             </div>
             
+            {% if current_broker == 'meritz' %}
+            <!-- Meritz Account Hide/Show Settings Toggle -->
+            <div style="text-align: center; margin-top: 2.5rem; margin-bottom: 1.5rem;">
+                <button type="button" onclick="toggleSettingsModal()" class="action-pill" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>⚙️</span> 계좌 숨김 설정
+                </button>
+            </div>
+
+            <div id="settingsPanel" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.25rem; margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 0.8rem;">
+                    <div style="font-size: 0.95rem; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>⚙️</span> 메리츠증권 계좌 숨김 / 표시 관리
+                    </div>
+                    <button type="button" onclick="toggleSettingsModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 0 4px;">✕</button>
+                </div>
+                
+                <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 1rem; line-height: 1.4;">
+                    토글을 끄면 해당 계좌가 총 자산 계산 및 계좌 목록에서 제외됩니다.
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% for acc in data.all_accounts_list %}
+                        {% if 'MERITZ' in acc.broker.upper() or '메리츠' in acc.broker %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: rgba(30, 41, 59, 0.5); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <div>
+                                <div style="color: #fff; font-weight: 700; font-size: 0.9rem;">{{ acc.account_type }}</div>
+                                <div style="color: #64748b; font-size: 0.78rem; margin-top: 2px; font-family: monospace;">{{ acc.account_num }}</div>
+                            </div>
+                            <div>
+                                <label class="switch" style="margin: 0;">
+                                    <input type="checkbox" {% if not acc.is_excluded %}checked{% endif %} 
+                                           onchange="handleAccountToggle('{{ acc.broker }}', '{{ acc.account_num }}', !this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
             <script>
+                function toggleSettingsModal() {
+                    const el = document.getElementById('settingsPanel');
+                    if (el) {
+                        const isHidden = el.style.display === 'none' || el.style.display === '';
+                        el.style.display = isHidden ? 'block' : 'none';
+                        if (isHidden) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }
+                }
+
+                function handleAccountToggle(broker, accountNum, isExcluded) {
+                    const formData = new FormData();
+                    formData.append('broker', broker);
+                    formData.append('account_num', accountNum);
+                    formData.append('is_excluded', isExcluded ? 'true' : 'false');
+                    formData.append('current_broker', '{{ current_broker }}');
+
+                    fetch('/infinite/toggle_exclude', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    }).then(() => {
+                        window.location.reload();
+                    }).catch(err => {
+                        console.error('Toggle error:', err);
+                        window.location.reload();
+                    });
+                }
                 
 
 

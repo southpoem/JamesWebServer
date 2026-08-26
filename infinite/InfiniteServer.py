@@ -596,17 +596,27 @@ def toggle_exclude():
     broker = request.form.get('broker')
     account_num = request.form.get('account_num')
     is_excluded = request.form.get('is_excluded') == 'true'
+    current_broker = request.form.get('current_broker') or request.args.get('broker', 'meritz')
     
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    if is_excluded:
-        c.execute("INSERT OR IGNORE INTO excluded_accounts (broker, account_num) VALUES (?, ?)", (broker, account_num))
-    else:
-        c.execute("DELETE FROM excluded_accounts WHERE broker = ? AND account_num = ?", (broker, account_num))
-    conn.commit()
-    conn.close()
-    
-    return redirect(url_for('infinite.infinite_assets', broker=request.args.get('broker', 'samsung')))
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS excluded_accounts (broker TEXT, account_num TEXT, PRIMARY KEY (broker, account_num))")
+        if is_excluded:
+            c.execute("INSERT OR IGNORE INTO excluded_accounts (broker, account_num) VALUES (?, ?)", (broker, account_num))
+        else:
+            c.execute("DELETE FROM excluded_accounts WHERE broker = ? AND account_num = ?", (broker, account_num))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.error(f"toggle_exclude error: {e}")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+        return jsonify({'status': 'success', 'is_excluded': is_excluded})
+        
+    return redirect(url_for('infinite.infinite_assets', broker=current_broker))
 
 @infinite_bp.route('/infinite', methods=['GET'])
 @login_required
