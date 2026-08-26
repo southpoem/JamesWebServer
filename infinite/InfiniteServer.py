@@ -591,6 +591,7 @@ def api_live_prices():
         return jsonify({})
 
 @infinite_bp.route('/toggle_exclude', methods=['POST'])
+@infinite_bp.route('/infinite/toggle_exclude', methods=['POST'])
 @login_required
 def toggle_exclude():
     broker = request.form.get('broker') or '메리츠'
@@ -1847,6 +1848,7 @@ def api_vr_simulation_data():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @infinite_bp.route('/add_family_asset', methods=['POST'])
+@infinite_bp.route('/infinite/add_family_asset', methods=['POST'])
 @login_required
 def route_add_family_asset():
     account_name = request.form.get('account_name')
@@ -1862,6 +1864,7 @@ def route_add_family_asset():
     return redirect(url_for('infinite.infinite_assets', broker='family'))
 
 @infinite_bp.route('/delete_family_asset', methods=['POST'])
+@infinite_bp.route('/infinite/delete_family_asset', methods=['POST'])
 @login_required
 def route_delete_family_asset():
     account_name = request.form.get('account_name')

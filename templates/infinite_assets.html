@@ -434,7 +434,7 @@
                     formData.append('current_broker', '{{ current_broker }}');
 
                     try {
-                        const res = await fetch('/infinite/toggle_exclude', {
+                        const res = await fetch('/toggle_exclude', {
                             method: 'POST',
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest'
@@ -563,7 +563,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span class="blur-target" style="color: #fbbf24; font-weight: 700; font-size: 1rem;" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();">{{ "{:,.0f}".format(fa.amount) }}원</span>
-                        <form action="/infinite/delete_family_asset" method="post" style="margin: 0;">
+                        <form action="/delete_family_asset" method="post" style="margin: 0;">
                             <input type="hidden" name="account_name" value="{{ fa.account_name }}">
                             <button type="submit" style="background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">삭제</button>
                         </form>
@@ -572,7 +572,7 @@
                 {% endfor %}
             </div>
 
-            <form action="/infinite/add_family_asset" method="post" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.2rem; display: flex; flex-direction: column; gap: 10px;">
+            <form action="/add_family_asset" method="post" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.2rem; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; gap: 10px;">
                     <input type="text" name="account_name" placeholder="소유자 (예: 와이프)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
                     <input type="text" name="asset_type" placeholder="자산명 (예: 예금)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
