@@ -411,19 +411,8 @@
     <div style="background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255,255,255,0.08); padding: 2.5rem 1rem; margin-top: 3rem; width: 100%; box-sizing: border-box;">
         <div style="max-width: 600px; margin: 0 auto;">
             <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1.2rem; font-weight: 700;">👨‍👩‍👧‍👦 가족 자산 수동 관리</h3>
-            
-            <form action="/infinite/add_family_asset" method="post" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" name="account_name" placeholder="소유자 (예: 와이프)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
-                    <input type="text" name="asset_type" placeholder="자산명 (예: 예금)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" name="amount" placeholder="금액 (원)" required style="flex: 2; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
-                    <button type="submit" style="flex: 1; background: #fbbf24; color: #121212; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;">추가하기</button>
-                </div>
-            </form>
 
-            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+            <div style="margin-bottom: 1.2rem;">
                 {% for fa in data.family_assets %}
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; padding: 0.8rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03);">
                     <div>
@@ -440,6 +429,17 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <form action="/infinite/add_family_asset" method="post" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.2rem; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" name="account_name" placeholder="소유자 (예: 와이프)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                    <input type="text" name="asset_type" placeholder="자산명 (예: 예금)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" name="amount" placeholder="금액 (원)" required style="flex: 2; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                    <button type="submit" style="flex: 1; background: #fbbf24; color: #121212; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">추가하기</button>
+                </div>
+            </form>
         </div>
     </div>
     {% endif %}
