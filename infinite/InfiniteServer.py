@@ -615,6 +615,19 @@ def infinite_assets():
         conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query("SELECT * FROM asset_history", conn)
         
+        # --- US Ticker Mapping ---
+        def map_us_ticker(t):
+            if pd.isnull(t): return t
+            t_upper = str(t).upper()
+            if 'PROSHARES QQQ 2X' in t_upper: return 'QLD'
+            if 'PROSHARES ULTRAPRO QQQ' in t_upper: return 'TQQQ'
+            if 'DIREXION SEMICONDUCTOR DAILY 3X' in t_upper: return 'SOXL'
+            if 'DIREXION DAILY SEMICONDUCTOR BULL 3X' in t_upper: return 'SOXL'
+            if 'PROSHARES ULTRAPRO SHORT QQQ' in t_upper: return 'SQQQ'
+            return t
+        df['ticker'] = df['ticker'].apply(map_us_ticker)
+
+        
         c = conn.cursor()
         c.execute("CREATE TABLE IF NOT EXISTS excluded_accounts (broker TEXT, account_num TEXT, PRIMARY KEY (broker, account_num))")
         excluded_df = pd.read_sql_query("SELECT broker, account_num FROM excluded_accounts", conn)
@@ -709,6 +722,14 @@ def infinite_assets():
             family_assets = FamilyDBHelper.get_latest_family_assets()
             for fa in family_assets:
                 total_today += fa['amount']
+                account_summary.append({
+                    'broker': '가족',
+                    'account_num': '',
+                    'account_type': f"{fa['account_name']} ({fa['asset_type']})",
+                    'total_investment': fa['amount'],
+                    'total_evaluation': fa['amount'],
+                    'profit_loss': 0
+                })
                 
             fam_df = FamilyDBHelper.get_family_history_df()
             if not fam_df.empty:
@@ -763,7 +784,7 @@ def infinite_assets():
 
     df['account_label'] = df.apply(get_account_label, axis=1)
     latest_date = df['date'].max()
-    latest_totals = df[df['date'] == latest_date].groupby('account_label')['total_evaluation'].sum().sort_values(ascending=False)
+    latest_totals = df.groupby('account_label').apply(lambda x: x.sort_values('date').iloc[-1]['total_evaluation']).sort_values(ascending=False)
     
     for account_label in latest_totals.index:
         group = df[df['account_label'] == account_label]
@@ -865,13 +886,16 @@ def infinite_assets():
         analysis_data['sector'].sort(key=lambda x: x['value'], reverse=True)
         analysis_data['stock'].sort(key=lambda x: x['value'], reverse=True)
 
+    # Compute family total for accurate deltas
+    family_total = sum(fa['amount'] for fa in family_assets) if broker_filter == 'family' else 0
+
     data = {
         'today_str': today.strftime('%Y-%m-%d'),
         'last_update_time': last_update_time,
-        'total_today': total_today,
-        'change_1d': total_today - total_yesterday if yesterday else 0,
-        'change_7d': total_today - total_last_week if last_week else 0,
-        'change_30d': total_today - total_last_month if last_month else 0,
+        'total_today': total_today, # Already includes family_total from the loop above
+        'change_1d': (total_today - family_total) - total_yesterday if yesterday else 0,
+        'change_7d': (total_today - family_total) - total_last_week if last_week else 0,
+        'change_30d': (total_today - family_total) - total_last_month if last_month else 0,
         'account_summary': account_summary,
         'ticker_summary': ticker_summary,
         'chart_dates': chart_dates,
