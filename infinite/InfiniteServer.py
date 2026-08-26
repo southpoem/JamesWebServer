@@ -892,22 +892,26 @@ def infinite_assets():
     family_total = sum(fa['amount'] for fa in family_assets) if broker_filter == 'family' else 0
 
     # For family tab: compute sub-totals per broker from the full unfiltered df
-    family_sub = {}
+    family_sub = {'samsung': 0, 'meritz': 0, 'manual': 0, 'grand_total': 0}
     if broker_filter == 'family':
-        df_all['date'] = pd.to_datetime(df_all['date'])
-        latest_all = df_all['date'].max()
-        df_all_today = df_all[df_all['date'] == latest_all]
-        samsung_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]['total_evaluation'].sum())
-        meritz_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]['total_evaluation'].sum())
-        manual_total = float(sum(fa['amount'] for fa in family_assets))
-        family_sub = {
-            'samsung': samsung_total,
-            'meritz': meritz_total,
-            'manual': manual_total,
-            'grand_total': samsung_total + meritz_total + manual_total,
-        }
-        # Override total_today with actual grand total for family
-        total_today = family_sub['grand_total']
+        try:
+            df_all['date'] = pd.to_datetime(df_all['date'])
+            latest_all = df_all['date'].max()
+            df_all_today = df_all[df_all['date'] == latest_all]
+            samsung_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]['total_evaluation'].sum())
+            meritz_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]['total_evaluation'].sum())
+            manual_total = float(sum(fa['amount'] for fa in family_assets))
+            grand_total = samsung_total + meritz_total + manual_total
+            family_sub = {
+                'samsung': samsung_total,
+                'meritz': meritz_total,
+                'manual': manual_total,
+                'grand_total': grand_total,
+            }
+            # Override total_today with actual grand total for family
+            total_today = grand_total
+        except Exception as e:
+            logging.error(f"Failed to compute family_sub: {e}")
 
     data = {
         'today_str': today.strftime('%Y-%m-%d'),
