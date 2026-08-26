@@ -593,7 +593,7 @@ def api_live_prices():
 @infinite_bp.route('/toggle_exclude', methods=['POST'])
 @login_required
 def toggle_exclude():
-    broker = request.form.get('broker')
+    broker = request.form.get('broker') or '메리츠'
     account_num = request.form.get('account_num')
     is_excluded = request.form.get('is_excluded') == 'true'
     current_broker = request.form.get('current_broker') or request.args.get('broker', 'meritz')
@@ -603,9 +603,9 @@ def toggle_exclude():
         c = conn.cursor()
         c.execute("CREATE TABLE IF NOT EXISTS excluded_accounts (broker TEXT, account_num TEXT, PRIMARY KEY (broker, account_num))")
         if is_excluded:
-            c.execute("INSERT OR IGNORE INTO excluded_accounts (broker, account_num) VALUES (?, ?)", (broker, account_num))
+            c.execute("INSERT OR REPLACE INTO excluded_accounts (broker, account_num) VALUES (?, ?)", (broker, account_num))
         else:
-            c.execute("DELETE FROM excluded_accounts WHERE broker = ? AND account_num = ?", (broker, account_num))
+            c.execute("DELETE FROM excluded_accounts WHERE account_num = ?", (account_num,))
         conn.commit()
         conn.close()
     except Exception as e:
@@ -641,7 +641,7 @@ def infinite_assets():
         c = conn.cursor()
         c.execute("CREATE TABLE IF NOT EXISTS excluded_accounts (broker TEXT, account_num TEXT, PRIMARY KEY (broker, account_num))")
         excluded_df = pd.read_sql_query("SELECT broker, account_num FROM excluded_accounts", conn)
-        excluded_list = excluded_df.to_dict('records')
+        excluded_acc_nums = set(excluded_df['account_num'].tolist()) if not excluded_df.empty else set()
         conn.close()
     except Exception as e:
         logging.error(f"Asset history DB error: {e}")
@@ -653,13 +653,12 @@ def infinite_assets():
     all_accounts_df = df[['broker', 'account_type', 'account_num']].drop_duplicates()
     all_accounts_list = all_accounts_df.to_dict('records')
     for acc in all_accounts_list:
-        acc['is_excluded'] = any(e['broker'] == acc['broker'] and e['account_num'] == acc['account_num'] for e in excluded_list)
+        acc['is_excluded'] = acc['account_num'] in excluded_acc_nums
         acc['masked_num'] = '*' + str(acc['account_num'])[-5:] if len(str(acc['account_num'])) >= 5 else str(acc['account_num'])
         b_str = str(acc['broker']).upper()
         acc['broker_clean'] = '삼성증권' if 'SAMSUNG' in b_str or '삼성' in b_str else ('메리츠' if 'MERITZ' in b_str or '메리츠' in b_str else str(acc['broker']))
 
-    for excl in excluded_list:
-        df = df[~((df['broker'] == excl['broker']) & (df['account_num'] == excl['account_num']))]
+    df = df[~df['account_num'].isin(excluded_acc_nums)]
 
     broker_filter = request.args.get('broker', 'samsung')
     df_all = df.copy()  # keep unfiltered for family tab sub-totals
