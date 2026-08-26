@@ -189,22 +189,34 @@
 
             <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()">
                 <div class="total-amount">{{ "{:,.0f}".format(data.family_sub.get('grand_total', 0)) }}원</div>
-                <div class="total-change neutral">삼성 + 메리츠 + 수동입력 합산</div>
+                {% set tpl = data.family_sub.get('total_pl', 0) %}
+                {% set tpr = data.family_sub.get('total_pl_rate', 0) %}
+                <div class="total-change {% if tpl > 0 %}up{% elif tpl < 0 %}down{% else %}neutral{% endif %}">
+                    {{ "{:+,.0f}".format(tpl) }}원 ({{ "{:+.2f}".format(tpr) }}%)
+                </div>
+                <div class="total-change-text neutral">삼성 + 메리츠 + 수동입력 합산</div>
             </div>
 
             {# 3가지 소계 카드 #}
-            <div style="display: flex; gap: 10px; margin-top: 1.5rem; margin-bottom: 1.5rem;">
-                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(79,172,254,0.3); border-radius: 14px; padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.78rem; color: #4facfe; font-weight: 700; margin-bottom: 6px;">🏦 삼성증권</div>
-                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 1rem; font-weight: 800; color: #fff;">{{ "{:,.0f}".format(data.family_sub.get('samsung', 0)) }}원</div>
+            <div style="display: flex; gap: 8px; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                {% set spl = data.family_sub.get('samsung_pl', 0) %}
+                {% set spr = data.family_sub.get('samsung_pl_rate', 0) %}
+                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(79,172,254,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #4facfe; font-weight: 700; margin-bottom: 5px;">🏦 삼성증권</div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('samsung', 0)) }}원</div>
+                    <div class="blur-target {% if spl > 0 %}up{% elif spl < 0 %}down{% else %}neutral{% endif %}" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.72rem; font-weight: 700;">{{ "{:+,.0f}".format(spl) }}<br>({{ "{:+.2f}".format(spr) }}%)</div>
                 </div>
-                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(248,113,113,0.3); border-radius: 14px; padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.78rem; color: #f87171; font-weight: 700; margin-bottom: 6px;">🏦 메리츠증권</div>
-                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 1rem; font-weight: 800; color: #fff;">{{ "{:,.0f}".format(data.family_sub.get('meritz', 0)) }}원</div>
+                {% set mpl = data.family_sub.get('meritz_pl', 0) %}
+                {% set mpr = data.family_sub.get('meritz_pl_rate', 0) %}
+                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(248,113,113,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #f87171; font-weight: 700; margin-bottom: 5px;">🏦 메리츠증권</div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('meritz', 0)) }}원</div>
+                    <div class="blur-target {% if mpl > 0 %}up{% elif mpl < 0 %}down{% else %}neutral{% endif %}" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.72rem; font-weight: 700;">{{ "{:+,.0f}".format(mpl) }}<br>({{ "{:+.2f}".format(mpr) }}%)</div>
                 </div>
-                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px; padding: 1rem; text-align: center;">
-                    <div style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; margin-bottom: 6px;">📝 수동입력</div>
-                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 1rem; font-weight: 800; color: #fff;">{{ "{:,.0f}".format(data.family_sub.get('manual', 0)) }}원</div>
+                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
+                    <div style="font-size: 0.72rem; color: #fbbf24; font-weight: 700; margin-bottom: 5px;">📝 수동입력</div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('manual', 0)) }}원</div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">수익률 없음</div>
                 </div>
             </div>
 

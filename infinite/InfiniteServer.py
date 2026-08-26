@@ -892,21 +892,50 @@ def infinite_assets():
     family_total = sum(fa['amount'] for fa in family_assets) if broker_filter == 'family' else 0
 
     # For family tab: compute sub-totals per broker from the full unfiltered df
-    family_sub = {'samsung': 0, 'meritz': 0, 'manual': 0, 'grand_total': 0}
+    family_sub = {'samsung': 0, 'meritz': 0, 'manual': 0, 'grand_total': 0,
+                  'samsung_pl': 0, 'samsung_pl_rate': 0,
+                  'meritz_pl': 0, 'meritz_pl_rate': 0,
+                  'total_pl': 0, 'total_pl_rate': 0}
     if broker_filter == 'family':
         try:
             df_all['date'] = pd.to_datetime(df_all['date'])
             latest_all = df_all['date'].max()
             df_all_today = df_all[df_all['date'] == latest_all]
-            samsung_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]['total_evaluation'].sum())
-            meritz_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]['total_evaluation'].sum())
-            manual_total = float(sum(fa['amount'] for fa in family_assets))
-            grand_total = samsung_total + meritz_total + manual_total
+
+            # Samsung
+            df_sam = df_all_today[df_all_today['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]
+            samsung_eval  = float(df_sam['total_evaluation'].sum())
+            samsung_invest = float(df_sam['total_investment'].sum())
+            samsung_pl    = float(df_sam['profit_loss'].sum())
+            samsung_pl_rate = (samsung_pl / samsung_invest * 100) if samsung_invest > 0 else 0
+
+            # Meritz
+            df_mer = df_all_today[df_all_today['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]
+            meritz_eval   = float(df_mer['total_evaluation'].sum())
+            meritz_invest  = float(df_mer['total_investment'].sum())
+            meritz_pl     = float(df_mer['profit_loss'].sum())
+            meritz_pl_rate = (meritz_pl / meritz_invest * 100) if meritz_invest > 0 else 0
+
+            # Manual (수동입력은 수익률 없음)
+            manual_total  = float(sum(fa['amount'] for fa in family_assets))
+
+            # Grand total
+            grand_total   = samsung_eval + meritz_eval + manual_total
+            total_pl      = samsung_pl + meritz_pl
+            total_invest   = samsung_invest + meritz_invest
+            total_pl_rate  = (total_pl / total_invest * 100) if total_invest > 0 else 0
+
             family_sub = {
-                'samsung': samsung_total,
-                'meritz': meritz_total,
+                'samsung': samsung_eval,
+                'samsung_pl': samsung_pl,
+                'samsung_pl_rate': samsung_pl_rate,
+                'meritz': meritz_eval,
+                'meritz_pl': meritz_pl,
+                'meritz_pl_rate': meritz_pl_rate,
                 'manual': manual_total,
                 'grand_total': grand_total,
+                'total_pl': total_pl,
+                'total_pl_rate': total_pl_rate,
             }
             # Override total_today with actual grand total for family
             total_today = grand_total
