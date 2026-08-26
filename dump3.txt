@@ -1,0 +1,70 @@
+411: </div>
+412: 
+413: <script>
+414: document.addEventListener('DOMContentLoaded', function() {
+415: const analysisData = {{ data.analysis_data | tojson | safe }};
+416: if (!analysisData) return;
+417: 
+418: const createDoughnut = (ctxId, legendId, dataArr) => {
+419: if (!dataArr || dataArr.length === 0) return;
+420: 
+421: const labels = dataArr.map(d => d.label);
+422: const values = dataArr.map(d => d.value);
+423: const total = values.reduce((a, b) => a + b, 0);
+424: 
+425: const colors = [
+426: '#FF5252', '#4FACFE', '#FEE140', '#43E97B', '#F093FB',
+427: '#00f2fe', '#f83600', '#f9d423', '#b224ef', '#f5576c',
+428: '#2193b0', '#6dd5ed', '#cc2b5e', '#753a88', '#ee0979',
+429: '#ff6a00', '#11998e', '#38ef7d', '#fc4a1a', '#f7b733'
+430: ];
+431: 
+432: new Chart(document.getElementById(ctxId), {
+433: type: 'doughnut',
+434: data: {
+435: labels: labels,
+436: datasets: [{
+437: data: values,
+438: backgroundColor: colors.slice(0, labels.length),
+439: borderWidth: 0
+440: }]
+441: },
+442: options: {
+443: responsive: true,
+444: maintainAspectRatio: false,
+445: plugins: {
+446: legend: { display: false },
+447: tooltip: {
+448: callbacks: {
+449: label: function(context) {
+450: let v = context.raw;
+451: let pct = (v / total * 100).toFixed(1) + '%';
+452: return  : 원 ();
+453: }
+454: }
+455: }
+456: },
+457: cutout: '65%'
+458: }
+459: });
+460: 
+461: const legendHtml = dataArr.map((d, i) => {
+462: let pct = total > 0 ? (d.value / total * 100).toFixed(1) : 0;
+463: return
+464: <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dotted rgba(255,255,255,0.1);">
+465: <div style="display: flex; align-items: center; gap: 10px; max-width: 65%;">
+466: <span style="width: 12px; height: 12px; border-radius: 50%; background: ; flex-shrink: 0;"></span>
+467: <span style="color: #eee; word-break: break-all; line-height: 1.3;"></span>
+468: </div>
+469: <div style="text-align: right; line-height: 1.3;">
+470: <span style="color: #fff; font-weight: 700; font-size: 0.95rem;">%</span>
+471: <br><span style="color: #888; font-size: 0.75rem;">원</span>
+472: </div>
+473: </li>;
+474: }).join('');
+475: document.getElementById(legendId).innerHTML = legendHtml;
+476: };
+477: 
+478: createDoughnut('countryChart', 'countryLegend', analysisData.country);
+479: createDoughnut('sectorChart', 'sectorLegend', analysisData.sector);
+480: createDoughnut('stockChart', 'stockLegend', analysisData.stock);

@@ -32,8 +32,34 @@
                 <input type="password" id="password" name="password" placeholder="Password" required>
             </div>
             
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <input type="checkbox" id="remember_id" style="width: auto; cursor: pointer;">
+                <label for="remember_id" style="margin: 0; font-weight: normal; color: #aaa; cursor: pointer;">아이디 저장</label>
+            </div>
+            
             <button type="submit" class="btn btn-primary mt-4">Login System</button>
         </form>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedUsername = localStorage.getItem("savedUsername");
+            const usernameInput = document.getElementById("username");
+            const rememberCheckbox = document.getElementById("remember_id");
+
+            if (savedUsername) {
+                usernameInput.value = savedUsername;
+                rememberCheckbox.checked = true;
+            }
+
+            document.querySelector("form").addEventListener("submit", function() {
+                if (rememberCheckbox.checked) {
+                    localStorage.setItem("savedUsername", usernameInput.value);
+                } else {
+                    localStorage.removeItem("savedUsername");
+                }
+            });
+        });
+    </script>
 </body>
 </html>

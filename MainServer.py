@@ -10,10 +10,12 @@ import Secret
 from auth.Login import login_required
 
 from infinite import Settings
+from datetime import timedelta
 from infinite.InfiniteServer import infinite_bp
 
 app = Flask(__name__)
 app.secret_key = 'thisismyworld'  # 꼭 있어야 세션 작동함 (아무 문자열이나)
+app.permanent_session_lifetime = timedelta(minutes=30)  # 세션 30분 유지
 app.register_blueprint(infinite_bp)
 
 # 이미지 저장 디렉터리 설정
@@ -35,8 +37,9 @@ def login():
 
         # 간단한 사용자 인증 (하드코딩 예시)
         if username == Secret.id and password == Secret.password:
+            session.permanent = True
             session['logged_in'] = True
-            return redirect(url_for('infinite.show_recent_ticker_data'))
+            return redirect(url_for('infinite.infinite_assets'))
         else:
             return "Login Failed. Please try again."
 

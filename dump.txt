@@ -1,0 +1,100 @@
+261: <!-- Broker Tabs -->
+262: <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; white-space: nowrap; padding-bottom: 0.5rem;">
+263: <a href="/infinite?broker=samsung" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; color: {% if current_broker == 'samsung' %}#121212{% else %}#4facfe{% endif %}; background: {% if current_broker == 'samsung' %}#4facfe{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'samsung' %}#4facfe{% else %}transparent{% endif %};">삼성증권</a>
+264: <a href="/infinite?broker=meritz" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; color: {% if current_broker == 'meritz' %}#121212{% else %}#ff5252{% endif %}; background: {% if current_broker == 'meritz' %}#ff5252{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'meritz' %}#ff5252{% else %}transparent{% endif %};">메리츠증권</a>
+265: <a href="/infinite?broker=all" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; color: {% if current_broker == 'all' %}#121212{% else %}white{% endif %}; background: {% if current_broker == 'all' %}white{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'all' %}white{% else %}transparent{% endif %};">전체계좌</a>
+266: <a href="/infinite?broker=family" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; color: {% if current_broker == 'family' %}#121212{% else %}#ffd700{% endif %}; background: {% if current_broker == 'family' %}#ffd700{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'family' %}#ffd700{% else %}transparent{% endif %};">가족 자산</a>
+267: <a href="/infinite?broker=analysis" style="padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; color: {% if current_broker == 'analysis' %}#121212{% else %}#f093fb{% endif %}; background: {% if current_broker == 'analysis' %}#f093fb{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'analysis' %}#f093fb{% else %}transparent{% endif %};">📊 자산 분석</a>
+268: </div>
+269: 
+270: <div class="header-section">
+271: <h1>총 자산</h1>
+272: <div style="display: flex; gap: 0.5rem; align-items: center;">
+273: {% if current_broker == 'samsung' %}
+274: <form action="/run_samsung_account" method="post" style="margin: 0;">
+275: <button type="submit" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #4facfe; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">🔄 삼성증권</button>
+276: </form>
+277: {% endif %}
+278: {% if current_broker == 'meritz' %}
+279: <form action="/run_meritz_account" method="post" style="margin: 0;">
+280: <button type="submit" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ff5252; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">🔄 메리츠</button>
+281: </form>
+282: {% endif %}
+283: <button class="icon-btn" onclick="toggleChart('trendChart')">📈 변동추이</button>
+284: <button class="icon-btn" onclick="toggleChart('pieChart')">🥧 비중</button>
+285: </div>
+286: </div>
+287: 
+288: {% if current_broker == 'analysis' %}
+289: <div style="padding: 1rem 0;">
+290: <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+291: <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem; text-align: center; font-weight: 700;">🇺🇸 미국 vs 🇰🇷 한국</h3>
+292: <div style="position: relative; height: 220px; width: 100%;">
+293: <canvas id="countryChart"></canvas>
+294: </div>
+295: <ul style="list-style: none; padding: 0; margin-top: 1.5rem;" id="countryLegend"></ul>
+296: </div>
+297: 
+298: <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+299: <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem; text-align: center; font-weight: 700;">🏢 업종별 비중</h3>
+300: <div style="position: relative; height: 260px; width: 100%;">
+301: <canvas id="sectorChart"></canvas>
+302: </div>
+303: <ul style="list-style: none; padding: 0; margin-top: 1.5rem;" id="sectorLegend"></ul>
+304: </div>
+305: 
+306: <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+307: <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1rem; text-align: center; font-weight: 700;">📈 종목별 비중</h3>
+308: <div style="position: relative; height: 260px; width: 100%;">
+309: <canvas id="stockChart"></canvas>
+310: </div>
+311: <ul style="list-style: none; padding: 0; margin-top: 1.5rem;" id="stockLegend"></ul>
+312: </div>
+313: </div>
+314: 
+315: <script>
+316: document.addEventListener('DOMContentLoaded', function() {
+317: const analysisData = {{ data.analysis_data | tojson | safe }};
+318: 
+319: const createDoughnut = (ctxId, legendId, dataArr) => {
+320: if (!dataArr || dataArr.length === 0) return;
+321: 
+322: const labels = dataArr.map(d => d.label);
+323: const values = dataArr.map(d => d.value);
+324: const total = values.reduce((a, b) => a + b, 0);
+325: 
+326: const colors = [
+327: '#FF5252', '#4FACFE', '#FEE140', '#43E97B', '#F093FB',
+328: '#00f2fe', '#f83600', '#f9d423', '#b224ef', '#f5576c',
+329: '#2193b0', '#6dd5ed', '#cc2b5e', '#753a88', '#ee0979',
+330: '#ff6a00', '#11998e', '#38ef7d', '#fc4a1a', '#f7b733'
+331: ];
+332: 
+333: new Chart(document.getElementById(ctxId), {
+334: type: 'doughnut',
+335: data: {
+336: labels: labels,
+337: datasets: [{
+338: data: values,
+339: backgroundColor: colors.slice(0, labels.length),
+340: borderWidth: 0
+341: }]
+342: },
+343: options: {
+344: responsive: true,
+345: maintainAspectRatio: false,
+346: plugins: {
+347: legend: { display: false },
+348: tooltip: {
+349: callbacks: {
+350: label: function(context) {
+351: let v = context.raw;
+352: let pct = (v / total * 100).toFixed(1) + '%';
+353: return  : 원 ();
+354: }
+355: }
+356: }
+357: },
+358: cutout: '65%'
+359: }
+360: });

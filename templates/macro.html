@@ -82,13 +82,50 @@
             padding: 8px 12px;
             border-radius: 0 8px 8px 0;
         }
+        .history-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(248, 250, 252, 0.05);
+            font-family: var(--font-mono);
+        }
+
+        /* Global Navigation Tabs */
+        .global-tabs {
+            display: flex;
+            background: #1e1e28;
+            padding: 0.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            gap: 0.5rem;
+        }
+        .global-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem;
+            color: #888;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .global-tab.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
     <div class="container" style="max-width: 1100px;">
+        <!-- Global Navigation -->
+        <div class="global-tabs">
+            <a href="/infinite" class="global-tab">내 자산관리</a>
+            <a href="/infinite/macro" class="global-tab">무한매수법</a>
+            <a href="/macro" class="global-tab active">매크로</a>
+        </div>
+        
         <!-- Header -->
         <header class="brand-header">
-            <a href="/infinite" class="brand-logo-group">
+            <a href="/macro" class="brand-logo-group">
                 <div class="logo-dot"></div>
                 <div class="brand-title">
                     매크로 보드
@@ -103,8 +140,7 @@
         <!-- raoni.xyz Top Pill Navigation Bar -->
         <div class="top-nav-row">
             <nav class="top-nav">
-                <a href="/infinite" class="nav-link">대시보드</a>
-                <a href="/macro" class="nav-link active">매크로 보드</a>
+                <a href="/infinite/macro" class="nav-link">대시보드</a>
                 <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
                 <a href="/infinite_settings" class="nav-link">매매 설정</a>
                 <a href="/infinite_help" class="nav-link">전략 가이드</a>

@@ -7,7 +7,7 @@ import time
 import urllib.request
 
 import pandas as pd
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from sqlalchemy import create_engine
 from sqlalchemy import text
 
@@ -181,7 +181,7 @@ def fetch_fear_and_greed():
         }
 
 
-@infinite_bp.route('/infinite', methods=['GET', 'POST'])
+@infinite_bp.route('/infinite/macro', methods=['GET', 'POST'])
 @login_required
 def show_recent_ticker_data():
     engine = create_engine(f"sqlite:///{DB_PATH}")
@@ -522,19 +522,133 @@ def fetch_macro_indicators():
 
 import sqlite3
 
-@infinite_bp.route('/infinite/assets', methods=['GET'])
+
+
+import FinanceDataReader as fdr
+import requests
+import threading
+
+krx_map_cache = {}
+krx_map_lock = threading.Lock()
+
+def get_krx_map():
+    global krx_map_cache
+    with krx_map_lock:
+        if not krx_map_cache:
+            try:
+                df_krx = fdr.StockListing('KRX')
+                df_etf = fdr.StockListing('ETF/KR')
+                for _, row in df_krx.iterrows():
+                    krx_map_cache[row['Name']] = row['Code']
+                for _, row in df_etf.iterrows():
+                    krx_map_cache[row['Name']] = row['Symbol']
+            except Exception as e:
+                logging.error(f"Failed to load KRX/ETF list: {e}")
+    return krx_map_cache
+
+@infinite_bp.route('/api/live_prices', methods=['POST'])
+@login_required
+def api_live_prices():
+    data = request.json
+    tickers = data.get('tickers', [])
+    
+    krx_map = get_krx_map()
+    
+    codes = []
+    name_to_code = {}
+    for name in tickers:
+        if name in krx_map:
+            code = krx_map[name]
+            codes.append(code)
+            name_to_code[name] = code
+            
+    if not codes:
+        return jsonify({})
+        
+    query = "SERVICE_ITEM:" + ",".join(codes)
+    url = f"https://polling.finance.naver.com/api/realtime?query={query}"
+    try:
+        res = requests.get(url, timeout=5)
+        res_data = res.json()
+        
+        live_prices = {}
+        if res_data.get('resultCode') == 'success':
+            items = res_data['result']['areas'][0]['datas']
+            code_to_data = {item['cd']: {
+                'nv': item['nv'],
+                'cv': item['cv'],
+                'cr': item['cr'],
+                'rf': item['rf']
+            } for item in items}
+            
+            for name, code in name_to_code.items():
+                if code in code_to_data:
+                    live_prices[name] = code_to_data[code]
+                    
+        return jsonify(live_prices)
+    except Exception as e:
+        logging.error(f"Live price fetch error: {e}")
+        return jsonify({})
+
+@infinite_bp.route('/toggle_exclude', methods=['POST'])
+@login_required
+def toggle_exclude():
+    broker = request.form.get('broker')
+    account_num = request.form.get('account_num')
+    is_excluded = request.form.get('is_excluded') == 'true'
+    
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    if is_excluded:
+        c.execute("INSERT OR IGNORE INTO excluded_accounts (broker, account_num) VALUES (?, ?)", (broker, account_num))
+    else:
+        c.execute("DELETE FROM excluded_accounts WHERE broker = ? AND account_num = ?", (broker, account_num))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('infinite.infinite_assets', broker=request.args.get('broker', 'samsung')))
+
+@infinite_bp.route('/infinite', methods=['GET'])
 @login_required
 def infinite_assets():
     try:
         conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query("SELECT * FROM asset_history", conn)
+        
+        c = conn.cursor()
+        c.execute("CREATE TABLE IF NOT EXISTS excluded_accounts (broker TEXT, account_num TEXT, PRIMARY KEY (broker, account_num))")
+        excluded_df = pd.read_sql_query("SELECT broker, account_num FROM excluded_accounts", conn)
+        excluded_list = excluded_df.to_dict('records')
         conn.close()
     except Exception as e:
         logging.error(f"Asset history DB error: {e}")
-        return render_template('infinite_assets.html', error=f"DB Error: {e}", data=None)
+        return render_template('infinite_assets.html', error=f"DB Error: {e}", data=None, current_broker='samsung')
 
     if df.empty:
-        return render_template('infinite_assets.html', data=None)
+        return render_template('infinite_assets.html', data=None, current_broker='samsung')
+        
+    all_accounts_df = df[['broker', 'account_type', 'account_num']].drop_duplicates()
+    all_accounts_list = all_accounts_df.to_dict('records')
+    for acc in all_accounts_list:
+        acc['is_excluded'] = any(e['broker'] == acc['broker'] and e['account_num'] == acc['account_num'] for e in excluded_list)
+        acc['masked_num'] = '*' + str(acc['account_num'])[-5:] if len(str(acc['account_num'])) >= 5 else str(acc['account_num'])
+        b_str = str(acc['broker']).upper()
+        acc['broker_clean'] = '삼성증권' if 'SAMSUNG' in b_str or '삼성' in b_str else ('메리츠' if 'MERITZ' in b_str or '메리츠' in b_str else str(acc['broker']))
+
+    for excl in excluded_list:
+        df = df[~((df['broker'] == excl['broker']) & (df['account_num'] == excl['account_num']))]
+
+    broker_filter = request.args.get('broker', 'samsung')
+    if broker_filter == 'analysis':
+        # No filtering, use all
+        pass
+    elif broker_filter == 'samsung':
+        df = df[df['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]
+    elif broker_filter == 'meritz':
+        df = df[df['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]
+
+    if df.empty:
+        return render_template('infinite_assets.html', data=None, current_broker=broker_filter)
 
     df['date'] = pd.to_datetime(df['date'])
     available_dates = sorted(df['date'].unique())
@@ -567,7 +681,14 @@ def infinite_assets():
     total_last_week = get_totals(last_week)
     total_last_month = get_totals(last_month)
 
-    df_today = df[df['date'] == today]
+    import re
+    df_today = df[df['date'] == today].copy()
+    
+    # 5만원 이하의 자투리 자산은 화면 표시(리스트, 차트 등)에서 숨김 처리
+    df_today = df_today[df_today['total_evaluation'] > 50000]
+    
+    df_today['account_type'] = df_today['account_type'].apply(lambda x: re.sub(r'\(.*?\)', '', str(x)).strip())
+    df_today['account_num'] = df_today['account_num'].apply(lambda x: '*' + str(x)[-5:] if len(str(x)) >= 5 else str(x))
     account_summary = df_today.groupby(['account_type', 'account_num', 'broker']).agg({
         'total_investment': 'sum',
         'total_evaluation': 'sum',
@@ -575,19 +696,178 @@ def infinite_assets():
     }).reset_index().to_dict('records')
 
     ticker_summary = df_today.groupby('ticker').agg({
+        'total_investment': 'sum',
         'total_evaluation': 'sum',
         'profit_loss': 'sum',
         'quantity': 'sum'
     }).reset_index().to_dict('records')
 
-    chart_data_df = df.groupby('date')['total_evaluation'].sum().reset_index()
-    chart_dates = chart_data_df['date'].dt.strftime('%Y-%m-%d').tolist()
-    chart_totals = chart_data_df['total_evaluation'].tolist()
+    from infinite import FamilyDBHelper
+    family_assets = []
+    if broker_filter == 'family':
+        try:
+            family_assets = FamilyDBHelper.get_latest_family_assets()
+            for fa in family_assets:
+                total_today += fa['amount']
+                
+            fam_df = FamilyDBHelper.get_family_history_df()
+            if not fam_df.empty:
+                fam_df['date'] = pd.to_datetime(fam_df['date'])
+                df = pd.concat([df, fam_df], ignore_index=True)
+        except Exception as e:
+            logging.error(f"Failed to load family assets: {e}")
 
+    chart_dates_dt = sorted(df['date'].unique())
+    chart_dates = [d.strftime('%Y-%m-%d') for d in chart_dates_dt]
+    
+    missing_today_data = False
+    actual_today = datetime.now().date()
+    if chart_dates and pd.to_datetime(chart_dates[-1]).date() < actual_today:
+        missing_today_data = True
+        chart_dates.append(actual_today.strftime('%Y-%m-%d') + ' (미포함)')
+    
+    chart_datasets = []
+    
+    samsung_colors = ['#4facfe', '#00f2fe', '#2980b9', '#3498db', '#6dd5ed']
+    meritz_colors = ['#ff5252', '#ff1744', '#f50057', '#d50000', '#ff8a80']
+    family_colors = ['#ffd700', '#ffeb3b', '#fbc02d', '#f57f17', '#ffee58']
+    other_colors = ['#ff5252', '#4facfe', '#ffd700', '#4caf50', '#9c27b0', '#ff9800', '#00bcd4', '#e91e63', '#8bc34a', '#3f51b5']
+    
+    sam_idx = 0
+    mer_idx = 0
+    fam_idx = 0
+    oth_idx = 0
+    
+    def get_account_label(row):
+        broker = str(row['broker'])
+        acc_type = re.sub(r'\([^)]*\)', '', str(row['account_type'])).strip()
+        acc_num = str(row.get('account_num', 'nan'))
+        if acc_num == 'nan' or not acc_num:
+            acc_num = ''
+        
+        is_samsung = 'SAMSUNG' in broker.upper() or '삼성' in broker
+        is_meritz = 'MERITZ' in broker.upper() or '메리츠' in broker
+        is_family = '가족' in broker
+        
+        if broker_filter in ['samsung', 'meritz']:
+            b_name = '삼성증권' if is_samsung else ('메리츠' if is_meritz else ('가족' if is_family else broker))
+            if is_family or not acc_num:
+                return f"{b_name} {acc_type}"
+            masked_num = '*' + acc_num[-5:] if len(acc_num) >= 5 else acc_num
+            return f"{b_name} {acc_type} ({masked_num})"
+        else:
+            if is_samsung: return "삼성"
+            if is_meritz: return "메리츠"
+            if is_family: return "가족"
+            return broker
+
+    df['account_label'] = df.apply(get_account_label, axis=1)
+    latest_date = df['date'].max()
+    latest_totals = df[df['date'] == latest_date].groupby('account_label')['total_evaluation'].sum().sort_values(ascending=False)
+    
+    for account_label in latest_totals.index:
+        group = df[df['account_label'] == account_label]
+        date_vals = group.groupby('date')['total_evaluation'].sum().to_dict()
+        data_arr = []
+        last_val = 0
+        for d in chart_dates_dt:
+            val = date_vals.get(d, last_val)
+            data_arr.append(float(val))
+            last_val = val
+        if missing_today_data:
+            data_arr.append(data_arr[-1])
+            
+        if broker_filter in ['samsung', 'meritz']:
+            color = other_colors[oth_idx % len(other_colors)]
+            oth_idx += 1
+        else:
+            if '삼성' in account_label:
+                color = samsung_colors[sam_idx % len(samsung_colors)]
+                sam_idx += 1
+            elif '메리츠' in account_label:
+                color = meritz_colors[mer_idx % len(meritz_colors)]
+                mer_idx += 1
+            elif '가족' in account_label:
+                color = family_colors[fam_idx % len(family_colors)]
+                fam_idx += 1
+            else:
+                color = other_colors[oth_idx % len(other_colors)]
+                oth_idx += 1
+        
+        chart_datasets.append({
+            'label': account_label,
+            'data': data_arr,
+            'borderColor': color,
+            'backgroundColor': color + '33',
+            'borderWidth': 2,
+            'tension': 0.4,
+            'fill': True,
+            'pointRadius': 2
+        })
+        
     detailed_list = df_today.sort_values(by=['account_type', 'account_num', 'total_evaluation'], ascending=[True, True, False]).to_dict('records')
+    db_mtime = os.path.getmtime(DB_PATH)
+    last_update_time = datetime.fromtimestamp(db_mtime).strftime('%Y-%m-%d %H:%M:%S')
+
+
+    # --- Analysis Data Preparation ---
+    analysis_data = {}
+    if broker_filter == 'analysis':
+        all_items = []
+        for tk in ticker_summary:
+            all_items.append({'name': tk['ticker'], 'amount': tk['total_evaluation']})
+        for fa in family_assets:
+            all_items.append({'name': fa['account_name'] + ' (' + fa['asset_type'] + ')', 'amount': fa['amount']})
+            
+        us_keywords = ['미국', 'QQQ', 'S&P', 'DIREXION', 'PROSHARES', '나스닥']
+        cash_keywords = ['현금', '예수금', 'MMF', 'CMA']
+        semi_keywords = ['반도체', 'SEMICONDUCTOR', '삼성전자', 'SK하이닉스']
+        index_keywords = ['나스닥', 'QQQ', 'S&P', '200TR', '지수']
+        bond_keywords = ['채권', '혼합']
+        
+        country_group = {'미국 자산': 0, '한국 자산': 0}
+        sector_group = {}
+        stock_group = {}
+        
+        for item in all_items:
+            name = item['name'].upper()
+            amt = item['amount']
+            
+            # 1. Country Group
+            if any(k in name for k in cash_keywords):
+                pass # cash shouldn't be counted in US vs KR according to standard, but if we do, it's KR.
+            if any(k in name for k in us_keywords):
+                country_group['미국 자산'] += amt
+            else:
+                country_group['한국 자산'] += amt
+                
+            # 2. Sector Group
+            sector = '기타'
+            if any(k in name for k in cash_keywords): sector = '현금 (Cash)'
+            elif any(k in name for k in semi_keywords): sector = '반도체 (Semiconductor)'
+            elif any(k in name for k in index_keywords): sector = '시장지수 (Index)'
+            elif any(k in name for k in bond_keywords): sector = '채권/혼합 (Bond/Mixed)'
+            elif '보험' in name: sector = '보험 (Insurance)'
+            
+            sector_group[sector] = sector_group.get(sector, 0) + amt
+            
+            # 3. Stock Group
+            stock_group[item['name']] = stock_group.get(item['name'], 0) + amt
+            
+        analysis_data = {
+            'country': [{'label': k, 'value': v} for k, v in country_group.items() if v > 0],
+            'sector': [{'label': k, 'value': v} for k, v in sector_group.items() if v > 0],
+            'stock': [{'label': k, 'value': v} for k, v in stock_group.items() if v > 0]
+        }
+        
+        # Sort desc
+        analysis_data['country'].sort(key=lambda x: x['value'], reverse=True)
+        analysis_data['sector'].sort(key=lambda x: x['value'], reverse=True)
+        analysis_data['stock'].sort(key=lambda x: x['value'], reverse=True)
 
     data = {
         'today_str': today.strftime('%Y-%m-%d'),
+        'last_update_time': last_update_time,
         'total_today': total_today,
         'change_1d': total_today - total_yesterday if yesterday else 0,
         'change_7d': total_today - total_last_week if last_week else 0,
@@ -595,11 +875,14 @@ def infinite_assets():
         'account_summary': account_summary,
         'ticker_summary': ticker_summary,
         'chart_dates': chart_dates,
-        'chart_totals': chart_totals,
-        'detailed_list': detailed_list
+        'chart_datasets': chart_datasets,
+        'detailed_list': detailed_list,
+        'family_assets': family_assets,
+        'all_accounts_list': all_accounts_list,
+        'analysis_data': analysis_data
     }
     
-    return render_template('infinite_assets.html', data=data)
+    return render_template('infinite_assets.html', data=data, current_broker=broker_filter)
 
 @infinite_bp.route('/macro', methods=['GET'])
 @login_required
@@ -834,6 +1117,24 @@ def run_infinite_buying():
 def run_infinite_account():
     print("run_infinite_account")
     bat_file_path = r"C:\Users\이재혁\OneDrive\바탕 화면\무한매수\계좌업데이트.bat"
+    ExecuteHelper.run_as_admin(bat_file_path)
+    return "", 204
+
+
+@infinite_bp.route('/run_samsung_account', methods=['POST'])
+@login_required
+def run_samsung_account():
+    print("run_samsung_account")
+    bat_file_path = r"C:\Users\이재혁\OneDrive\바탕 화면\samsung_account.bat"
+    ExecuteHelper.run_as_admin(bat_file_path)
+    return "", 204
+
+
+@infinite_bp.route('/run_meritz_account', methods=['POST'])
+@login_required
+def run_meritz_account():
+    print("run_meritz_account")
+    bat_file_path = r"C:\Users\이재혁\OneDrive\바탕 화면\meritz_account.bat"
     ExecuteHelper.run_as_admin(bat_file_path)
     return "", 204
 
@@ -1456,3 +1757,30 @@ def api_vr_simulation_data():
     except Exception as e:
         logging.error(f"Error generating VR simulation data: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@infinite_bp.route('/add_family_asset', methods=['POST'])
+@login_required
+def route_add_family_asset():
+    account_name = request.form.get('account_name')
+    asset_type = request.form.get('asset_type')
+    amount = request.form.get('amount')
+    if account_name and asset_type and amount:
+        try:
+            amount = float(amount.replace(',', ''))
+            from infinite import FamilyDBHelper
+            FamilyDBHelper.add_family_asset(account_name, asset_type, amount)
+        except Exception as e:
+            logging.error(f"Error adding family asset: {e}")
+    return redirect(url_for('infinite.infinite_assets', broker='family'))
+
+@infinite_bp.route('/delete_family_asset', methods=['POST'])
+@login_required
+def route_delete_family_asset():
+    account_name = request.form.get('account_name')
+    if account_name:
+        try:
+            from infinite import FamilyDBHelper
+            FamilyDBHelper.delete_family_asset(account_name)
+        except Exception as e:
+            logging.error(f"Error deleting family asset: {e}")
+    return redirect(url_for('infinite.infinite_assets', broker='family'))

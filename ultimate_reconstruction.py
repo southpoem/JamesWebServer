@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+﻿with open(r'C:\PycharmProjects\JamesWebServer\templates\infinite_assets.html', 'w', encoding='utf-8') as f:
+    f.write('''<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -342,4 +343,6 @@
         {% endif %}
     </div>
 </body>
-</html>
+</html>''')
+
+print("ULTIMATE RECONSTRUCTION COMPLETED")
