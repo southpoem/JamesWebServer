@@ -426,25 +426,54 @@
                     }
                 }
 
-                function handleAccountToggle(broker, accountNum, isExcluded) {
+                async function handleAccountToggle(broker, accountNum, isExcluded) {
                     const formData = new FormData();
                     formData.append('broker', broker);
                     formData.append('account_num', accountNum);
                     formData.append('is_excluded', isExcluded ? 'true' : 'false');
                     formData.append('current_broker', '{{ current_broker }}');
 
-                    fetch('/infinite/toggle_exclude', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
-                    }).then(() => {
-                        window.location.reload();
-                    }).catch(err => {
+                    try {
+                        const res = await fetch('/infinite/toggle_exclude', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        if (res.ok) {
+                            // Seamless in-place update without reloading the page
+                            const pageRes = await fetch(window.location.href);
+                            const text = await pageRes.text();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(text, 'text/html');
+
+                            const newTotal = doc.getElementById('totalAmountSection');
+                            const curTotal = document.getElementById('totalAmountSection');
+                            if (newTotal && curTotal) {
+                                curTotal.innerHTML = newTotal.innerHTML;
+                            }
+
+                            const newAccView = doc.getElementById('accountView');
+                            const curAccView = document.getElementById('accountView');
+                            if (newAccView && curAccView) {
+                                curAccView.innerHTML = newAccView.innerHTML;
+                            }
+
+                            const newStockView = doc.getElementById('stockView');
+                            const curStockView = document.getElementById('stockView');
+                            if (newStockView && curStockView) {
+                                curStockView.innerHTML = newStockView.innerHTML;
+                            }
+
+                            if (!document.body.classList.contains('blur-active')) {
+                                fetchLivePrices();
+                            }
+                        }
+                    } catch (err) {
                         console.error('Toggle error:', err);
-                        window.location.reload();
-                    });
+                    }
                 }
                 
 
