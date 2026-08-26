@@ -652,6 +652,7 @@ def infinite_assets():
         df = df[~((df['broker'] == excl['broker']) & (df['account_num'] == excl['account_num']))]
 
     broker_filter = request.args.get('broker', 'samsung')
+    df_all = df.copy()  # keep unfiltered for family tab sub-totals
     if broker_filter == 'analysis':
         # No filtering, use all
         pass
@@ -659,6 +660,7 @@ def infinite_assets():
         df = df[df['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]
     elif broker_filter == 'meritz':
         df = df[df['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]
+    # For family tab: use all brokers (no filter on df)
 
     if df.empty:
         return render_template('infinite_assets.html', data=None, current_broker=broker_filter)
@@ -889,10 +891,28 @@ def infinite_assets():
     # Compute family total for accurate deltas
     family_total = sum(fa['amount'] for fa in family_assets) if broker_filter == 'family' else 0
 
+    # For family tab: compute sub-totals per broker from the full unfiltered df
+    family_sub = {}
+    if broker_filter == 'family':
+        df_all['date'] = pd.to_datetime(df_all['date'])
+        latest_all = df_all['date'].max()
+        df_all_today = df_all[df_all['date'] == latest_all]
+        samsung_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('SAMSUNG|삼성', na=False)]['total_evaluation'].sum())
+        meritz_total = float(df_all_today[df_all_today['broker'].str.upper().str.contains('MERITZ|메리츠', na=False)]['total_evaluation'].sum())
+        manual_total = float(sum(fa['amount'] for fa in family_assets))
+        family_sub = {
+            'samsung': samsung_total,
+            'meritz': meritz_total,
+            'manual': manual_total,
+            'grand_total': samsung_total + meritz_total + manual_total,
+        }
+        # Override total_today with actual grand total for family
+        total_today = family_sub['grand_total']
+
     data = {
         'today_str': today.strftime('%Y-%m-%d'),
         'last_update_time': last_update_time,
-        'total_today': total_today, # Already includes family_total from the loop above
+        'total_today': total_today,
         'change_1d': (total_today - family_total) - total_yesterday if yesterday else 0,
         'change_7d': (total_today - family_total) - total_last_week if last_week else 0,
         'change_30d': (total_today - family_total) - total_last_month if last_month else 0,
@@ -902,11 +922,13 @@ def infinite_assets():
         'chart_datasets': chart_datasets,
         'detailed_list': detailed_list,
         'family_assets': family_assets,
+        'family_sub': family_sub,
         'all_accounts_list': all_accounts_list,
         'analysis_data': analysis_data
     }
     
     return render_template('infinite_assets.html', data=data, current_broker=broker_filter)
+
 
 @infinite_bp.route('/macro', methods=['GET'])
 @login_required

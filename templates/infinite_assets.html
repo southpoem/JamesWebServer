@@ -180,7 +180,65 @@
             </script>
         {% elif not data %}
             <div style="text-align: center; color: #888; padding: 2rem;">데이터가 없습니다.</div>
+        {% elif current_broker == 'family' %}
+            {# ── 가족 자산 전용 총액 섹션 ── #}
+            <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
+                가족 총 자산 (업데이트: {{ data.chart_dates[-1] if data.chart_dates else '' }})<br>
+                <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
+            </div>
+
+            <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()">
+                <div class="total-amount">{{ "{:,.0f}".format(data.family_sub.grand_total) }}원</div>
+                <div class="total-change neutral">삼성 + 메리츠 + 수동입력 합산</div>
+            </div>
+
+            {# 3가지 소계 카드 #}
+            <div style="display: flex; gap: 10px; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(79,172,254,0.3); border-radius: 14px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.78rem; color: #4facfe; font-weight: 700; margin-bottom: 6px;">🏦 삼성증권</div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 1rem; font-weight: 800; color: #fff;">{{ "{:,.0f}".format(data.family_sub.samsung) }}원</div>
+                </div>
+                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(248,113,113,0.3); border-radius: 14px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.78rem; color: #f87171; font-weight: 700; margin-bottom: 6px;">🏦 메리츠증권</div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 1rem; font-weight: 800; color: #fff;">{{ "{:,.0f}".format(data.family_sub.meritz) }}원</div>
+                </div>
+                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; margin-bottom: 6px;">📝 수동입력</div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 1rem; font-weight: 800; color: #fff;">{{ "{:,.0f}".format(data.family_sub.manual) }}원</div>
+                </div>
+            </div>
+
+            {# 수동입력 상세 내역 #}
+            {% if data.family_assets %}
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 0.85rem; color: #94a3b8; font-weight: 700; margin-bottom: 0.6rem;">📝 수동입력 상세</div>
+                {% for fa in data.family_assets %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: rgba(30,41,59,0.4); border-radius: 10px; border: 1px solid rgba(251,191,36,0.1); margin-bottom: 6px;">
+                    <div>
+                        <span style="color: #fff; font-weight: 700; font-size: 0.9rem;">{{ fa.account_name }}</span>
+                        <span style="color: #888; font-size: 0.78rem; margin-left: 6px;">{{ fa.asset_type }}</span>
+                    </div>
+                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="color: #fbbf24; font-weight: 700; font-size: 0.95rem;">
+                        {{ "{:,.0f}".format(fa.amount) }}원
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <script>
+                function toggleTotal() {
+                    const body = document.body;
+                    if (body.classList.contains('blur-active')) {
+                        body.classList.remove('blur-active');
+                    } else {
+                        body.classList.add('blur-active');
+                    }
+                }
+            </script>
+
         {% else %}
+            {# ── 삼성/메리츠/전체 일반 총액 섹션 ── #}
             {% set total_eval = data.account_summary | sum(attribute='total_evaluation') %}
             {% set total_pl = data.account_summary | sum(attribute='profit_loss') %}
             {% set total_invest = total_eval - total_pl %}
