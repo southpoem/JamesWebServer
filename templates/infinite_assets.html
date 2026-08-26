@@ -72,9 +72,22 @@
         .stock-price-live { font-size: 0.8rem; font-weight: 600; display: flex; gap: 4px; align-items: center; }
         .stock-eval { font-size: 0.9rem; font-weight: 700; color: #fff; text-align: right; margin-bottom: 6px; }
         .stock-eval-change { font-size: 0.8rem; font-weight: 600; text-align: right; }
+    
+        .blur-active .blur-target {
+            filter: blur(8px);
+            opacity: 0.7;
+            user-select: none;
+            cursor: pointer;
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 10;
+        }
+        .blur-target {
+            transition: filter 0.3s ease, opacity 0.3s ease;
+        }
     </style>
 </head>
-<body>
+<body class="blur-active">
     <div class="page-container">
         <!-- Top Nav -->
         <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
@@ -147,17 +160,16 @@
                         
                         const legendHtml = dataArr.map((d, i) => {
                             let pct = total > 0 ? (d.value / total * 100).toFixed(1) : 0;
-                            return 
-                            <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dotted rgba(255,255,255,0.1);">
-                                <div style="display: flex; align-items: center; gap: 10px; max-width: 65%;">
-                                    <span style="width: 12px; height: 12px; border-radius: 50%; background: ; flex-shrink: 0;"></span>
-                                    <span style="color: #eee; word-break: break-all; line-height: 1.3;"></span>
-                                </div>
-                                <div style="text-align: right; line-height: 1.3;">
-                                    <span style="color: #fff; font-weight: 700; font-size: 0.95rem;">%</span><br>
-                                    <span style="color: #888; font-size: 0.75rem;">원</span>
-                                </div>
-                            </li>;
+                            return '<li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dotted rgba(255,255,255,0.1);">' +
+'<div style="display: flex; align-items: center; gap: 10px; max-width: 65%;">' +
+'<span style="width: 12px; height: 12px; border-radius: 50%; background: ' + colors[i % colors.length] + '; flex-shrink: 0;"></span>' +
+'<span style="color: #eee; word-break: break-all; line-height: 1.3;">' + d.label + '</span>' +
+'</div>' +
+'<div style="text-align: right; line-height: 1.3;">' +
+'<span style="color: #fff; font-weight: 700; font-size: 0.95rem;">' + pct + '%</span><br>' +
+'<span style="color: #888; font-size: 0.75rem;">' + d.value.toLocaleString() + '원</span>' +
+'</div>' +
+'</li>';
                         }).join('');
                         document.getElementById(legendId).innerHTML = legendHtml;
                     };
@@ -179,7 +191,7 @@
                 <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
             </div>
             
-            <div id="totalAmountSection">
+            <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()">
                 <div class="total-amount">{{ "{:,.0f}".format(total_eval) }}원</div>
                 <div class="total-change {% if total_pl > 0 %}up{% elif total_pl < 0 %}down{% else %}neutral{% endif %}">
                     {{ "{:+,.0f}".format(total_pl) }}원 ({{ "{:+.2f}".format(total_pl_rate) }}%)
@@ -210,7 +222,7 @@
                             <div class="acc-name">{{ acc.account_type }}</div>
                             <div class="acc-num">(*{{ acc.account_num[-5:] if acc.account_num else '' }})</div>
                         </div>
-                        <div>
+                        <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();">
                             <div class="acc-total">{{ "{:,.0f}".format(acc.total_evaluation) }}원</div>
                             <div class="acc-change {% if acc.profit_loss > 0 %}up{% elif acc.profit_loss < 0 %}down{% else %}neutral{% endif %}">
                                 {{ "{:+,.0f}".format(acc.profit_loss) }}원 ({{ "{:+.2f}".format((acc.profit_loss / (acc.total_evaluation - acc.profit_loss) * 100) if (acc.total_evaluation - acc.profit_loss) > 0 else 0) }}%)
@@ -231,7 +243,7 @@
                                         <span style="color: #64748b;">{{ "{:,.0f}".format(row.current_price) }}원</span>
                                     </div>
                                 </div>
-                                <div>
+                                <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();">
                                     <div class="stock-eval">{{ "{:,.0f}".format(row.total_evaluation) }}원</div>
                                     <div class="stock-eval-change {% if row.profit_loss > 0 %}up{% elif row.profit_loss < 0 %}down{% else %}neutral{% endif %}">
                                         {{ "{:+,.0f}".format(row.profit_loss) }}원 ({{ "{:+.2f}".format((row.profit_loss / row.total_investment * 100) if row.total_investment > 0 else 0) }}%)
@@ -256,7 +268,7 @@
                             </div>
                             <div class="stock-price-live" data-ticker="{{ tk.ticker }}"></div>
                         </div>
-                        <div>
+                        <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();">
                             <div class="stock-eval">{{ "{:,.0f}".format(tk.total_evaluation) }}원</div>
                             <div class="stock-eval-change {% if tk.profit_loss > 0 %}up{% elif tk.profit_loss < 0 %}down{% else %}neutral{% endif %}">
                                 {{ "{:+,.0f}".format(tk.profit_loss) }}원
@@ -268,15 +280,16 @@
             </div>
             
             <script>
+                
+
+
                 function toggleTotal() {
-                    const el = document.getElementById('totalAmountSection');
-                    if (el.style.filter === 'blur(8px)') {
-                        el.style.filter = 'none';
-                        el.style.opacity = '1';
+                    const body = document.body;
+                    if (body.classList.contains('blur-active')) {
+                        body.classList.remove('blur-active');
                         fetchLivePrices();
                     } else {
-                        el.style.filter = 'blur(8px)';
-                        el.style.opacity = '0.7';
+                        body.classList.add('blur-active');
                     }
                 }
                 
@@ -330,14 +343,12 @@
                                         const colorClass = isUp ? 'up' : isDown ? 'down' : 'neutral';
                                         const arrow = isUp ? '▲' : isDown ? '▼' : '';
                                         
-                                        el.innerHTML = <span style="color: #f87171;" class="">원</span> <span class=""> %</span>;
+                                        el.innerHTML = '<span style="color: #f87171;" class="' + colorClass + '">' + Number(p.stck_prpr).toLocaleString() + '원</span> <span class="' + colorClass + '">' + arrow + ' ' + Number(p.prdy_ctrt).toFixed(2) + '%</span>';
                                     }
                                 });
                             }
                         });
                 }
-                
-                toggleTotal();
             </script>
         {% endif %}
     </div>
