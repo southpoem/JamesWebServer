@@ -546,49 +546,196 @@ def get_krx_map():
                 logging.error(f"Failed to load KRX/ETF list: {e}")
     return krx_map_cache
 
-@infinite_bp.route('/api/live_prices', methods=['POST'])
+@infinite_bp.route('/api/live_prices', methods=['GET', 'POST'])
+@infinite_bp.route('/infinite/api/live_prices', methods=['GET', 'POST'])
 @login_required
 def api_live_prices():
-    data = request.json
-    tickers = data.get('tickers', [])
-    
+    tickers = []
+    if request.method == 'POST':
+        if request.is_json and request.json:
+            tickers = request.json.get('tickers', [])
+        elif request.form:
+            tickers = request.form.getlist('tickers')
+            
+    if not tickers:
+        ticker_param = request.args.get('tickers')
+        if ticker_param:
+            tickers = [t.strip() for t in ticker_param.split(',') if t.strip()]
+        else:
+            try:
+                conn = sqlite3.connect(DB_PATH)
+                c = conn.cursor()
+                c.execute("SELECT DISTINCT ticker FROM asset_history")
+                tickers = [r[0] for r in c.fetchall() if r[0]]
+                conn.close()
+            except Exception as e:
+                logging.error(f"Error reading asset_history tickers: {e}")
+                tickers = []
+                
     krx_map = get_krx_map()
     
-    codes = []
-    name_to_code = {}
+    kr_name_to_code = {}
+    us_tickers = []
+    
     for name in tickers:
+        if not name:
+            continue
         if name in krx_map:
-            code = krx_map[name]
-            codes.append(code)
-            name_to_code[name] = code
+            kr_name_to_code[name] = krx_map[name]
+        else:
+            us_tickers.append(name)
             
-    if not codes:
-        return jsonify({})
-        
-    query = "SERVICE_ITEM:" + ",".join(codes)
-    url = f"https://polling.finance.naver.com/api/realtime?query={query}"
-    try:
-        res = requests.get(url, timeout=5)
-        res_data = res.json()
-        
-        live_prices = {}
-        if res_data.get('resultCode') == 'success':
-            items = res_data['result']['areas'][0]['datas']
-            code_to_data = {item['cd']: {
-                'nv': item['nv'],
-                'cv': item['cv'],
-                'cr': item['cr'],
-                'rf': item['rf']
-            } for item in items}
+    live_prices = {}
+    
+    # 1. KRX real-time stock price query
+    if kr_name_to_code:
+        codes = list(set(kr_name_to_code.values()))
+        query = "SERVICE_ITEM:" + ",".join(codes)
+        url = f"https://polling.finance.naver.com/api/realtime?query={query}"
+        try:
+            res = requests.get(url, timeout=5)
+            res_data = res.json()
+            if res_data.get('resultCode') == 'success':
+                items = res_data.get('result', {}).get('areas', [{}])[0].get('datas', [])
+                code_to_data = {item['cd']: item for item in items}
+                
+                for name, code in kr_name_to_code.items():
+                    if code in code_to_data:
+                        it = code_to_data[code]
+                        nv = it.get('nv', 0)
+                        cv = it.get('cv', 0)
+                        cr = it.get('cr', 0.0)
+                        rf = str(it.get('rf', '3'))
+                        
+                        over_market_info = None
+                        nxt = it.get('nxtOverMarketPriceInfo')
+                        if nxt:
+                            st = nxt.get('overMarketStatus', '')
+                            is_open = st in ['OPEN', 'PREOPEN']
+                            p_str = str(nxt.get('overPrice', '0')).replace(',', '').strip()
+                            cv_str = str(nxt.get('compareToPreviousClosePrice', '0')).replace(',', '').strip()
+                            cr_str = str(nxt.get('fluctuationsRatio', '0')).replace(',', '').strip()
+                            try:
+                                over_p = float(p_str)
+                            except:
+                                over_p = 0
+                            if over_p > 0:
+                                try:
+                                    over_cv = float(cv_str)
+                                except:
+                                    over_cv = 0
+                                try:
+                                    over_cr = float(cr_str)
+                                except:
+                                    over_cr = 0
+                                over_sign = str(nxt.get('compareToPreviousPrice', {}).get('code', '3'))
+                                stype = nxt.get('tradingSessionType', '')
+                                sname = '시간외'
+                                if 'PRE' in stype: sname = '프리장'
+                                elif 'AFTER' in stype: sname = '시간외'
+                                over_market_info = {
+                                    'is_open': is_open,
+                                    'session_type': stype,
+                                    'session_name': sname,
+                                    'price': over_p,
+                                    'change_val': over_cv,
+                                    'change_rate': over_cr,
+                                    'sign': over_sign
+                                }
+
+                        live_prices[name] = {
+                            'price': nv,
+                            'change_val': cv,
+                            'change_rate': cr,
+                            'sign': rf,
+                            'currency': 'KRW',
+                            'over_market': over_market_info,
+                            'nv': nv,
+                            'cv': cv,
+                            'cr': cr,
+                            'rf': rf,
+                            'stck_prpr': nv,
+                            'prdy_vrss': cv,
+                            'prdy_ctrt': cr,
+                            'prdy_vrss_sign': rf
+                        }
+        except Exception as e:
+            logging.error(f"KRX live price fetch error: {e}")
             
-            for name, code in name_to_code.items():
-                if code in code_to_data:
-                    live_prices[name] = code_to_data[code]
-                    
-        return jsonify(live_prices)
-    except Exception as e:
-        logging.error(f"Live price fetch error: {e}")
-        return jsonify({})
+    # 2. US real-time stock price query
+    for us_t in set(us_tickers):
+        try:
+            url = f"https://polling.finance.naver.com/api/realtime/worldstock/stock/{us_t}"
+            res = requests.get(url, timeout=3)
+            res_json = res.json()
+            datas = res_json.get('datas', [])
+            if datas:
+                d = datas[0]
+                price = float(d.get('closePriceRaw') or d.get('closePrice') or 0)
+                change_val = float(d.get('compareToPreviousClosePriceRaw') or d.get('compareToPreviousClosePrice') or 0)
+                change_rate = float(d.get('fluctuationsRatioRaw') or d.get('fluctuationsRatio') or 0)
+                sign_obj = d.get('compareToPreviousPrice') or {}
+                sign = str(sign_obj.get('code', '3'))
+                
+                over_market_info = None
+                over = d.get('overMarketPriceInfo')
+                if over:
+                    st = over.get('overMarketStatus', '')
+                    is_open = st in ['OPEN', 'PREOPEN']
+                    p_str = str(over.get('overPrice', '0')).replace(',', '').strip()
+                    cv_str = str(over.get('compareToPreviousClosePrice', '0')).replace(',', '').strip()
+                    cr_str = str(over.get('fluctuationsRatio', '0')).replace(',', '').strip()
+                    try:
+                        over_p = float(p_str)
+                    except:
+                        over_p = 0
+                    if over_p > 0:
+                        try:
+                            over_cv = float(cv_str)
+                        except:
+                            over_cv = 0
+                        try:
+                            over_cr = float(cr_str)
+                        except:
+                            over_cr = 0
+                        over_sign = str(over.get('compareToPreviousPrice', {}).get('code', '3'))
+                        stype = over.get('tradingSessionType', '')
+                        sname = '장외'
+                        if 'PRE' in stype: sname = '프리'
+                        elif 'AFTER' in stype: sname = '애프터'
+                        over_market_info = {
+                            'is_open': is_open,
+                            'session_type': stype,
+                            'session_name': sname,
+                            'price': over_p,
+                            'change_val': over_cv,
+                            'change_rate': over_cr,
+                            'sign': over_sign
+                        }
+
+                live_prices[us_t] = {
+                    'price': price,
+                    'change_val': change_val,
+                    'change_rate': change_rate,
+                    'sign': sign,
+                    'currency': 'USD',
+                    'over_market': over_market_info,
+                    'nv': price,
+                    'cv': change_val,
+                    'cr': change_rate,
+                    'rf': sign,
+                    'stck_prpr': price,
+                    'prdy_vrss': change_val,
+                    'prdy_ctrt': change_rate,
+                    'prdy_vrss_sign': sign
+                }
+        except Exception as e:
+            logging.debug(f"US live price fetch error for {us_t}: {e}")
+            
+    return jsonify({
+        'status': 'success',
+        'data': live_prices
+    })
 
 @infinite_bp.route('/toggle_exclude', methods=['POST'])
 @infinite_bp.route('/infinite/toggle_exclude', methods=['POST'])
@@ -952,10 +1099,20 @@ def infinite_assets():
         except Exception as e:
             logging.error(f"Failed to compute family_sub: {e}")
 
+    df_raw_today = df[df['date'] == today]
+    total_eval_direct = float(df_raw_today['total_evaluation'].sum())
+    total_invest_direct = float(df_raw_today['total_investment'].sum())
+    total_pl_direct = float(df_raw_today['profit_loss'].sum())
+    total_pl_rate_direct = (total_pl_direct / total_invest_direct * 100) if total_invest_direct > 0 else 0
+
     data = {
         'today_str': today.strftime('%Y-%m-%d'),
         'last_update_time': last_update_time,
         'total_today': total_today,
+        'total_eval': total_eval_direct,
+        'total_pl': total_pl_direct,
+        'total_invest': total_invest_direct,
+        'total_pl_rate': total_pl_rate_direct,
         'change_1d': (total_today - family_total) - total_yesterday if yesterday else 0,
         'change_7d': (total_today - family_total) - total_last_week if last_week else 0,
         'change_30d': (total_today - family_total) - total_last_month if last_month else 0,

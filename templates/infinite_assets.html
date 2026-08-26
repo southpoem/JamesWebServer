@@ -156,6 +156,7 @@
                 <form action="/run_meritz_account" method="post" style="margin:0;"><button type="submit" class="action-pill">🔄 메리츠</button></form>
                 {% endif %}
                 <button class="action-pill" onclick="toggleChart('trendChartContainer')">📈 변동추이</button>
+                <button type="button" class="action-pill" id="btnToggleOverMarket" onclick="toggleOverMarket()" title="장외/프리/애프터마켓 시세 포함 여부 토글" style="transition: all 0.2s;">🌙 장외 <span id="overMarketStatusBadge" style="font-weight: 700; margin-left: 2px;">OFF</span></button>
             </div>
         </div>
         
@@ -266,6 +267,7 @@
                     const body = document.body;
                     if (body.classList.contains('blur-active')) {
                         body.classList.remove('blur-active');
+                        if (typeof fetchLivePrices === 'function') fetchLivePrices();
                     } else {
                         body.classList.add('blur-active');
                     }
@@ -274,10 +276,10 @@
 
         {% else %}
             {# ── 삼성/메리츠/전체 일반 총액 섹션 ── #}
-            {% set total_eval = data.account_summary | sum(attribute='total_evaluation') %}
-            {% set total_pl = data.account_summary | sum(attribute='profit_loss') %}
-            {% set total_invest = total_eval - total_pl %}
-            {% set total_pl_rate = (total_pl / total_invest * 100) if total_invest > 0 else 0 %}
+            {% set total_eval = data.total_eval if data.total_eval is defined else (data.account_summary | sum(attribute='total_evaluation')) %}
+            {% set total_pl = data.total_pl if data.total_pl is defined else (data.account_summary | sum(attribute='profit_loss')) %}
+            {% set total_invest = data.total_invest if data.total_invest is defined else (total_eval - total_pl) %}
+            {% set total_pl_rate = data.total_pl_rate if data.total_pl_rate is defined else ((total_pl / total_invest * 100) if total_invest > 0 else 0) %}
             
             <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
                 총 평가 금액 (업데이트: {{ data.chart_dates[-1] if data.chart_dates else '' }})<br>
@@ -444,7 +446,11 @@
 
                         if (res.ok) {
                             // Seamless in-place update without reloading the page
-                            const pageRes = await fetch(window.location.href);
+                            const fetchUrl = window.location.pathname + window.location.search + (window.location.search ? '&' : '?') + '_t=' + Date.now();
+                            const pageRes = await fetch(fetchUrl, {
+                                cache: 'no-store',
+                                headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
+                            });
                             const text = await pageRes.text();
                             const parser = new DOMParser();
                             const doc = parser.parseFromString(text, 'text/html');
@@ -467,8 +473,16 @@
                                 curStockView.innerHTML = newStockView.innerHTML;
                             }
 
+                            const newSettings = doc.getElementById('settingsPanel');
+                            const curSettings = document.getElementById('settingsPanel');
+                            if (newSettings && curSettings) {
+                                const isDisplay = curSettings.style.display;
+                                curSettings.innerHTML = newSettings.innerHTML;
+                                curSettings.style.display = isDisplay;
+                            }
+
                             if (!document.body.classList.contains('blur-active')) {
-                                fetchLivePrices();
+                                if (typeof fetchLivePrices === 'function') fetchLivePrices();
                             }
                         }
                     } catch (err) {
@@ -524,26 +538,106 @@
                     });
                 }
                 
-                function fetchLivePrices() {
-                    fetch('/api/live_prices')
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                document.querySelectorAll('.stock-price-live').forEach(el => {
-                                    const ticker = el.getAttribute('data-ticker');
-                                    if (data.data[ticker]) {
-                                        const p = data.data[ticker];
-                                        const isUp = p.prdy_vrss_sign === '2' || p.prdy_vrss_sign === '1';
-                                        const isDown = p.prdy_vrss_sign === '5' || p.prdy_vrss_sign === '4';
-                                        const colorClass = isUp ? 'up' : isDown ? 'down' : 'neutral';
-                                        const arrow = isUp ? '▲' : isDown ? '▼' : '';
-                                        
-                                        el.innerHTML = '<span style="color: #f87171;" class="' + colorClass + '">' + Number(p.stck_prpr).toLocaleString() + '원</span> <span class="' + colorClass + '">' + arrow + ' ' + Number(p.prdy_ctrt).toFixed(2) + '%</span>';
-                                    }
-                                });
-                            }
-                        });
+                let cachedLivePriceData = null;
+                let isOverMarketEnabled = localStorage.getItem('enable_over_market') === 'true';
+
+                function updateOverMarketBtnUI() {
+                    const btn = document.getElementById('btnToggleOverMarket');
+                    const badge = document.getElementById('overMarketStatusBadge');
+                    if (!btn || !badge) return;
+                    if (isOverMarketEnabled) {
+                        btn.style.background = 'rgba(56, 189, 248, 0.18)';
+                        btn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                        btn.style.color = '#fff';
+                        badge.textContent = 'ON';
+                        badge.style.color = '#38bdf8';
+                    } else {
+                        btn.style.background = 'rgba(255, 255, 255, 0.08)';
+                        btn.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                        btn.style.color = '#ccc';
+                        badge.textContent = 'OFF';
+                        badge.style.color = '#94a3b8';
+                    }
                 }
+
+                function toggleOverMarket() {
+                    isOverMarketEnabled = !isOverMarketEnabled;
+                    localStorage.setItem('enable_over_market', isOverMarketEnabled ? 'true' : 'false');
+                    updateOverMarketBtnUI();
+                    if (cachedLivePriceData) {
+                        renderAllLivePrices(cachedLivePriceData);
+                    } else {
+                        fetchLivePrices();
+                    }
+                }
+
+                function renderAllLivePrices(dataMap) {
+                    const liveEls = document.querySelectorAll('.stock-price-live');
+                    liveEls.forEach(el => {
+                        const ticker = el.getAttribute('data-ticker');
+                        const p = dataMap[ticker];
+                        if (p) {
+                            const useOver = isOverMarketEnabled && p.over_market && p.over_market.price > 0;
+                            const src = useOver ? p.over_market : p;
+
+                            const isUp = src.sign === '2' || src.sign === '1' || src.rf === '2' || src.rf === '1' || src.prdy_vrss_sign === '2' || src.prdy_vrss_sign === '1' || Number(src.change_rate || src.cr || src.prdy_ctrt) > 0;
+                            const isDown = src.sign === '5' || src.sign === '4' || src.rf === '5' || src.rf === '4' || src.prdy_vrss_sign === '5' || src.prdy_vrss_sign === '4' || Number(src.change_rate || src.cr || src.prdy_ctrt) < 0;
+                            const colorClass = isUp ? 'up' : (isDown ? 'down' : 'neutral');
+                            const arrow = isUp ? '▲' : (isDown ? '▼' : '');
+
+                            const priceVal = src.price !== undefined ? src.price : (src.nv !== undefined ? src.nv : src.stck_prpr);
+                            const changeVal = src.change_val !== undefined ? src.change_val : (src.cv !== undefined ? src.cv : (src.prdy_vrss !== undefined ? src.prdy_vrss : 0));
+                            const changeRate = src.change_rate !== undefined ? src.change_rate : (src.cr !== undefined ? src.cr : (src.prdy_ctrt !== undefined ? src.prdy_ctrt : 0));
+                            const isUSD = p.currency === 'USD' || (typeof priceVal === 'number' && priceVal < 1000 && !Number.isInteger(priceVal));
+
+                            const priceFormatted = isUSD ? `$${Number(priceVal).toFixed(2)}` : `${Number(priceVal).toLocaleString()}원`;
+                            const changeFormatted = isUSD ? `$${Math.abs(Number(changeVal)).toFixed(2)}` : `${Math.abs(Number(changeVal)).toLocaleString()}`;
+                            const rateFormatted = `${Math.abs(Number(changeRate)).toFixed(2)}%`;
+
+                            let html = '';
+                            if (useOver && src.session_name) {
+                                html += `<span style="font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24; font-weight: 700; margin-right: 4px;">${src.session_name}</span>`;
+                            }
+                            html += `<span class="${colorClass}">${priceFormatted}</span> `;
+                            if (Math.abs(Number(changeVal)) > 0 || Math.abs(Number(changeRate)) > 0) {
+                                html += `<span class="${colorClass}">${changeFormatted} ${arrow} ${rateFormatted}</span>`;
+                            }
+                            el.innerHTML = html;
+                        }
+                    });
+                }
+
+                function fetchLivePrices() {
+                    const liveEls = document.querySelectorAll('.stock-price-live');
+                    if (!liveEls.length) return;
+                    
+                    const tickers = Array.from(new Set(
+                        Array.from(liveEls).map(el => el.getAttribute('data-ticker')).filter(Boolean)
+                    ));
+                    
+                    fetch('/api/live_prices', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ tickers: tickers })
+                    })
+                    .then(res => res.json())
+                    .then(resData => {
+                        cachedLivePriceData = resData.data || resData;
+                        renderAllLivePrices(cachedLivePriceData);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching live prices:', err);
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    updateOverMarketBtnUI();
+                    if (!document.body.classList.contains('blur-active')) {
+                        fetchLivePrices();
+                    }
+                });
             </script>
         {% endif %}
     </div> <!-- end page-container -->
