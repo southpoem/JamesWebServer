@@ -612,8 +612,8 @@
                             const rateFormatted = `${Math.abs(Number(changeRate)).toFixed(2)}%`;
 
                             let html = '';
-                            if (useOver && src.session_name) {
-                                html += `<span style="font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24; font-weight: 700; margin-right: 4px;">${src.session_name}</span>`;
+                            if (useOver) {
+                                html += `<span style="font-size: 0.8rem; margin-right: 3px;" title="${src.session_name || '장외'}">🌙</span>`;
                             }
                             html += `<span class="${colorClass}">${priceFormatted}</span> `;
                             if (Math.abs(Number(changeVal)) > 0 || Math.abs(Number(changeRate)) > 0) {
