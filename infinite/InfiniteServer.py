@@ -546,6 +546,106 @@ def get_krx_map():
                 logging.error(f"Failed to load KRX/ETF list: {e}")
     return krx_map_cache
 
+US_TICKER_MAP = {
+    'DIREXION SEMICONDUCTOR DAILY 3X': 'SOXL',
+    'DIREXION DAILY SEMICONDUCTOR BULL 3X': 'SOXL',
+    'PROSHARES QQQ 2X': 'QLD',
+    'PROSHARES ULTRAPRO QQQ': 'TQQQ',
+    'PROSHARES ULTRAPRO SHORT QQQ': 'SQQQ',
+    'DIREXION DAILY 20+ YEAR TREASURY BULL 3X': 'TMF',
+    'MICROSECTORS FANG+ INDEX 3X': 'BULZ',
+    'DIREXION DAILY S&P BIOTECH BULL 3X': 'LABU',
+}
+
+def normalize_us_ticker(t):
+    if not t:
+        return t
+    t_str = str(t).strip()
+    t_upper = t_str.upper()
+    for full_name, symbol in US_TICKER_MAP.items():
+        if full_name in t_upper:
+            return symbol
+    return t_str
+
+def fetch_single_us_stock(symbol):
+    for code in [symbol, f"{symbol}.K", f"{symbol}.O", f"{symbol}.N", f"{symbol}.A"]:
+        try:
+            url = f"https://polling.finance.naver.com/api/realtime/worldstock/stock/{code}"
+            res = requests.get(url, timeout=3)
+            res_json = res.json()
+            datas = res_json.get('datas', [])
+            if datas:
+                d = datas[0]
+                price = float(d.get('closePriceRaw') or d.get('closePrice') or 0)
+                if price > 0:
+                    change_val = float(d.get('compareToPreviousClosePriceRaw') or d.get('compareToPreviousClosePrice') or 0)
+                    change_rate = float(d.get('fluctuationsRatioRaw') or d.get('fluctuationsRatio') or 0)
+                    sign_obj = d.get('compareToPreviousPrice') or {}
+                    sign = str(sign_obj.get('code', '3'))
+                    
+                    over_market_info = None
+                    over = d.get('overMarketPriceInfo')
+                    if over:
+                        st = over.get('overMarketStatus', '')
+                        is_open = st in ['OPEN', 'PREOPEN']
+                        p_str = str(over.get('overPrice', '0')).replace(',', '').strip()
+                        cv_str = str(over.get('compareToPreviousClosePrice', '0')).replace(',', '').strip()
+                        cr_str = str(over.get('fluctuationsRatio', '0')).replace(',', '').strip()
+                        try:
+                            over_p = float(p_str)
+                        except:
+                            over_p = 0
+                        if over_p > 0:
+                            try:
+                                over_cv = float(cv_str)
+                            except:
+                                over_cv = 0
+                            try:
+                                over_cr = float(cr_str)
+                            except:
+                                over_cr = 0
+                            over_sign = str(over.get('compareToPreviousPrice', {}).get('code', '3'))
+                            stype = over.get('tradingSessionType', '')
+                            sname = '장외'
+                            if 'PRE' in stype: sname = '프리'
+                            elif 'AFTER' in stype: sname = '애프터'
+                            over_market_info = {
+                                'is_open': is_open,
+                                'session_type': stype,
+                                'session_name': sname,
+                                'price': over_p,
+                                'change_val': over_cv,
+                                'change_rate': over_cr,
+                                'sign': over_sign
+                            }
+
+                    if sign in ['4', '5']:
+                        change_val = -abs(change_val)
+                        change_rate = -abs(change_rate)
+                    elif sign in ['1', '2']:
+                        change_val = abs(change_val)
+                        change_rate = abs(change_rate)
+
+                    return {
+                        'price': price,
+                        'change_val': change_val,
+                        'change_rate': change_rate,
+                        'sign': sign,
+                        'currency': 'USD',
+                        'over_market': over_market_info,
+                        'nv': price,
+                        'cv': change_val,
+                        'cr': change_rate,
+                        'rf': sign,
+                        'stck_prpr': price,
+                        'prdy_vrss': change_val,
+                        'prdy_ctrt': change_rate,
+                        'prdy_vrss_sign': sign
+                    }
+        except Exception:
+            pass
+    return None
+
 @infinite_bp.route('/api/live_prices', methods=['GET', 'POST'])
 @infinite_bp.route('/infinite/api/live_prices', methods=['GET', 'POST'])
 @login_required
@@ -607,6 +707,13 @@ def api_live_prices():
                         cr = it.get('cr', 0.0)
                         rf = str(it.get('rf', '3'))
                         
+                        if rf in ['4', '5']:
+                            cv = -abs(cv)
+                            cr = -abs(cr)
+                        elif rf in ['1', '2']:
+                            cv = abs(cv)
+                            cr = abs(cr)
+
                         over_market_info = None
                         nxt = it.get('nxtOverMarketPriceInfo')
                         if nxt:
@@ -629,6 +736,15 @@ def api_live_prices():
                                 except:
                                     over_cr = 0
                                 over_sign = str(nxt.get('compareToPreviousPrice', {}).get('code', '3'))
+                                if over_sign in ['4', '5'] or (isinstance(cv_str, str) and '-' in cv_str) or (isinstance(cr_str, str) and '-' in cr_str):
+                                    over_cv = -abs(over_cv)
+                                    over_cr = -abs(over_cr)
+                                    over_sign = '5'
+                                elif over_sign in ['1', '2'] or (isinstance(cv_str, str) and '+' in cv_str) or (isinstance(cr_str, str) and '+' in cr_str):
+                                    over_cv = abs(over_cv)
+                                    over_cr = abs(over_cr)
+                                    over_sign = '2'
+
                                 stype = nxt.get('tradingSessionType', '')
                                 sname = '시간외'
                                 if 'PRE' in stype: sname = '프리장'
@@ -663,78 +779,25 @@ def api_live_prices():
             logging.error(f"KRX live price fetch error: {e}")
             
     # 2. US real-time stock price query
-    for us_t in set(us_tickers):
-        try:
-            url = f"https://polling.finance.naver.com/api/realtime/worldstock/stock/{us_t}"
-            res = requests.get(url, timeout=3)
-            res_json = res.json()
-            datas = res_json.get('datas', [])
-            if datas:
-                d = datas[0]
-                price = float(d.get('closePriceRaw') or d.get('closePrice') or 0)
-                change_val = float(d.get('compareToPreviousClosePriceRaw') or d.get('compareToPreviousClosePrice') or 0)
-                change_rate = float(d.get('fluctuationsRatioRaw') or d.get('fluctuationsRatio') or 0)
-                sign_obj = d.get('compareToPreviousPrice') or {}
-                sign = str(sign_obj.get('code', '3'))
-                
-                over_market_info = None
-                over = d.get('overMarketPriceInfo')
-                if over:
-                    st = over.get('overMarketStatus', '')
-                    is_open = st in ['OPEN', 'PREOPEN']
-                    p_str = str(over.get('overPrice', '0')).replace(',', '').strip()
-                    cv_str = str(over.get('compareToPreviousClosePrice', '0')).replace(',', '').strip()
-                    cr_str = str(over.get('fluctuationsRatio', '0')).replace(',', '').strip()
-                    try:
-                        over_p = float(p_str)
-                    except:
-                        over_p = 0
-                    if over_p > 0:
-                        try:
-                            over_cv = float(cv_str)
-                        except:
-                            over_cv = 0
-                        try:
-                            over_cr = float(cr_str)
-                        except:
-                            over_cr = 0
-                        over_sign = str(over.get('compareToPreviousPrice', {}).get('code', '3'))
-                        stype = over.get('tradingSessionType', '')
-                        sname = '장외'
-                        if 'PRE' in stype: sname = '프리'
-                        elif 'AFTER' in stype: sname = '애프터'
-                        over_market_info = {
-                            'is_open': is_open,
-                            'session_type': stype,
-                            'session_name': sname,
-                            'price': over_p,
-                            'change_val': over_cv,
-                            'change_rate': over_cr,
-                            'sign': over_sign
-                        }
-
-                live_prices[us_t] = {
-                    'price': price,
-                    'change_val': change_val,
-                    'change_rate': change_rate,
-                    'sign': sign,
-                    'currency': 'USD',
-                    'over_market': over_market_info,
-                    'nv': price,
-                    'cv': change_val,
-                    'cr': change_rate,
-                    'rf': sign,
-                    'stck_prpr': price,
-                    'prdy_vrss': change_val,
-                    'prdy_ctrt': change_rate,
-                    'prdy_vrss_sign': sign
-                }
-        except Exception as e:
-            logging.debug(f"US live price fetch error for {us_t}: {e}")
+    for raw_name in set(us_tickers):
+        sym = normalize_us_ticker(raw_name)
+        stock_data = fetch_single_us_stock(sym)
+        if stock_data:
+            live_prices[raw_name] = stock_data
+            live_prices[sym] = stock_data
+            
+    usdkrw_val = 1410.0
+    try:
+        macro_info = fetch_macro_indicators()
+        if macro_info and 'usdkrw' in macro_info:
+            usdkrw_val = float(macro_info['usdkrw'].get('price', 1410.0))
+    except Exception:
+        usdkrw_val = 1410.0
             
     return jsonify({
         'status': 'success',
-        'data': live_prices
+        'data': live_prices,
+        'usdkrw': usdkrw_val
     })
 
 @infinite_bp.route('/toggle_exclude', methods=['POST'])

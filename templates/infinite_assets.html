@@ -286,7 +286,7 @@
                 <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
             </div>
             
-            <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()">
+            <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()" data-orig-eval="{{ total_eval }}" data-orig-invest="{{ total_invest }}" data-yesterday="{{ (data.total_today - (data.change_1d if data.change_1d is defined else 0)) }}">
                 <div class="total-amount">{{ "{:,.0f}".format(total_eval) }}원</div>
                 <div class="total-change {% if total_pl > 0 %}up{% elif total_pl < 0 %}down{% else %}neutral{% endif %}">
                     {{ "{:+,.0f}".format(total_pl) }}원 ({{ "{:+.2f}".format(total_pl_rate) }}%)
@@ -311,7 +311,7 @@
             
             <div id="accountView">
                 {% for acc in data.account_summary %}
-                <div class="acc-card">
+                <div class="acc-card" data-acc-num="{{ acc.account_num }}" data-orig-eval="{{ acc.total_evaluation }}" data-orig-invest="{{ acc.total_investment }}">
                     <div class="acc-card-header">
                         <div>
                             <div class="acc-name">{{ acc.account_type }}</div>
@@ -328,7 +328,7 @@
                     <div>
                         {% for row in data.detailed_list %}
                             {% if row.account_num == acc.account_num %}
-                            <div class="stock-row">
+                            <div class="stock-row" data-ticker="{{ row.ticker }}" data-qty="{{ row.quantity }}" data-invest="{{ row.total_investment }}" data-orig-eval="{{ row.total_evaluation }}">
                                 <div>
                                     <div class="stock-name-wrap">
                                         <div class="stock-name">{{ row.ticker }}</div>
@@ -355,7 +355,7 @@
             <div id="stockView" style="display: none;">
                 <div class="acc-card">
                     {% for tk in data.ticker_summary %}
-                    <div class="stock-row">
+                    <div class="stock-row" data-ticker="{{ tk.ticker }}" data-qty="{{ tk.quantity }}" data-invest="{{ tk.total_investment }}" data-orig-eval="{{ tk.total_evaluation }}">
                         <div>
                             <div class="stock-name-wrap">
                                 <div class="stock-name">{{ tk.ticker }}</div>
@@ -571,7 +571,10 @@
                     }
                 }
 
+                let currentUsdKrw = 1410.0;
+
                 function renderAllLivePrices(dataMap) {
+                    // 1. Update Stock Price Labels
                     const liveEls = document.querySelectorAll('.stock-price-live');
                     liveEls.forEach(el => {
                         const ticker = el.getAttribute('data-ticker');
@@ -580,8 +583,22 @@
                             const useOver = isOverMarketEnabled && p.over_market && p.over_market.price > 0;
                             const src = useOver ? p.over_market : p;
 
-                            const isUp = src.sign === '2' || src.sign === '1' || src.rf === '2' || src.rf === '1' || src.prdy_vrss_sign === '2' || src.prdy_vrss_sign === '1' || Number(src.change_rate || src.cr || src.prdy_ctrt) > 0;
-                            const isDown = src.sign === '5' || src.sign === '4' || src.rf === '5' || src.rf === '4' || src.prdy_vrss_sign === '5' || src.prdy_vrss_sign === '4' || Number(src.change_rate || src.cr || src.prdy_ctrt) < 0;
+                            const signStr = String(src.sign !== undefined ? src.sign : (src.rf !== undefined ? src.rf : (src.prdy_vrss_sign !== undefined ? src.prdy_vrss_sign : ''))).trim();
+
+                            let isUp = false;
+                            let isDown = false;
+
+                            if (signStr === '1' || signStr === '2') {
+                                isUp = true;
+                            } else if (signStr === '4' || signStr === '5') {
+                                isDown = true;
+                            } else {
+                                const rawRate = Number(src.change_rate !== undefined ? src.change_rate : (src.cr !== undefined ? src.cr : (src.prdy_ctrt || 0)));
+                                const rawVal = Number(src.change_val !== undefined ? src.change_val : (src.cv !== undefined ? src.cv : (src.prdy_vrss || 0)));
+                                if (rawRate > 0 || rawVal > 0) isUp = true;
+                                else if (rawRate < 0 || rawVal < 0) isDown = true;
+                            }
+
                             const colorClass = isUp ? 'up' : (isDown ? 'down' : 'neutral');
                             const arrow = isUp ? '▲' : (isDown ? '▼' : '');
 
@@ -605,6 +622,152 @@
                             el.innerHTML = html;
                         }
                     });
+
+                    // 2. Real-time Asset Recalculation (Account View)
+                    let grandLiveEval = 0;
+                    let grandLiveInvest = 0;
+
+                    const accCards = document.querySelectorAll('#accountView .acc-card');
+                    accCards.forEach(card => {
+                        let accLiveEval = 0;
+                        let accLiveInvest = 0;
+
+                        const stockRows = card.querySelectorAll('.stock-row');
+                        stockRows.forEach(row => {
+                            const ticker = row.getAttribute('data-ticker');
+                            const qty = parseFloat(row.getAttribute('data-qty')) || 0;
+                            const invest = parseFloat(row.getAttribute('data-invest')) || 0;
+                            const origEval = parseFloat(row.getAttribute('data-orig-eval')) || 0;
+
+                            let currentEval = origEval;
+                            let currentPL = origEval - invest;
+
+                            const p = dataMap[ticker];
+                            if (p && qty > 0) {
+                                const useOver = isOverMarketEnabled && p.over_market && p.over_market.price > 0;
+                                const src = useOver ? p.over_market : p;
+                                const livePrice = src.price !== undefined ? src.price : (src.nv !== undefined ? src.nv : src.stck_prpr);
+                                const isUSD = p.currency === 'USD' || (typeof livePrice === 'number' && livePrice < 1000 && !Number.isInteger(livePrice));
+
+                                if (isUSD) {
+                                    currentEval = qty * Number(livePrice) * Number(currentUsdKrw);
+                                } else {
+                                    currentEval = qty * Number(livePrice);
+                                }
+                                currentPL = currentEval - invest;
+                            }
+
+                            const plRate = invest > 0 ? (currentPL / invest * 100) : 0;
+                            const evalEl = row.querySelector('.stock-eval');
+                            const changeEl = row.querySelector('.stock-eval-change');
+
+                            if (evalEl) {
+                                evalEl.textContent = `${Math.round(currentEval).toLocaleString()}원`;
+                            }
+                            if (changeEl) {
+                                const isUp = currentPL > 0;
+                                const isDown = currentPL < 0;
+                                changeEl.className = 'stock-eval-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                                changeEl.textContent = `${currentPL >= 0 ? '+' : ''}${Math.round(currentPL).toLocaleString()}원 (${plRate >= 0 ? '+' : ''}${plRate.toFixed(2)}%)`;
+                            }
+
+                            accLiveEval += currentEval;
+                            accLiveInvest += invest;
+                        });
+
+                        if (stockRows.length === 0) {
+                            accLiveEval = parseFloat(card.getAttribute('data-orig-eval')) || 0;
+                            accLiveInvest = parseFloat(card.getAttribute('data-orig-invest')) || 0;
+                        }
+
+                        const accPL = accLiveEval - accLiveInvest;
+                        const accPLRate = accLiveInvest > 0 ? (accPL / accLiveInvest * 100) : 0;
+                        const cardTotalEl = card.querySelector('.acc-total');
+                        const cardChangeEl = card.querySelector('.acc-change');
+
+                        if (cardTotalEl) {
+                            cardTotalEl.textContent = `${Math.round(accLiveEval).toLocaleString()}원`;
+                        }
+                        if (cardChangeEl) {
+                            const isUp = accPL > 0;
+                            const isDown = accPL < 0;
+                            cardChangeEl.className = 'acc-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                            cardChangeEl.textContent = `${accPL >= 0 ? '+' : ''}${Math.round(accPL).toLocaleString()}원 (${accPLRate >= 0 ? '+' : ''}${accPLRate.toFixed(2)}%)`;
+                        }
+
+                        grandLiveEval += accLiveEval;
+                        grandLiveInvest += accLiveInvest;
+                    });
+
+                    // 3. Update Stock View (.stock-eval and .stock-eval-change)
+                    const stockViewRows = document.querySelectorAll('#stockView .stock-row');
+                    stockViewRows.forEach(row => {
+                        const ticker = row.getAttribute('data-ticker');
+                        const qty = parseFloat(row.getAttribute('data-qty')) || 0;
+                        const invest = parseFloat(row.getAttribute('data-invest')) || 0;
+                        const origEval = parseFloat(row.getAttribute('data-orig-eval')) || 0;
+
+                        let currentEval = origEval;
+                        let currentPL = origEval - invest;
+
+                        const p = dataMap[ticker];
+                        if (p && qty > 0) {
+                            const useOver = isOverMarketEnabled && p.over_market && p.over_market.price > 0;
+                            const src = useOver ? p.over_market : p;
+                            const livePrice = src.price !== undefined ? src.price : (src.nv !== undefined ? src.nv : src.stck_prpr);
+                            const isUSD = p.currency === 'USD' || (typeof livePrice === 'number' && livePrice < 1000 && !Number.isInteger(livePrice));
+
+                            if (isUSD) {
+                                currentEval = qty * Number(livePrice) * Number(currentUsdKrw);
+                            } else {
+                                currentEval = qty * Number(livePrice);
+                            }
+                            currentPL = currentEval - invest;
+                        }
+
+                        const evalEl = row.querySelector('.stock-eval');
+                        const changeEl = row.querySelector('.stock-eval-change');
+
+                        if (evalEl) {
+                            evalEl.textContent = `${Math.round(currentEval).toLocaleString()}원`;
+                        }
+                        if (changeEl) {
+                            const isUp = currentPL > 0;
+                            const isDown = currentPL < 0;
+                            changeEl.className = 'stock-eval-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                            changeEl.textContent = `${currentPL >= 0 ? '+' : ''}${Math.round(currentPL).toLocaleString()}원`;
+                        }
+                    });
+
+                    // 4. Update Header Total Asset Section
+                    const totalSection = document.getElementById('totalAmountSection');
+                    if (totalSection && accCards.length > 0) {
+                        const grandPL = grandLiveEval - grandLiveInvest;
+                        const grandPLRate = grandLiveInvest > 0 ? (grandPL / grandLiveInvest * 100) : 0;
+                        const totalAmountEl = totalSection.querySelector('.total-amount');
+                        const totalChangeEl = totalSection.querySelector('.total-change');
+                        const totalChangeTextEl = totalSection.querySelector('.total-change-text');
+
+                        if (totalAmountEl) {
+                            totalAmountEl.textContent = `${Math.round(grandLiveEval).toLocaleString()}원`;
+                        }
+                        if (totalChangeEl) {
+                            const isUp = grandPL > 0;
+                            const isDown = grandPL < 0;
+                            totalChangeEl.className = 'total-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                            totalChangeEl.textContent = `${grandPL >= 0 ? '+' : ''}${Math.round(grandPL).toLocaleString()}원 (${grandPLRate >= 0 ? '+' : ''}${grandPLRate.toFixed(2)}%)`;
+                        }
+                        if (totalChangeTextEl) {
+                            const yesterdayTotal = parseFloat(totalSection.getAttribute('data-yesterday')) || 0;
+                            if (yesterdayTotal > 0) {
+                                const dayDiff = grandLiveEval - yesterdayTotal;
+                                const isUp = dayDiff > 0;
+                                const isDown = dayDiff < 0;
+                                totalChangeTextEl.className = 'total-change-text ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                                totalChangeTextEl.textContent = `어제보다 ${Math.round(Math.abs(dayDiff)).toLocaleString()}원 ${isUp ? '올랐어요' : (isDown ? '내렸어요' : '같아요')}`;
+                            }
+                        }
+                    }
                 }
 
                 function fetchLivePrices() {
@@ -624,6 +787,9 @@
                     })
                     .then(res => res.json())
                     .then(resData => {
+                        if (resData.usdkrw) {
+                            currentUsdKrw = Number(resData.usdkrw);
+                        }
                         cachedLivePriceData = resData.data || resData;
                         renderAllLivePrices(cachedLivePriceData);
                     })
