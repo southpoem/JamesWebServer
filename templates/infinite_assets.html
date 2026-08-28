@@ -816,16 +816,18 @@
 
             <div style="margin-bottom: 1.2rem;">
                 {% for fa in data.family_assets %}
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; padding: 0.8rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03);">
-                    <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; padding: 0.8rem; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.03); transition: background 0.2s;">
+                    <div style="cursor: pointer; flex: 1;" onclick="openEditFamilyModal('{{ fa.account_name|e }}', '{{ fa.asset_type|e }}', '{{ fa.amount }}')">
                         <span style="color: #fff; font-weight: 700; font-size: 0.95rem;">{{ fa.account_name }}</span>
                         <span style="color: #888; font-size: 0.8rem; margin-left: 6px;">{{ fa.asset_type }}</span>
+                        <span style="font-size: 0.75rem; color: #fbbf24; margin-left: 6px; opacity: 0.8;">✏️</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="blur-target" style="color: #fbbf24; font-weight: 700; font-size: 1rem;" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();">{{ "{:,.0f}".format(fa.amount) }}원</span>
-                        <form action="/delete_family_asset" method="post" style="margin: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="blur-target" style="color: #fbbf24; font-weight: 700; font-size: 1rem; cursor: pointer;" onclick="openEditFamilyModal('{{ fa.account_name|e }}', '{{ fa.asset_type|e }}', '{{ fa.amount }}')">{{ "{:,.0f}".format(fa.amount) }}원</span>
+                        <button type="button" onclick="openEditFamilyModal('{{ fa.account_name|e }}', '{{ fa.asset_type|e }}', '{{ fa.amount }}')" style="background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">수정</button>
+                        <form action="/delete_family_asset" method="post" style="margin: 0;" onsubmit="return confirm('\'{{ fa.account_name }}\' 항목을 삭제하시겠습니까?');">
                             <input type="hidden" name="account_name" value="{{ fa.account_name }}">
-                            <button type="submit" style="background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">삭제</button>
+                            <button type="submit" style="background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 0.75rem; font-weight: 600;">삭제</button>
                         </form>
                     </div>
                 </div>
@@ -844,6 +846,64 @@
             </form>
         </div>
     </div>
+
+    <!-- Edit Family Asset Modal -->
+    <div id="editFamilyModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+        <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; width: 100%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.8rem;">
+                <h4 style="margin: 0; color: #fff; font-size: 1.05rem; font-weight: 700;">✏️ 가족 자산 수정</h4>
+                <button type="button" onclick="closeEditFamilyModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;">✕</button>
+            </div>
+
+            <form action="/update_family_asset" method="post" style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="hidden" name="orig_account_name" id="editOrigAccountName">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">소유자 / 계좌명</label>
+                    <input type="text" name="account_name" id="editAccountName" required style="width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">자산명 (분류)</label>
+                    <input type="text" name="asset_type" id="editAssetType" required style="width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">금액 (원)</label>
+                    <input type="number" name="amount" id="editAmount" required style="width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 0.8rem;">
+                    <button type="button" onclick="closeEditFamilyModal()" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.08); color: #ccc; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">취소</button>
+                    <button type="submit" style="flex: 2; padding: 10px; background: #fbbf24; color: #121212; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditFamilyModal(name, type, amount) {
+            document.getElementById('editOrigAccountName').value = name;
+            document.getElementById('editAccountName').value = name;
+            document.getElementById('editAssetType').value = type;
+            document.getElementById('editAmount').value = amount;
+            const modal = document.getElementById('editFamilyModal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeEditFamilyModal() {
+            const modal = document.getElementById('editFamilyModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('editFamilyModal');
+            if (modal && e.target === modal) {
+                closeEditFamilyModal();
+            }
+        });
+    </script>
     {% endif %}
 </body>
 </html>

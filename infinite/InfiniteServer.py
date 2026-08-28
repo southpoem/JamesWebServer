@@ -2076,11 +2076,28 @@ def route_add_family_asset():
     amount = request.form.get('amount')
     if account_name and asset_type and amount:
         try:
-            amount = float(amount.replace(',', ''))
+            amount = float(str(amount).replace(',', ''))
             from infinite import FamilyDBHelper
             FamilyDBHelper.add_family_asset(account_name, asset_type, amount)
         except Exception as e:
             logging.error(f"Error adding family asset: {e}")
+    return redirect(url_for('infinite.infinite_assets', broker='family'))
+
+@infinite_bp.route('/update_family_asset', methods=['POST'])
+@infinite_bp.route('/infinite/update_family_asset', methods=['POST'])
+@login_required
+def route_update_family_asset():
+    orig_account_name = request.form.get('orig_account_name')
+    account_name = request.form.get('account_name')
+    asset_type = request.form.get('asset_type')
+    amount = request.form.get('amount')
+    if orig_account_name and account_name and asset_type and amount:
+        try:
+            amount = float(str(amount).replace(',', ''))
+            from infinite import FamilyDBHelper
+            FamilyDBHelper.update_family_asset(orig_account_name, account_name, asset_type, amount)
+        except Exception as e:
+            logging.error(f"Error updating family asset: {e}")
     return redirect(url_for('infinite.infinite_assets', broker='family'))
 
 @infinite_bp.route('/delete_family_asset', methods=['POST'])

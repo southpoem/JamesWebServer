@@ -1,4 +1,4 @@
-﻿
+
 import sqlite3
 import datetime
 import os
@@ -47,6 +47,19 @@ def add_family_asset(account_name, asset_type, amount):
         INSERT INTO family_asset_history (account_name, asset_type, amount, updated_at)
         VALUES (?, ?, ?, ?)
     ''', (account_name, asset_type, amount, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    conn.commit()
+    conn.close()
+
+def update_family_asset(orig_account_name, new_account_name, asset_type, amount):
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    if orig_account_name != new_account_name:
+        c.execute('UPDATE family_asset_history SET account_name = ? WHERE account_name = ?', (new_account_name, orig_account_name))
+    c.execute('''
+        INSERT INTO family_asset_history (account_name, asset_type, amount, updated_at)
+        VALUES (?, ?, ?, ?)
+    ''', (new_account_name, asset_type, amount, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     conn.commit()
     conn.close()
 
