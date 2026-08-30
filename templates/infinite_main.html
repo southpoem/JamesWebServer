@@ -123,7 +123,8 @@
         <!-- raoni.xyz Top Pill Navigation Bar -->
         <div class="top-nav-row">
             <nav class="top-nav">
-                <a href="/infinite/macro" class="nav-link active">대시보드</a>
+                <a href="/infinite/macro" class="nav-link {% if active_tab != 'my_account' %}active{% endif %}">대시보드</a>
+                <a href="/infinite/macro?tab=my_account" class="nav-link {% if active_tab == 'my_account' %}active{% endif %}">내 계좌</a>
                 <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
                 <a href="/infinite_settings" class="nav-link">매매 설정</a>
                 <a href="/infinite_help" class="nav-link">전략 가이드</a>
@@ -133,9 +134,10 @@
         <!-- Account Filter Sub-Tabs & Action Bar -->
         <div class="sub-nav-row">
             <div class="sub-nav">
-                <button type="button" class="sub-tab active" onclick="filterAccountTab('all', this)">전체 계좌</button>
+                <button type="button" class="sub-tab {% if active_tab != 'my_account' %}active{% endif %}" onclick="filterAccountTab('all', this)">전체 계좌</button>
                 <button type="button" class="sub-tab" onclick="filterAccountTab('Public', this)">Public 계좌</button>
                 <button type="button" class="sub-tab" onclick="filterAccountTab('Private', this)">Private 계좌</button>
+                <button type="button" class="sub-tab {% if active_tab == 'my_account' %}active{% endif %}" onclick="filterAccountTab('my_account', this)">내 계좌</button>
             </div>
 
             <form action="/run_infinite_buying" method="post" style="margin: 0;">
@@ -147,7 +149,7 @@
         <div class="ticker-grid" id="ticker-grid">
             {% if ticker_cards %}
                 {% for card in ticker_cards %}
-                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" data-mode="{{ card.mode }}" data-ticker="{{ card.ticker }}" data-avg="{{ card.average_price|replace('$', '') }}" onclick="openTradeHistoryModal('{{ card.mode|lower }}', '{{ card.ticker }}')">
+                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" data-mode="{{ card.mode }}" data-holding="{{ 'true' if card.is_holding_only else 'false' }}" data-ticker="{{ card.ticker }}" data-avg="{{ card.average_price|replace('$', '') }}" onclick="{% if not card.is_holding_only %}openTradeHistoryModal('{{ card.mode|lower }}', '{{ card.ticker }}'){% endif %}">
                     <!-- Card Header -->
                     <div class="pro-card-head">
                         <div class="pro-card-title">
@@ -158,8 +160,8 @@
                             <span class="badge {{ card.broker_badge }}" style="margin-right: 4px;">
                                 {{ card.broker }}
                             </span>
-                            <span class="badge {% if card.is_private %}badge-yellow{% else %}badge-blue{% endif %}">
-                                {{ card.mode }}
+                            <span class="badge {% if card.is_private %}badge-yellow{% elif card.is_holding_only %}badge-green{% else %}badge-blue{% endif %}">
+                                {{ card.account_name or card.mode }}
                             </span>
                         </div>
                     </div>
@@ -177,6 +179,32 @@
 
                     <!-- Metric Grid -->
                     <div class="card-metric-grid">
+                        {% if card.is_holding_only %}
+                        <div class="metric-item">
+                            <span class="metric-label">보유 수량</span>
+                            <span class="metric-val">{{ card.quantity }}개</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">매수 평단가</span>
+                            <span class="metric-val">{{ card.average_price }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">총 매입금액</span>
+                            <span class="metric-val">{{ card.total_buy }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">총 평가금액</span>
+                            <span class="metric-val">{{ card.total_eval }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">원화 환산 (매입)</span>
+                            <span class="metric-val" style="font-size: 0.82rem; color: var(--text-dim);">{{ card.total_buy_krw }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">원화 환산 (평가)</span>
+                            <span class="metric-val" style="font-size: 0.82rem; color: var(--text);">{{ card.total_eval_krw }}</span>
+                        </div>
+                        {% else %}
                         <div class="metric-item">
                             <span class="metric-label">회차 / 분할</span>
                             <span class="metric-val">{{ card.current_round }} / {{ card.total_splits }}회차</span>
@@ -201,8 +229,10 @@
                             <span class="metric-label">총 가용 예산</span>
                             <span class="metric-val">{{ card.total_invest }}</span>
                         </div>
+                        {% endif %}
                     </div>
 
+                    {% if not card.is_holding_only %}
                     <!-- Dashed Divider -->
                     <div class="card-dashed-sep"></div>
 
@@ -216,11 +246,12 @@
                             <div class="progress-bar-fill" style="width: {{ card.progress_percent }}%;"></div>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="glass-panel text-center" style="grid-column: 1 / -1; padding: 2.5rem;">
-                    <p style="color: var(--text-muted);">등록되거나 조회된 종목 데이터가 없습니다.</p>
+                <div class="glass-panel" style="grid-column: 1 / -1; text-align: center; color: var(--text-dim); padding: 3rem;">
+                    조회 가능한 종목 데이터가 없습니다.
                 </div>
             {% endif %}
         </div>
@@ -300,15 +331,20 @@
 
         function filterAccountTab(mode, btn) {
             document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
 
             const cards = document.querySelectorAll('.pro-ticker-card');
             cards.forEach(card => {
                 const cardMode = card.getAttribute('data-mode');
-                if (mode === 'all' || cardMode === mode) {
+                const isHolding = card.getAttribute('data-holding') === 'true';
+                if (mode === 'all') {
                     card.style.display = '';
+                } else if (mode === 'my_account') {
+                    card.style.display = isHolding ? '' : 'none';
+                } else if (mode === 'Public' || mode === 'Private') {
+                    card.style.display = (cardMode === mode && !isHolding) ? '' : 'none';
                 } else {
-                    card.style.display = 'none';
+                    card.style.display = (cardMode === mode) ? '' : 'none';
                 }
             });
         }
