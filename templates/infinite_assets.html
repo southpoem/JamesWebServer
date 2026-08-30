@@ -126,6 +126,33 @@
         .switch input:checked + .slider:before {
             transform: translateX(22px);
         }
+        .chart-sub-tabs {
+            display: inline-flex;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.7);
+            padding: 3px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .chart-sub-tab {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 5px 12px;
+            border-radius: 7px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .chart-sub-tab:hover {
+            color: #fff;
+        }
+        .chart-sub-tab.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="blur-active">
@@ -216,93 +243,93 @@
                     };
                     createDoughnut('countryChart', 'countryLegend', analysisData.country);
                     createDoughnut('sectorChart', 'sectorLegend', analysisData.sector);
-                    createDoughnut('stockChart', 'stockLegend', analysisData.stock);
-                });
-            </script>
-        {% elif not data %}
+                    createDoughnut('stockChart',         {% elif not data %}
             <div style="text-align: center; color: #888; padding: 2rem;">데이터가 없습니다.</div>
-        {% elif current_broker == 'family' %}
-            {# ── 가족 자산 전용 총액 섹션 ── #}
-            <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
-                가족 총 자산 (업데이트: {{ data.chart_dates[-1] if data.chart_dates else '' }})<br>
-                <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
-            </div>
-
-            <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()">
-                <div class="total-amount">{{ "{:,.0f}".format(data.family_sub.get('grand_total', 0)) }}원</div>
-                {% set tpl = data.family_sub.get('total_pl', 0) %}
-                {% set tpr = data.family_sub.get('total_pl_rate', 0) %}
-                <div class="total-change {% if tpl > 0 %}up{% elif tpl < 0 %}down{% else %}neutral{% endif %}">
-                    {{ "{:+,.0f}".format(tpl) }}원 ({{ "{:+.2f}".format(tpr) }}%)
-                </div>
-                <div class="total-change-text neutral">삼성 + 메리츠 + 수동입력 합산</div>
-            </div>
-
-            {# 3가지 소계 카드 #}
-            <div style="display: flex; gap: 8px; margin-top: 1.5rem; margin-bottom: 1.5rem;">
-                {% set spl = data.family_sub.get('samsung_pl', 0) %}
-                {% set spr = data.family_sub.get('samsung_pl_rate', 0) %}
-                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(79,172,254,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
-                    <div style="font-size: 0.72rem; color: #4facfe; font-weight: 700; margin-bottom: 5px;">🏦 삼성증권</div>
-                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('samsung', 0)) }}원</div>
-                    <div class="blur-target {% if spl > 0 %}up{% elif spl < 0 %}down{% else %}neutral{% endif %}" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.72rem; font-weight: 700;">{{ "{:+,.0f}".format(spl) }}<br>({{ "{:+.2f}".format(spr) }}%)</div>
-                </div>
-                {% set mpl = data.family_sub.get('meritz_pl', 0) %}
-                {% set mpr = data.family_sub.get('meritz_pl_rate', 0) %}
-                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(248,113,113,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
-                    <div style="font-size: 0.72rem; color: #f87171; font-weight: 700; margin-bottom: 5px;">🏦 메리츠증권</div>
-                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('meritz', 0)) }}원</div>
-                    <div class="blur-target {% if mpl > 0 %}up{% elif mpl < 0 %}down{% else %}neutral{% endif %}" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.72rem; font-weight: 700;">{{ "{:+,.0f}".format(mpl) }}<br>({{ "{:+.2f}".format(mpr) }}%)</div>
-                </div>
-                <div style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
-                    <div style="font-size: 0.72rem; color: #fbbf24; font-weight: 700; margin-bottom: 5px;">📝 수동입력</div>
-                    <div class="blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('manual', 0)) }}원</div>
-                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">수익률 없음</div>
-                </div>
-            </div>
-
-
-            <script>
-                function toggleTotal() {
-                    const body = document.body;
-                    if (body.classList.contains('blur-active')) {
-                        body.classList.remove('blur-active');
-                        if (typeof fetchLivePrices === 'function') fetchLivePrices();
-                    } else {
-                        body.classList.add('blur-active');
-                    }
-                }
-            </script>
-
         {% else %}
-            {# ── 삼성/메리츠/전체 일반 총액 섹션 ── #}
-            {% set total_eval = data.total_eval if data.total_eval is defined else (data.account_summary | sum(attribute='total_evaluation')) %}
-            {% set total_pl = data.total_pl if data.total_pl is defined else (data.account_summary | sum(attribute='profit_loss')) %}
-            {% set total_invest = data.total_invest if data.total_invest is defined else (total_eval - total_pl) %}
-            {% set total_pl_rate = data.total_pl_rate if data.total_pl_rate is defined else ((total_pl / total_invest * 100) if total_invest > 0 else 0) %}
-            
-            <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
-                총 평가 금액 (업데이트: {{ data.chart_dates[-1] if data.chart_dates else '' }})<br>
-                <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
-            </div>
-            
-            <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()" data-orig-eval="{{ total_eval }}" data-orig-invest="{{ total_invest }}" data-yesterday="{{ (data.total_today - (data.change_1d if data.change_1d is defined else 0)) }}">
-                <div class="total-amount">{{ "{:,.0f}".format(total_eval) }}원</div>
-                <div class="total-change {% if total_pl > 0 %}up{% elif total_pl < 0 %}down{% else %}neutral{% endif %}">
-                    {{ "{:+,.0f}".format(total_pl) }}원 ({{ "{:+.2f}".format(total_pl_rate) }}%)
+            {% if current_broker == 'family' %}
+                {# ── 가족 자산 전용 총액 섹션 ── #}
+                <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
+                    가족 총 자산 (업데이트: {{ data.chart_dates[-1] if data.chart_dates else '' }})<br>
+                    <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
                 </div>
-                <div class="total-change-text {% if data.change_1d > 0 %}up{% elif data.change_1d < 0 %}down{% else %}neutral{% endif %}">
-                    어제보다 {{ "{:,.0f}".format(data.change_1d|abs) }}원 {{ "올랐어요" if data.change_1d > 0 else "내렸어요" if data.change_1d < 0 else "같아요" }}
+
+                <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()" data-orig-eval="{{ data.family_sub.get('grand_total', 0) }}" data-orig-invest="{{ data.family_sub.get('total_invest', 0) }}" data-manual="{{ data.family_sub.get('manual', 0) }}">
+                    <div class="total-amount">{{ "{:,.0f}".format(data.family_sub.get('grand_total', 0)) }}원</div>
+                    {% set tpl = data.family_sub.get('total_pl', 0) %}
+                    {% set tpr = data.family_sub.get('total_pl_rate', 0) %}
+                    <div class="total-change {% if tpl > 0 %}up{% elif tpl < 0 %}down{% else %}neutral{% endif %}">
+                        {{ "{:+,.0f}".format(tpl) }}원 ({{ "{:+.2f}".format(tpr) }}%)
+                    </div>
+                    <div class="total-change-text neutral">삼성 + 메리츠 + 수동입력 합산</div>
                 </div>
-            </div>
+
+                {# 3가지 소계 카드 #}
+                <div style="display: flex; gap: 8px; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                    {% set spl = data.family_sub.get('samsung_pl', 0) %}
+                    {% set spr = data.family_sub.get('samsung_pl_rate', 0) %}
+                    <div id="famSubCardSamsung" class="sub-card-box" data-orig-eval="{{ data.family_sub.get('samsung', 0) }}" data-orig-invest="{{ data.family_sub.get('samsung_invest', 0) }}" style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(79,172,254,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
+                        <div style="font-size: 0.72rem; color: #4facfe; font-weight: 700; margin-bottom: 5px;">🏦 삼성증권</div>
+                        <div class="fam-sub-eval blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('samsung', 0)) }}원</div>
+                        <div class="fam-sub-change blur-target {% if spl > 0 %}up{% elif spl < 0 %}down{% else %}neutral{% endif %}" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.72rem; font-weight: 700;">{{ "{:+,.0f}".format(spl) }}<br>({{ "{:+.2f}".format(spr) }}%)</div>
+                    </div>
+                    {% set mpl = data.family_sub.get('meritz_pl', 0) %}
+                    {% set mpr = data.family_sub.get('meritz_pl_rate', 0) %}
+                    <div id="famSubCardMeritz" class="sub-card-box" data-orig-eval="{{ data.family_sub.get('meritz', 0) }}" data-orig-invest="{{ data.family_sub.get('meritz_invest', 0) }}" style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(248,113,113,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
+                        <div style="font-size: 0.72rem; color: #f87171; font-weight: 700; margin-bottom: 5px;">🏦 메리츠증권</div>
+                        <div class="fam-sub-eval blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('meritz', 0)) }}원</div>
+                        <div class="fam-sub-change blur-target {% if mpl > 0 %}up{% elif mpl < 0 %}down{% else %}neutral{% endif %}" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.72rem; font-weight: 700;">{{ "{:+,.0f}".format(mpl) }}<br>({{ "{:+.2f}".format(mpr) }}%)</div>
+                    </div>
+                    <div id="famSubCardManual" class="sub-card-box" data-amount="{{ data.family_sub.get('manual', 0) }}" style="flex: 1; background: rgba(30,41,59,0.5); border: 1px solid rgba(251,191,36,0.3); border-radius: 14px; padding: 0.85rem 0.7rem; text-align: center;">
+                        <div style="font-size: 0.72rem; color: #fbbf24; font-weight: 700; margin-bottom: 5px;">📝 수동입력</div>
+                        <div class="fam-sub-eval blur-target" onclick="if(document.body.classList.contains('blur-active')) toggleTotal();" style="font-size: 0.9rem; font-weight: 800; color: #fff; margin-bottom: 3px;">{{ "{:,.0f}".format(data.family_sub.get('manual', 0)) }}원</div>
+                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">수익률 없음</div>
+                    </div>
+                </div>
+
+            {% else %}
+                {# ── 삼성/메리츠/전체 일반 총액 섹션 ── #}
+                {% set total_eval = data.total_eval if data.total_eval is defined else (data.account_summary | sum(attribute='total_evaluation')) %}
+                {% set total_pl = data.total_pl if data.total_pl is defined else (data.account_summary | sum(attribute='profit_loss')) %}
+                {% set total_invest = data.total_invest if data.total_invest is defined else (total_eval - total_pl) %}
+                {% set total_pl_rate = data.total_pl_rate if data.total_pl_rate is defined else ((total_pl / total_invest * 100) if total_invest > 0 else 0) %}
+                
+                <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">
+                    총 평가 금액 (업데이트: {{ data.chart_dates[-1] if data.chart_dates else '' }})<br>
+                    <span style="cursor: pointer;" onclick="toggleTotal()">👁 (터치하여 보기)</span>
+                </div>
+                
+                <div id="totalAmountSection" class="blur-target" onclick="toggleTotal()" data-orig-eval="{{ total_eval }}" data-orig-invest="{{ total_invest }}" data-yesterday="{{ (data.total_today - (data.change_1d if data.change_1d is defined else 0)) }}">
+                    <div class="total-amount">{{ "{:,.0f}".format(total_eval) }}원</div>
+                    <div class="total-change {% if total_pl > 0 %}up{% elif total_pl < 0 %}down{% else %}neutral{% endif %}">
+                        {{ "{:+,.0f}".format(total_pl) }}원 ({{ "{:+.2f}".format(total_pl_rate) }}%)
+                    </div>
+                    <div class="total-change-text {% if data.change_1d > 0 %}up{% elif data.change_1d < 0 %}down{% else %}neutral{% endif %}">
+                        어제보다 {{ "{:,.0f}".format(data.change_1d|abs) }}원 {{ "올랐어요" if data.change_1d > 0 else "내렸어요" if data.change_1d < 0 else "같아요" }}
+                    </div>
+                </div>
+            {% endif %}
             
             <!-- Hidden Chart -->
-            <div id="trendChartContainer" style="display: none; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem; margin-bottom: 1.5rem;">
-                <div style="height: 250px; width: 100%;">
+            <div id="trendChartContainer" style="display: none; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem 1rem 1.2rem 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div class="chart-sub-tabs">
+                        <button type="button" class="chart-sub-tab active" onclick="switchChartTab('account', this)">📊 계좌별 누적</button>
+                        <button type="button" class="chart-sub-tab" onclick="switchChartTab('daily', this)">📈 일일 변동 (전체)</button>
+                    </div>
+                </div>
+                
+                <!-- Account Stacked Trend Line Chart -->
+                <div id="chartWrapAccount" style="height: 250px; width: 100%;">
                     <canvas id="assetChart"></canvas>
+                </div>
+
+                <!-- Daily Total Asset Change Bar Chart -->
+                <div id="chartWrapDaily" style="height: 250px; width: 100%; display: none;">
+                    <canvas id="dailyChangeChart"></canvas>
                 </div>
             </div>
             
+            {% if current_broker != 'family' %}
             <!-- Inner Tabs -->
             <div class="inner-tabs">
                 <div class="inner-tab active" onclick="switchView('accountView', this)">계좌별</div>
@@ -311,7 +338,7 @@
             
             <div id="accountView">
                 {% for acc in data.account_summary %}
-                <div class="acc-card" data-acc-num="{{ acc.account_num }}" data-orig-eval="{{ acc.total_evaluation }}" data-orig-invest="{{ acc.total_investment }}">
+                <div class="acc-card" data-broker="{{ acc.broker }}" data-acc-num="{{ acc.account_num }}" data-orig-eval="{{ acc.total_evaluation }}" data-orig-invest="{{ acc.total_investment }}">
                     <div class="acc-card-header">
                         <div>
                             <div class="acc-name">{{ acc.account_type }}</div>
@@ -373,6 +400,25 @@
                     {% endfor %}
                 </div>
             </div>
+            {% else %}
+            <!-- Hidden Data Structure for Family Tab Real-time Calculation -->
+            <div id="accountView" style="display: none;">
+                {% for acc in data.account_summary %}
+                <div class="acc-card" data-broker="{{ acc.broker }}" data-acc-num="{{ acc.account_num }}" data-orig-eval="{{ acc.total_evaluation }}" data-orig-invest="{{ acc.total_investment }}">
+                    {% for row in data.detailed_list %}
+                        {% if row.account_num == acc.account_num %}
+                        <div class="stock-row" data-ticker="{{ row.ticker }}" data-qty="{{ row.quantity }}" data-invest="{{ row.total_investment }}" data-orig-eval="{{ row.total_evaluation }}">
+                            <div class="stock-price-live" data-ticker="{{ row.ticker }}"></div>
+                            <div class="stock-eval"></div>
+                            <div class="stock-eval-change"></div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <div id="stockView" style="display: none;"></div>
+            {% endif %}
             
             {% if current_broker == 'meritz' %}
             <!-- Meritz Account Hide/Show Settings Toggle -->
@@ -490,8 +536,6 @@
                     }
                 }
                 
-
-
                 function toggleTotal() {
                     const body = document.body;
                     if (body.classList.contains('blur-active')) {
@@ -511,14 +555,44 @@
                     btn.classList.add('active');
                 }
                 
+                let accountChartInstance = null;
+                let dailyChartInstance = null;
+
+                function switchChartTab(mode, btn) {
+                    const wrapAcc = document.getElementById('chartWrapAccount');
+                    const wrapDaily = document.getElementById('chartWrapDaily');
+                    if (!wrapAcc || !wrapDaily) return;
+                    
+                    document.querySelectorAll('.chart-sub-tab').forEach(b => b.classList.remove('active'));
+                    if (btn) btn.classList.add('active');
+
+                    if (mode === 'account') {
+                        wrapAcc.style.display = 'block';
+                        wrapDaily.style.display = 'none';
+                        if (accountChartInstance) accountChartInstance.resize();
+                    } else {
+                        wrapAcc.style.display = 'none';
+                        wrapDaily.style.display = 'block';
+                        if (dailyChartInstance) dailyChartInstance.resize();
+                    }
+                }
+
                 function toggleChart(containerId) {
                     const el = document.getElementById(containerId);
-                    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                    if (!el) return;
+                    const isHidden = el.style.display === 'none' || el.style.display === '';
+                    el.style.display = isHidden ? 'block' : 'none';
+                    if (isHidden) {
+                        setTimeout(() => {
+                            if (accountChartInstance) accountChartInstance.resize();
+                            if (dailyChartInstance) dailyChartInstance.resize();
+                        }, 50);
+                    }
                 }
 
                 const trendCtx = document.getElementById('assetChart');
                 if (trendCtx) {
-                    new Chart(trendCtx.getContext('2d'), {
+                    accountChartInstance = new Chart(trendCtx.getContext('2d'), {
                         type: 'line',
                         data: {
                             labels: {{ data.chart_dates | tojson }},
@@ -533,6 +607,70 @@
                             scales: {
                                 x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', maxTicksLimit: 7 } },
                                 y: { stacked: true, min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', callback: function(value) { return (value / 10000).toLocaleString() + '만'; } } }
+                            }
+                        }
+                    });
+                }
+
+                const dailyCtx = document.getElementById('dailyChangeChart');
+                if (dailyCtx) {
+                    const dailyData = {{ (data.daily_change_chart if data.daily_change_chart is defined else {}) | tojson }};
+                    dailyChartInstance = new Chart(dailyCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: dailyData.dates || [],
+                            datasets: [{
+                                label: '전일 대비 변동액',
+                                data: dailyData.diffs || [],
+                                backgroundColor: dailyData.bg_colors || '#60a5fa',
+                                borderColor: dailyData.colors || '#60a5fa',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const idx = context.dataIndex;
+                                            const diff = (dailyData.diffs && dailyData.diffs[idx] !== undefined) ? dailyData.diffs[idx] : 0;
+                                            const rate = (dailyData.rates && dailyData.rates[idx] !== undefined) ? dailyData.rates[idx] : 0;
+                                            const total = (dailyData.totals && dailyData.totals[idx] !== undefined) ? dailyData.totals[idx] : 0;
+                                            const sign = diff > 0 ? '+' : '';
+                                            return [
+                                                `전일대비: ${sign}${Math.round(diff).toLocaleString()}원 (${sign}${rate.toFixed(2)}%)`,
+                                                `당일총액: ${Math.round(total).toLocaleString()}원`
+                                            ];
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { color: 'rgba(255,255,255,0.05)' },
+                                    ticks: { color: '#888', maxTicksLimit: 7 }
+                                },
+                                y: {
+                                    grid: {
+                                        color: function(ctx) {
+                                            if (ctx.tick && ctx.tick.value === 0) {
+                                                return 'rgba(255, 255, 255, 0.25)';
+                                            }
+                                            return 'rgba(255, 255, 255, 0.05)';
+                                        }
+                                    },
+                                    ticks: {
+                                        color: '#888',
+                                        callback: function(value) {
+                                            const sign = value > 0 ? '+' : '';
+                                            return sign + (value / 10000).toLocaleString() + '만';
+                                        }
+                                    }
+                                }
                             }
                         }
                     });
@@ -626,11 +764,16 @@
                     // 2. Real-time Asset Recalculation (Account View)
                     let grandLiveEval = 0;
                     let grandLiveInvest = 0;
+                    let samsungLiveEval = 0;
+                    let samsungLiveInvest = 0;
+                    let meritzLiveEval = 0;
+                    let meritzLiveInvest = 0;
 
                     const accCards = document.querySelectorAll('#accountView .acc-card');
                     accCards.forEach(card => {
                         let accLiveEval = 0;
                         let accLiveInvest = 0;
+                        const broker = (card.getAttribute('data-broker') || '').toUpperCase();
 
                         const stockRows = card.querySelectorAll('.stock-row');
                         stockRows.forEach(row => {
@@ -695,6 +838,14 @@
                             cardChangeEl.textContent = `${accPL >= 0 ? '+' : ''}${Math.round(accPL).toLocaleString()}원 (${accPLRate >= 0 ? '+' : ''}${accPLRate.toFixed(2)}%)`;
                         }
 
+                        if (broker.includes('SAMSUNG') || broker.includes('삼성')) {
+                            samsungLiveEval += accLiveEval;
+                            samsungLiveInvest += accLiveInvest;
+                        } else if (broker.includes('MERITZ') || broker.includes('메리츠')) {
+                            meritzLiveEval += accLiveEval;
+                            meritzLiveInvest += accLiveInvest;
+                        }
+
                         grandLiveEval += accLiveEval;
                         grandLiveInvest += accLiveInvest;
                     });
@@ -739,32 +890,85 @@
                         }
                     });
 
-                    // 4. Update Header Total Asset Section
-                    const totalSection = document.getElementById('totalAmountSection');
-                    if (totalSection && accCards.length > 0) {
-                        const grandPL = grandLiveEval - grandLiveInvest;
-                        const grandPLRate = grandLiveInvest > 0 ? (grandPL / grandLiveInvest * 100) : 0;
-                        const totalAmountEl = totalSection.querySelector('.total-amount');
-                        const totalChangeEl = totalSection.querySelector('.total-change');
-                        const totalChangeTextEl = totalSection.querySelector('.total-change-text');
+                    // 4. Update Family Tab Sub-cards (if present)
+                    const famSamsungCard = document.getElementById('famSubCardSamsung');
+                    const famMeritzCard = document.getElementById('famSubCardMeritz');
+                    const famManualCard = document.getElementById('famSubCardManual');
 
-                        if (totalAmountEl) {
-                            totalAmountEl.textContent = `${Math.round(grandLiveEval).toLocaleString()}원`;
+                    if (famSamsungCard) {
+                        const sPL = samsungLiveEval - samsungLiveInvest;
+                        const sPLRate = samsungLiveInvest > 0 ? (sPL / samsungLiveInvest * 100) : 0;
+                        const sEvalEl = famSamsungCard.querySelector('.fam-sub-eval');
+                        const sChangeEl = famSamsungCard.querySelector('.fam-sub-change');
+                        if (sEvalEl) sEvalEl.textContent = `${Math.round(samsungLiveEval).toLocaleString()}원`;
+                        if (sChangeEl) {
+                            const isUp = sPL > 0;
+                            const isDown = sPL < 0;
+                            sChangeEl.className = 'fam-sub-change blur-target ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                            sChangeEl.innerHTML = `${sPL >= 0 ? '+' : ''}${Math.round(sPL).toLocaleString()}<br>(${sPLRate >= 0 ? '+' : ''}${sPLRate.toFixed(2)}%)`;
                         }
-                        if (totalChangeEl) {
-                            const isUp = grandPL > 0;
-                            const isDown = grandPL < 0;
-                            totalChangeEl.className = 'total-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
-                            totalChangeEl.textContent = `${grandPL >= 0 ? '+' : ''}${Math.round(grandPL).toLocaleString()}원 (${grandPLRate >= 0 ? '+' : ''}${grandPLRate.toFixed(2)}%)`;
+                    }
+
+                    if (famMeritzCard) {
+                        const mPL = meritzLiveEval - meritzLiveInvest;
+                        const mPLRate = meritzLiveInvest > 0 ? (mPL / meritzLiveInvest * 100) : 0;
+                        const mEvalEl = famMeritzCard.querySelector('.fam-sub-eval');
+                        const mChangeEl = famMeritzCard.querySelector('.fam-sub-change');
+                        if (mEvalEl) mEvalEl.textContent = `${Math.round(meritzLiveEval).toLocaleString()}원`;
+                        if (mChangeEl) {
+                            const isUp = mPL > 0;
+                            const isDown = mPL < 0;
+                            mChangeEl.className = 'fam-sub-change blur-target ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                            mChangeEl.innerHTML = `${mPL >= 0 ? '+' : ''}${Math.round(mPL).toLocaleString()}<br>(${mPLRate >= 0 ? '+' : ''}${mPLRate.toFixed(2)}%)`;
                         }
-                        if (totalChangeTextEl) {
-                            const yesterdayTotal = parseFloat(totalSection.getAttribute('data-yesterday')) || 0;
-                            if (yesterdayTotal > 0) {
-                                const dayDiff = grandLiveEval - yesterdayTotal;
-                                const isUp = dayDiff > 0;
-                                const isDown = dayDiff < 0;
-                                totalChangeTextEl.className = 'total-change-text ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
-                                totalChangeTextEl.textContent = `어제보다 ${Math.round(Math.abs(dayDiff)).toLocaleString()}원 ${isUp ? '올랐어요' : (isDown ? '내렸어요' : '같아요')}`;
+                    }
+
+                    // 5. Update Header Total Asset Section
+                    const totalSection = document.getElementById('totalAmountSection');
+                    if (totalSection) {
+                        if (famManualCard) {
+                            // Family Tab
+                            const manualAmt = parseFloat(famManualCard.getAttribute('data-amount')) || 0;
+                            const famGrandTotal = samsungLiveEval + meritzLiveEval + manualAmt;
+                            const famGrandPL = (samsungLiveEval - samsungLiveInvest) + (meritzLiveEval - meritzLiveInvest);
+                            const famGrandInvest = samsungLiveInvest + meritzLiveInvest;
+                            const famGrandPLRate = famGrandInvest > 0 ? (famGrandPL / famGrandInvest * 100) : 0;
+
+                            const totalAmountEl = totalSection.querySelector('.total-amount');
+                            const totalChangeEl = totalSection.querySelector('.total-change');
+                            if (totalAmountEl) totalAmountEl.textContent = `${Math.round(famGrandTotal).toLocaleString()}원`;
+                            if (totalChangeEl) {
+                                const isUp = famGrandPL > 0;
+                                const isDown = famGrandPL < 0;
+                                totalChangeEl.className = 'total-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                                totalChangeEl.textContent = `${famGrandPL >= 0 ? '+' : ''}${Math.round(famGrandPL).toLocaleString()}원 (${famGrandPLRate >= 0 ? '+' : ''}${famGrandPLRate.toFixed(2)}%)`;
+                            }
+                        } else if (accCards.length > 0) {
+                            // Standard Broker Tabs
+                            const grandPL = grandLiveEval - grandLiveInvest;
+                            const grandPLRate = grandLiveInvest > 0 ? (grandPL / grandLiveInvest * 100) : 0;
+                            const totalAmountEl = totalSection.querySelector('.total-amount');
+                            const totalChangeEl = totalSection.querySelector('.total-change');
+                            const totalChangeTextEl = totalSection.querySelector('.total-change-text');
+
+                            if (totalAmountEl) {
+                                totalAmountEl.textContent = `${Math.round(grandLiveEval).toLocaleString()}원`;
+                            }
+                            if (totalChangeEl) {
+                                const isUp = grandPL > 0;
+                                const isDown = grandPL < 0;
+                                totalChangeEl.className = 'total-change ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                                totalChangeEl.textContent = `${grandPL >= 0 ? '+' : ''}${Math.round(grandPL).toLocaleString()}원 (${grandPLRate >= 0 ? '+' : ''}${grandPLRate.toFixed(2)}%)`;
+                            }
+                            if (totalChangeTextEl) {
+                                const yesterdayTotal = parseFloat(totalSection.getAttribute('data-yesterday')) || 0;
+                                if (yesterdayTotal > 0) {
+                                    const dayDiff = grandLiveEval - yesterdayTotal;
+                                    const isUp = dayDiff > 0;
+                                    const isDown = dayDiff < 0;
+                                    totalChangeTextEl.className = 'total-change-text ' + (isUp ? 'up' : (isDown ? 'down' : 'neutral'));
+                                    totalChangeTextEl.textContent = `어제보다 ${Math.round(Math.abs(dayDiff)).toLocaleString()}원 ${isUp ? '올랐어요' : (isDown ? '내렸어요' : '같아요')}`;
+                                }
                             }
                         }
                     }
@@ -810,7 +1014,7 @@
     
     {% if current_broker == 'family' %}
     <!-- Family Asset Manual Edit Menu (Separated Bottom Area) -->
-    <div style="background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255,255,255,0.08); padding: 2.5rem 1rem; margin-top: 3rem; width: 100%; box-sizing: border-box;">
+    <div style="background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255,255,255,0.08); padding: 2.5rem 1rem; margin-top: 1.5rem; width: 100%; box-sizing: border-box;">
         <div style="max-width: 600px; margin: 0 auto;">
             <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 1.2rem; font-weight: 700;">👨‍👩‍👧‍👦 가족 자산 수동 관리</h3>
 
@@ -840,7 +1044,7 @@
                     <input type="text" name="asset_type" placeholder="자산명 (예: 예금)" required style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <input type="number" name="amount" placeholder="금액 (원)" required style="flex: 2; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                    <input type="text" inputmode="numeric" name="amount" id="addFamilyAmount" placeholder="금액 (원)" required class="number-comma-input" style="flex: 2; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
                     <button type="submit" style="flex: 1; background: #fbbf24; color: #121212; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">추가하기</button>
                 </div>
             </form>
@@ -867,7 +1071,7 @@
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: 600;">금액 (원)</label>
-                    <input type="number" name="amount" id="editAmount" required style="width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
+                    <input type="text" inputmode="numeric" name="amount" id="editAmount" required class="number-comma-input" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.9rem;">
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 0.8rem;">
@@ -879,11 +1083,20 @@
     </div>
 
     <script>
+        function formatNaturalNumberWithComma(input) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (val.length > 1 && val.startsWith('0')) {
+                val = val.replace(/^0+/, '');
+            }
+            input.value = val === '' ? '' : Number(val).toLocaleString();
+        }
+
         function openEditFamilyModal(name, type, amount) {
             document.getElementById('editOrigAccountName').value = name;
             document.getElementById('editAccountName').value = name;
             document.getElementById('editAssetType').value = type;
-            document.getElementById('editAmount').value = amount;
+            const cleanAmt = String(amount).replace(/[^0-9]/g, '');
+            document.getElementById('editAmount').value = cleanAmt ? Number(cleanAmt).toLocaleString() : '';
             const modal = document.getElementById('editFamilyModal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -902,6 +1115,17 @@
             if (modal && e.target === modal) {
                 closeEditFamilyModal();
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.number-comma-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    formatNaturalNumberWithComma(this);
+                });
+                input.addEventListener('paste', function() {
+                    setTimeout(() => formatNaturalNumberWithComma(this), 0);
+                });
+            });
         });
     </script>
     {% endif %}

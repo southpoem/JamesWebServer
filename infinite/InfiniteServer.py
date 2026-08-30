@@ -1048,6 +1048,54 @@ def infinite_assets():
             'pointRadius': 2
         })
         
+    # Daily total asset & daily change (전일 대비 변동액/등락율) computation
+    daily_totals_map = df.groupby('date')['total_evaluation'].sum().to_dict()
+    total_trend_arr = []
+    daily_diff_arr = []
+    daily_diff_rate_arr = []
+    daily_diff_colors = []
+    daily_diff_bg_colors = []
+    
+    prev_total = None
+    for d in chart_dates_dt:
+        val = float(daily_totals_map.get(d, 0.0))
+        total_trend_arr.append(val)
+        if prev_total is None:
+            diff = 0.0
+            rate = 0.0
+        else:
+            diff = val - prev_total
+            rate = (diff / prev_total * 100) if prev_total > 0 else 0.0
+        
+        daily_diff_arr.append(round(diff))
+        daily_diff_rate_arr.append(round(rate, 2))
+        if diff > 0:
+            daily_diff_colors.append('#f87171')
+            daily_diff_bg_colors.append('rgba(248, 113, 113, 0.65)')
+        elif diff < 0:
+            daily_diff_colors.append('#60a5fa')
+            daily_diff_bg_colors.append('rgba(96, 165, 250, 0.65)')
+        else:
+            daily_diff_colors.append('#94a3b8')
+            daily_diff_bg_colors.append('rgba(148, 163, 184, 0.4)')
+        prev_total = val
+        
+    if missing_today_data:
+        total_trend_arr.append(total_trend_arr[-1] if total_trend_arr else 0.0)
+        daily_diff_arr.append(0)
+        daily_diff_rate_arr.append(0.0)
+        daily_diff_colors.append('#94a3b8')
+        daily_diff_bg_colors.append('rgba(148, 163, 184, 0.4)')
+        
+    daily_change_chart = {
+        'dates': chart_dates,
+        'totals': total_trend_arr,
+        'diffs': daily_diff_arr,
+        'rates': daily_diff_rate_arr,
+        'colors': daily_diff_colors,
+        'bg_colors': daily_diff_bg_colors
+    }
+
     detailed_list = df_today.sort_values(by=['account_type', 'account_num', 'total_evaluation'], ascending=[True, True, False]).to_dict('records')
     db_mtime = os.path.getmtime(DB_PATH)
     last_update_time = datetime.fromtimestamp(db_mtime).strftime('%Y-%m-%d %H:%M:%S')
@@ -1147,13 +1195,16 @@ def infinite_assets():
 
             family_sub = {
                 'samsung': samsung_eval,
+                'samsung_invest': samsung_invest,
                 'samsung_pl': samsung_pl,
                 'samsung_pl_rate': samsung_pl_rate,
                 'meritz': meritz_eval,
+                'meritz_invest': meritz_invest,
                 'meritz_pl': meritz_pl,
                 'meritz_pl_rate': meritz_pl_rate,
                 'manual': manual_total,
                 'grand_total': grand_total,
+                'total_invest': total_invest,
                 'total_pl': total_pl,
                 'total_pl_rate': total_pl_rate,
             }
@@ -1187,7 +1238,8 @@ def infinite_assets():
         'family_assets': family_assets,
         'family_sub': family_sub,
         'all_accounts_list': all_accounts_list,
-        'analysis_data': analysis_data
+        'analysis_data': analysis_data,
+        'daily_change_chart': daily_change_chart
     }
     
     return render_template('infinite_assets.html', data=data, current_broker=broker_filter)
