@@ -235,12 +235,13 @@ def show_recent_ticker_data():
 
     for i, row in df.iterrows():
         ticker = row["ticker"]
-        avg = float(row["average_buy_price"])
+        avg = float(row["average_buy_price"]) if row["average_buy_price"] else 0.0
         try:
-            current = current_prices.get(ticker) or fetch_current_price(ticker)
+            db_curr = float(row["current_price"]) if ("current_price" in row and pd.notnull(row["current_price"]) and float(row["current_price"]) > 0) else avg
+            current = current_prices.get(ticker) or db_curr
             current_prices[ticker] = current
             df.at[i, "현재가"] = f"{current:.2f}"
-            profit = ((current - avg) / avg) * 100
+            profit = ((current - avg) / avg) * 100 if avg > 0 else 0.0
             df.at[i, "평단가(수익률)"] = f"{avg:.2f} ({profit:+.2f}%)"
         except Exception as e:
             logging.error(f"Error processing ticker {ticker}: {e}", exc_info=True)

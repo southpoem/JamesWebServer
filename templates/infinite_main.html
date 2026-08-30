@@ -147,7 +147,7 @@
         <div class="ticker-grid" id="ticker-grid">
             {% if ticker_cards %}
                 {% for card in ticker_cards %}
-                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" data-mode="{{ card.mode }}" onclick="openTradeHistoryModal('{{ card.mode|lower }}', '{{ card.ticker }}')">
+                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" data-mode="{{ card.mode }}" data-ticker="{{ card.ticker }}" data-avg="{{ card.average_price|replace('$', '') }}" onclick="openTradeHistoryModal('{{ card.mode|lower }}', '{{ card.ticker }}')">
                     <!-- Card Header -->
                     <div class="pro-card-head">
                         <div class="pro-card-title">
@@ -656,6 +656,45 @@
                 }
             });
         }
+
+        // Asynchronous background live price hydration (non-blocking)
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const cards = document.querySelectorAll('.pro-ticker-card');
+                const tickers = Array.from(new Set(Array.from(cards).map(c => c.getAttribute('data-ticker')).filter(Boolean)));
+                if (!tickers.length) return;
+                
+                const res = await fetch('/infinite/api/live_prices', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ tickers: tickers })
+                });
+                if (!res.ok) return;
+                const liveData = await res.json();
+                
+                cards.forEach(card => {
+                    const ticker = card.getAttribute('data-ticker');
+                    const avg = parseFloat(card.getAttribute('data-avg') || '0');
+                    if (ticker && liveData[ticker]) {
+                        const live = liveData[ticker];
+                        const price = parseFloat(live.price || 0);
+                        if (price > 0) {
+                            const priceEl = card.querySelector('.price-num');
+                            const chgEl = card.querySelector('.chg-badge');
+                            if (priceEl) priceEl.innerText = `$${price.toFixed(2)}`;
+                            if (chgEl && avg > 0) {
+                                const profitPct = ((price - avg) / avg) * 100;
+                                const sign = profitPct >= 0 ? '▲' : '▼';
+                                chgEl.className = `chg-badge ${profitPct >= 0 ? 'up' : 'down'}`;
+                                chgEl.innerText = `${sign} ${profitPct >= 0 ? '+' : ''}${profitPct.toFixed(2)}%`;
+                            }
+                        }
+                    }
+                });
+            } catch(e) {
+                console.warn('Background live price fetch:', e);
+            }
+        });
     </script>
 
     <!-- Fear & Greed History Glass Modal Overlay -->
