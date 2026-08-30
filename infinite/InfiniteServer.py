@@ -185,18 +185,15 @@ def fetch_fear_and_greed():
 @login_required
 def show_recent_ticker_data():
     engine = create_engine(f"sqlite:///{DB_PATH}")
-    today = date.today()
-    start_date = today - timedelta(days=6)
     account_filter = request.args.get("account", None)
 
     with engine.connect() as conn:
         latest_date = conn.execute(
-            text("SELECT MAX(date) FROM account_daily WHERE date >= :start_date"),
-            {"start_date": start_date}
+            text("SELECT MAX(date) FROM account_daily")
         ).scalar()
 
     if not latest_date:
-        return "최근 일주일간 저장된 데이터가 없습니다."
+        return "저장된 계좌 데이터가 없습니다. 먼저 계좌 업데이트를 실행해 주세요."
 
     base_query = """
     SELECT ad.account_id, ad.date, ti.ticker, ti.current_round, ti.target_profit_rate,
