@@ -137,7 +137,7 @@
                 <button type="button" class="sub-tab" onclick="filterAccountTab('Private', this)">Private 계좌</button>
             </div>
 
-            <form action="/run_infinite_buying" method="post" style="margin: 0;">
+            <form action="/run_infinite_buying" method="post" style="margin: 0;" onsubmit="handleRunInfinite(event, this)">
                 <button type="submit" class="btn btn-primary exec-btn">⚡ 무한매수 실행</button>
             </form>
         </div>
@@ -923,6 +923,26 @@
                 console.warn('Background live price fetch:', e);
             }
         });
+
+        async function handleRunInfinite(e, form) {
+            e.preventDefault();
+            const btn = form.querySelector('button');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 실행 요청 중...';
+            try {
+                await fetch(form.action, { method: 'POST' });
+                btn.innerHTML = '🚀 매크로 시작됨';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = origText;
+                }, 3000);
+            } catch(err) {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
     </script>
 
     <!-- Fear & Greed History Glass Modal Overlay -->
