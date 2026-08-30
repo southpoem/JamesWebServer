@@ -167,22 +167,20 @@
                     <div class="pro-card-head">
                         <div class="pro-card-title">
                             {{ card.ticker }}
-                            <span class="pro-card-sub" {% if not card.has_strategy and active_tab == 'my_account' %}style="color: var(--text-dim);"{% endif %}>
-                                {{ card.strategy }}
+                            <span class="pro-card-sub">
+                                {% if card.has_strategy %}
+                                    {{ card.strategy }}
+                                {% elif active_tab == 'my_account' %}
+                                    {{ card.mode }} 계좌
+                                {% else %}
+                                    {{ card.strategy }}
+                                {% endif %}
                             </span>
                         </div>
                         <div class="pro-card-actions">
-                            <span class="badge {{ card.broker_badge }}" style="margin-right: 4px;">
-                                {{ card.broker }}
-                            </span>
-                            <span class="badge {% if card.is_private %}badge-yellow{% elif card.is_holding_only %}badge-green{% else %}badge-blue{% endif %}" style="margin-right: 4px;">
+                            <span class="badge {% if card.is_private %}badge-yellow{% elif card.has_strategy %}badge-blue{% else %}badge-green{% endif %}">
                                 {{ card.account_name or card.mode }}
                             </span>
-                            {% if active_tab == 'my_account' %}
-                            <button type="button" class="btn btn-sm btn-secondary" style="padding: 2px 6px; font-size: 0.68rem;" onclick="event.stopPropagation(); openStrategySettingModal(this.closest('.pro-ticker-card'));" title="매매 설정">
-                                ⚙️
-                            </button>
-                            {% endif %}
                         </div>
                     </div>
 
