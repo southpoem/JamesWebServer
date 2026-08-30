@@ -426,18 +426,18 @@
             <div id="trendChartContainer" style="display: block; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem 1rem 1.2rem 1rem; margin-bottom: 1.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <div class="sub-nav">
-                        <button type="button" class="sub-tab active" onclick="switchChartTab('account', this)">📊 계좌별 누적</button>
-                        <button type="button" class="sub-tab" onclick="switchChartTab('daily', this)">📈 일일 변동 (전체)</button>
+                        <button type="button" class="sub-tab" onclick="switchChartTab('account', this)">📊 계좌별 누적</button>
+                        <button type="button" class="sub-tab active" onclick="switchChartTab('daily', this)">📈 일일 변동 (전체)</button>
                     </div>
                 </div>
                 
                 <!-- Account Stacked Trend Line Chart -->
-                <div id="chartWrapAccount" style="height: 250px; width: 100%;">
+                <div id="chartWrapAccount" style="height: 250px; width: 100%; display: none;">
                     <canvas id="assetChart"></canvas>
                 </div>
 
                 <!-- Daily Total Asset Change Bar Chart -->
-                <div id="chartWrapDaily" style="height: 250px; width: 100%; display: none;">
+                <div id="chartWrapDaily" style="height: 250px; width: 100%; display: block;">
                     <canvas id="dailyChangeChart"></canvas>
                 </div>
             </div>
