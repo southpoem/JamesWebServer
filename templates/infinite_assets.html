@@ -293,7 +293,6 @@
                 {% if current_broker == 'meritz' %}
                 <form action="/run_meritz_account" method="post" style="margin:0;"><button type="submit" class="action-pill">🔄 메리츠</button></form>
                 {% endif %}
-                <button class="action-pill" onclick="toggleChart('trendChartContainer')">📈 변동추이</button>
                 <button type="button" class="action-pill" id="btnToggleOverMarket" onclick="toggleOverMarket()" title="장외/프리/애프터마켓 시세 포함 여부 토글" style="transition: all 0.2s;">🌙 장외 <span id="overMarketStatusBadge" style="font-weight: 700; margin-left: 2px;">OFF</span></button>
             </div>
         </div>
@@ -423,8 +422,8 @@
                 </div>
             {% endif %}
             
-            <!-- Hidden Chart -->
-            <div id="trendChartContainer" style="display: none; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem 1rem 1.2rem 1rem; margin-bottom: 1.5rem;">
+            <!-- Trend Chart Container (Always Visible) -->
+            <div id="trendChartContainer" style="display: block; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 1rem 1rem 1.2rem 1rem; margin-bottom: 1.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <div class="sub-nav">
                         <button type="button" class="sub-tab active" onclick="switchChartTab('account', this)">📊 계좌별 누적</button>
