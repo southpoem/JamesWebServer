@@ -195,6 +195,15 @@ def show_recent_ticker_data():
         ticker_cards = []
         latest_date = ""
         try:
+            # Load settings
+            settings = {}
+            if os.path.exists(SETTINGS_FILE):
+                try:
+                    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                        settings = json.load(f)
+                except Exception as e:
+                    logging.error(f"Error loading settings: {e}")
+
             with engine.connect() as conn:
                 table_check = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='overseas_holdings'")).scalar()
                 if table_check:
@@ -220,7 +229,7 @@ def show_recent_ticker_data():
 
                         rate = 1380.0
                         for _, r in ov_df.iterrows():
-                            t_symbol = str(r['ticker']).strip()
+                            t_symbol = str(r['ticker']).strip().upper()
                             t_name = str(r['ticker_name']).strip() if pd.notnull(r['ticker_name']) else t_symbol
                             qty = float(r['quantity'])
                             avg_usd = float(r['average_price_usd'])
@@ -230,38 +239,91 @@ def show_recent_ticker_data():
                             pl_usd = float(r['profit_loss_usd'])
                             profit_pct = float(r['profit_rate'])
                             
-                            acc_type = str(r['account_type'])
+                            acc_type = str(r['account_type']).capitalize()
                             acc_num = str(r['account_num']) if r['account_num'] else f"Super365({acc_type})"
                             broker_name = str(r['broker']) if r['broker'] else "메리츠증권"
                             broker_badge = "badge-blue" if "삼성" in broker_name or "SAMSUNG" in broker_name.upper() else "badge-yellow"
 
-                            ticker_cards.append({
-                                "ticker": t_symbol,
-                                "account_id": f"myacc_{t_symbol.lower()}_{acc_type.lower()}",
-                                "broker": broker_name,
-                                "broker_badge": broker_badge,
-                                "is_private": acc_type.lower() == "private",
-                                "mode": acc_type,
-                                "account_name": f"{acc_num}",
-                                "start_date": str(latest_oversea_date),
-                                "strategy": f"{acc_type} 계좌",
-                                "current_round": 0,
-                                "total_splits": 0,
-                                "quantity": int(qty) if qty.is_integer() else qty,
-                                "average_price": f"${avg_usd:.2f}",
-                                "current_price": f"${curr_usd:.2f}",
-                                "profit_rate": f"{profit_pct:+.2f}",
-                                "profit_val": profit_pct,
-                                "total_buy": f"${invest_usd:,.2f}",
-                                "total_invest": f"${invest_usd:,.0f}",
-                                "total_eval": f"${eval_usd:,.2f}",
-                                "total_buy_krw": f"{invest_usd * rate:,.0f}원",
-                                "total_eval_krw": f"{eval_usd * rate:,.0f}원",
-                                "profit_loss_str": f"{'+' if pl_usd >= 0 else ''}${pl_usd:,.2f} ({profit_pct:+.2f}%)",
-                                "target_profit_rate": "-",
-                                "progress_percent": 0,
-                                "is_holding_only": True
-                            })
+                            setting_key = f"{acc_type.lower()}_{t_symbol.upper()}"
+                            setting_info = settings.get(setting_key)
+
+                            if setting_info:
+                                # 전략 설정이 완료된 상태 -> 대시보드 형태의 전체 진행률 카드 렌더링
+                                capital = float(setting_info.get("capital", 20000) or 20000)
+                                split = int(setting_info.get("split", 40) or 40)
+                                target_rate = str(setting_info.get("target", "12.0")).replace("%", "")
+                                strategy_name = setting_info.get("strategy", "v2.2")
+                                auto_enabled = bool(setting_info.get("auto", False))
+                                
+                                one_round_amt = (capital / split) if split > 0 else 1.0
+                                curr_rnd = round(invest_usd / one_round_amt, 1) if one_round_amt > 0 else 0.0
+                                progress_pct = min(100, int((curr_rnd / split) * 100)) if split > 0 else 0
+
+                                ticker_cards.append({
+                                    "ticker": t_symbol,
+                                    "account_id": setting_key,
+                                    "broker": broker_name,
+                                    "broker_badge": broker_badge,
+                                    "is_private": acc_type.lower() == "private",
+                                    "mode": acc_type,
+                                    "account_name": f"{acc_num}",
+                                    "start_date": setting_info.get("start_date", str(latest_oversea_date)),
+                                    "strategy": strategy_name,
+                                    "current_round": int(curr_rnd) if curr_rnd.is_integer() else curr_rnd,
+                                    "total_splits": split,
+                                    "quantity": int(qty) if qty.is_integer() else qty,
+                                    "average_price": f"${avg_usd:.2f}",
+                                    "current_price": f"${curr_usd:.2f}",
+                                    "profit_rate": f"{profit_pct:+.2f}",
+                                    "profit_val": profit_pct,
+                                    "total_buy": f"${invest_usd:,.2f}",
+                                    "total_invest": f"${capital:,.0f}",
+                                    "total_eval": f"${eval_usd:,.2f}",
+                                    "target_profit_rate": target_rate,
+                                    "progress_percent": progress_pct,
+                                    "has_strategy": True,
+                                    "is_holding_only": False,
+                                    "capital_raw": capital,
+                                    "split_raw": split,
+                                    "target_raw": target_rate,
+                                    "strategy_raw": strategy_name,
+                                    "auto_raw": auto_enabled
+                                })
+                            else:
+                                # 전략 미설정 상태 -> 일반 보유 카드 (클릭 시 전략 설정 팝업)
+                                ticker_cards.append({
+                                    "ticker": t_symbol,
+                                    "account_id": setting_key,
+                                    "broker": broker_name,
+                                    "broker_badge": broker_badge,
+                                    "is_private": acc_type.lower() == "private",
+                                    "mode": acc_type,
+                                    "account_name": f"{acc_num}",
+                                    "start_date": str(latest_oversea_date),
+                                    "strategy": "미설정 (클릭하여 전략 설정)",
+                                    "current_round": 0,
+                                    "total_splits": 0,
+                                    "quantity": int(qty) if qty.is_integer() else qty,
+                                    "average_price": f"${avg_usd:.2f}",
+                                    "current_price": f"${curr_usd:.2f}",
+                                    "profit_rate": f"{profit_pct:+.2f}",
+                                    "profit_val": profit_pct,
+                                    "total_buy": f"${invest_usd:,.2f}",
+                                    "total_invest": f"${invest_usd:,.0f}",
+                                    "total_eval": f"${eval_usd:,.2f}",
+                                    "total_buy_krw": f"{invest_usd * rate:,.0f}원",
+                                    "total_eval_krw": f"{eval_usd * rate:,.0f}원",
+                                    "profit_loss_str": f"{'+' if pl_usd >= 0 else ''}${pl_usd:,.2f} ({profit_pct:+.2f}%)",
+                                    "target_profit_rate": "-",
+                                    "progress_percent": 0,
+                                    "has_strategy": False,
+                                    "is_holding_only": True,
+                                    "capital_raw": 20000,
+                                    "split_raw": 40,
+                                    "target_raw": "12.0",
+                                    "strategy_raw": "v2.2",
+                                    "auto_raw": False
+                                })
         except Exception as e:
             logging.error(f"Error loading overseas_holdings for my account tab: {e}")
 
@@ -1340,6 +1402,81 @@ SETTINGS_FILE = "C:\\PycharmProjects\\InfiniteProject\\infinite_settings.json"
 @login_required
 def infinite_settings():
     return render_template("settings_infinite.html")
+
+
+@infinite_bp.route('/api/save_ticker_strategy', methods=['POST'])
+@login_required
+def save_ticker_strategy():
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        ticker = str(data.get('ticker', '')).strip().upper()
+        mode = str(data.get('mode', 'public')).strip().lower()
+        if not ticker:
+            return jsonify({'status': 'error', 'message': '종목명이 필요합니다.'}), 400
+
+        capital = str(data.get('capital', '20000')).replace(',', '').strip()
+        split = str(data.get('split', '40')).strip()
+        target = str(data.get('target', '12')).replace('%', '').strip()
+        strategy = data.get('strategy', 'v2.2')
+        auto = bool(data.get('auto', False))
+        start_date = data.get('start_date', str(date.today()))
+
+        # Load existing settings
+        settings = {}
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+            except Exception:
+                pass
+
+        key = f"{mode}_{ticker}"
+        settings[key] = {
+            "mode": mode,
+            "auto": auto,
+            "ticker": ticker,
+            "capital": capital,
+            "split": split,
+            "target": target,
+            "strategy": strategy,
+            "start_date": start_date
+        }
+
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=2, ensure_ascii=False)
+
+        return jsonify({'status': 'success', 'message': f'{ticker} ({mode.upper()}) 매매 설정이 성공적으로 저장되었습니다.', 'key': key})
+    except Exception as e:
+        logging.error(f"Error saving ticker strategy: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@infinite_bp.route('/api/delete_ticker_strategy', methods=['POST'])
+@login_required
+def delete_ticker_strategy():
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        ticker = str(data.get('ticker', '')).strip().upper()
+        mode = str(data.get('mode', 'public')).strip().lower()
+        key = f"{mode}_{ticker}"
+
+        settings = {}
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                    settings = json.load(f)
+            except Exception:
+                pass
+
+        if key in settings:
+            del settings[key]
+            with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=2, ensure_ascii=False)
+
+        return jsonify({'status': 'success', 'message': f'{ticker} ({mode.upper()}) 전략 설정이 삭제되었습니다.'})
+    except Exception as e:
+        logging.error(f"Error deleting ticker strategy: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 @infinite_bp.route('/infinite_charts', methods=['GET'])

@@ -150,20 +150,39 @@
         <div class="ticker-grid" id="ticker-grid">
             {% if ticker_cards %}
                 {% for card in ticker_cards %}
-                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" data-mode="{{ card.mode }}" data-holding="{{ 'true' if card.is_holding_only else 'false' }}" data-ticker="{{ card.ticker }}" data-avg="{{ card.average_price|replace('$', '') }}" onclick="{% if not card.is_holding_only %}openTradeHistoryModal('{{ card.mode|lower }}', '{{ card.ticker }}'){% endif %}">
+                <div class="pro-ticker-card {% if card.is_private %}private-card{% endif %}" 
+                     data-mode="{{ card.mode }}" 
+                     data-holding="{{ 'true' if card.is_holding_only else 'false' }}" 
+                     data-ticker="{{ card.ticker }}" 
+                     data-avg="{{ card.average_price|replace('$', '') }}"
+                     data-capital="{{ card.capital_raw }}"
+                     data-split="{{ card.split_raw }}"
+                     data-target="{{ card.target_raw }}"
+                     data-strategy="{{ card.strategy_raw }}"
+                     data-auto="{{ 'true' if card.auto_raw else 'false' }}"
+                     data-has-strategy="{{ 'true' if card.has_strategy else 'false' }}"
+                     data-start-date="{{ card.start_date }}"
+                     onclick="handleCardClick(this, '{{ active_tab }}', '{{ card.mode|lower }}', '{{ card.ticker }}')">
                     <!-- Card Header -->
                     <div class="pro-card-head">
                         <div class="pro-card-title">
                             {{ card.ticker }}
-                            <span class="pro-card-sub">{{ card.strategy }}</span>
+                            <span class="pro-card-sub" {% if not card.has_strategy and active_tab == 'my_account' %}style="color: var(--text-dim);"{% endif %}>
+                                {{ card.strategy }}
+                            </span>
                         </div>
                         <div class="pro-card-actions">
                             <span class="badge {{ card.broker_badge }}" style="margin-right: 4px;">
                                 {{ card.broker }}
                             </span>
-                            <span class="badge {% if card.is_private %}badge-yellow{% elif card.is_holding_only %}badge-green{% else %}badge-blue{% endif %}">
+                            <span class="badge {% if card.is_private %}badge-yellow{% elif card.is_holding_only %}badge-green{% else %}badge-blue{% endif %}" style="margin-right: 4px;">
                                 {{ card.account_name or card.mode }}
                             </span>
+                            {% if active_tab == 'my_account' %}
+                            <button type="button" class="btn btn-sm btn-secondary" style="padding: 2px 6px; font-size: 0.68rem;" onclick="event.stopPropagation(); openStrategySettingModal(this.closest('.pro-ticker-card'));" title="매매 설정">
+                                ⚙️
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -240,12 +259,18 @@
                     <!-- Round Progress Bar -->
                     <div class="progress-wrap">
                         <div class="progress-header">
-                            <span>분할 진행률 (클릭하여 히스토리 보기)</span>
+                            <span>분할 진행률 {% if active_tab == 'my_account' %}(클릭하여 설정 수정){% else %}(클릭하여 히스토리 보기){% endif %}</span>
                             <span>{{ card.progress_percent }}%</span>
                         </div>
                         <div class="progress-bar-bg">
                             <div class="progress-bar-fill" style="width: {{ card.progress_percent }}%;"></div>
                         </div>
+                    </div>
+                    {% else %}
+                    <!-- Dashed Divider -->
+                    <div class="card-dashed-sep"></div>
+                    <div style="text-align: center; font-size: 0.78rem; color: var(--hl-blue); font-weight: 600; padding: 2px 0;">
+                        ⚡ 클릭하여 무한매수법 전략 설정하기 →
                     </div>
                     {% endif %}
                 </div>
@@ -327,8 +352,185 @@
         </div>
     </div>
 
+    <!-- Strategy Setting Modal (Image 2 Style) -->
+    <div class="modal-overlay" id="strategySettingModal" onclick="handleStrategyModalOverlayClick(event)">
+        <div class="modal-content" style="max-width: 460px; padding: 1.5rem; border: 1px solid rgba(56, 189, 248, 0.25); background: #0f172a; box-shadow: 0 10px 30px rgba(0,0,0,0.6);" onclick="event.stopPropagation()">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding-bottom: 0.85rem; margin-bottom: 1.25rem;">
+                <div class="modal-title">
+                    <span class="dot" style="background: var(--hl-blue); box-shadow: 0 0 10px var(--hl-blue);"></span>
+                    <span id="setting-modal-title" style="font-weight: 700; font-size: 1.1rem; color: #fff;">⚡ 무한매수법 매매 설정</span>
+                </div>
+                <button type="button" class="modal-close" onclick="closeStrategySettingModal()" style="font-size: 1.5rem; color: var(--text-dim); background: none; border: none; cursor: pointer;">&times;</button>
+            </div>
+
+            <form id="strategySettingForm" onsubmit="event.preventDefault(); saveTickerStrategyFromModal();">
+                <div style="display: flex; flex-direction: column; gap: 1.1rem;">
+                    <!-- 전략 선택 -->
+                    <div class="form-group">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">전략 선택</label>
+                        <select id="modal-strategy" style="width: 100%; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.95rem; font-weight: 600; outline: none;">
+                            <option value="v2.2">무한매수법 v2.2</option>
+                            <option value="only_buying">Only Buying (매수 전용)</option>
+                        </select>
+                    </div>
+
+                    <!-- 종목명 (TICKER) & 계좌 모드 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">종목명 (TICKER)</label>
+                            <input type="text" id="modal-ticker" readonly style="width: 100%; background: #0b1120; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; color: #38BDF8; font-weight: 800; font-family: var(--font-mono); font-size: 1.05rem; outline: none;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">계좌 모드</label>
+                            <select id="modal-mode" style="width: 100%; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.95rem; outline: none;">
+                                <option value="public">Public (Super365)</option>
+                                <option value="private">Private (개인)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 가용금 ($) & 분할횟수 (회) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">가용금 ($)</label>
+                            <input type="number" id="modal-capital" placeholder="예: 20000" required style="width: 100%; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; color: #fff; font-family: var(--font-mono); font-size: 0.95rem; outline: none;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">분할횟수 (회)</label>
+                            <input type="number" id="modal-split" placeholder="예: 40" required style="width: 100%; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; color: #fff; font-family: var(--font-mono); font-size: 0.95rem; outline: none;">
+                        </div>
+                    </div>
+
+                    <!-- 목표 수익률 (%) & 시작일 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">목표 수익률 (%)</label>
+                            <input type="text" id="modal-target" placeholder="예: 12.0" required style="width: 100%; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; color: #fff; font-family: var(--font-mono); font-size: 0.95rem; outline: none;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 5px; display: block;">시작일</label>
+                            <input type="date" id="modal-start-date" style="width: 100%; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 9px 12px; color: #fff; font-size: 0.9rem; outline: none;">
+                        </div>
+                    </div>
+
+                    <!-- 자동매매 체크박스 -->
+                    <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.85rem; font-weight: 600; color: #fff;">⚡ HTS 자동매매 활성화</span>
+                        <input type="checkbox" id="modal-auto" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--hl-blue);">
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div style="margin-top: 1.5rem; display: flex; gap: 10px; justify-content: space-between; align-items: center;">
+                    <button type="button" id="modal-delete-btn" class="btn btn-secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.35); font-size: 0.85rem;" onclick="deleteTickerStrategyFromModal()">🗑️ 전략 해제</button>
+                    <div style="display: flex; gap: 10px; margin-left: auto;">
+                        <button type="button" class="btn btn-secondary" onclick="closeStrategySettingModal()">취소</button>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.4rem;">💾 설정값 저장</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let historyChartInstance = null;
+
+        function handleCardClick(cardEl, activeTab, mode, ticker) {
+            if (activeTab === 'my_account') {
+                openStrategySettingModal(cardEl);
+            } else {
+                openTradeHistoryModal(mode, ticker);
+            }
+        }
+
+        function openStrategySettingModal(cardEl) {
+            const ticker = cardEl.getAttribute('data-ticker') || '';
+            const mode = (cardEl.getAttribute('data-mode') || 'public').toLowerCase();
+            const capital = cardEl.getAttribute('data-capital') || '20000';
+            const split = cardEl.getAttribute('data-split') || '40';
+            const target = cardEl.getAttribute('data-target') || '12.0';
+            const strategy = cardEl.getAttribute('data-strategy') || 'v2.2';
+            const auto = cardEl.getAttribute('data-auto') === 'true';
+            const hasStrategy = cardEl.getAttribute('data-has-strategy') === 'true';
+            const startDate = cardEl.getAttribute('data-start-date') || new Date().toISOString().split('T')[0];
+
+            document.getElementById('setting-modal-title').innerText = `⚡ ${ticker} (${mode.toUpperCase()}) 매매 설정`;
+            document.getElementById('modal-ticker').value = ticker;
+            document.getElementById('modal-mode').value = mode;
+            document.getElementById('modal-capital').value = capital;
+            document.getElementById('modal-split').value = split;
+            document.getElementById('modal-target').value = target;
+            document.getElementById('modal-strategy').value = strategy.includes('only') ? 'only_buying' : 'v2.2';
+            document.getElementById('modal-auto').checked = auto;
+            document.getElementById('modal-start-date').value = startDate;
+
+            const delBtn = document.getElementById('modal-delete-btn');
+            delBtn.style.display = hasStrategy ? 'inline-block' : 'none';
+
+            const modal = document.getElementById('strategySettingModal');
+            modal.classList.add('active');
+        }
+
+        function closeStrategySettingModal() {
+            document.getElementById('strategySettingModal').classList.remove('active');
+        }
+
+        function handleStrategyModalOverlayClick(e) {
+            if (e.target.id === 'strategySettingModal') {
+                closeStrategySettingModal();
+            }
+        }
+
+        function saveTickerStrategyFromModal() {
+            const ticker = document.getElementById('modal-ticker').value.trim().toUpperCase();
+            const mode = document.getElementById('modal-mode').value;
+            const capital = document.getElementById('modal-capital').value;
+            const split = document.getElementById('modal-split').value;
+            const target = document.getElementById('modal-target').value;
+            const strategy = document.getElementById('modal-strategy').value;
+            const auto = document.getElementById('modal-auto').checked;
+            const startDate = document.getElementById('modal-start-date').value;
+
+            fetch('/api/save_ticker_strategy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, mode, capital, split, target, strategy, auto, start_date: startDate })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeStrategySettingModal();
+                    window.location.reload();
+                } else {
+                    alert('오류: ' + data.message);
+                }
+            })
+            .catch(err => {
+                alert('설정 저장 중 오류가 발생했습니다.');
+                console.error(err);
+            });
+        }
+
+        function deleteTickerStrategyFromModal() {
+            if (!confirm('정말 이 종목의 무한매수 전략 설정을 해제하시겠습니까?')) return;
+            const ticker = document.getElementById('modal-ticker').value.trim().toUpperCase();
+            const mode = document.getElementById('modal-mode').value;
+
+            fetch('/api/delete_ticker_strategy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, mode })
+            })
+            .then(res => res.json())
+            .then(data => {
+                closeStrategySettingModal();
+                window.location.reload();
+            })
+            .catch(err => {
+                alert('전략 해제 중 오류가 발생했습니다.');
+                console.error(err);
+            });
+        }
 
         function filterAccountTab(mode, btn) {
             document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
