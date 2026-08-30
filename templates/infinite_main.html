@@ -134,15 +134,16 @@
         <!-- Account Filter Sub-Tabs & Action Bar -->
         <div class="sub-nav-row">
             <div class="sub-nav">
-                <button type="button" class="sub-tab {% if active_tab != 'my_account' %}active{% endif %}" onclick="filterAccountTab('all', this)">전체 계좌</button>
+                <button type="button" class="sub-tab active" onclick="filterAccountTab('all', this)">전체 계좌</button>
                 <button type="button" class="sub-tab" onclick="filterAccountTab('Public', this)">Public 계좌</button>
                 <button type="button" class="sub-tab" onclick="filterAccountTab('Private', this)">Private 계좌</button>
-                <button type="button" class="sub-tab {% if active_tab == 'my_account' %}active{% endif %}" onclick="filterAccountTab('my_account', this)">내 계좌</button>
             </div>
 
+            {% if active_tab != 'my_account' %}
             <form action="/run_infinite_buying" method="post" style="margin: 0;">
                 <button type="submit" class="btn btn-primary exec-btn">⚡ 무한매수 실행</button>
             </form>
+            {% endif %}
         </div>
 
         <!-- Image 2 Style Ticker Cards Grid -->
@@ -336,15 +337,10 @@
             const cards = document.querySelectorAll('.pro-ticker-card');
             cards.forEach(card => {
                 const cardMode = card.getAttribute('data-mode');
-                const isHolding = card.getAttribute('data-holding') === 'true';
-                if (mode === 'all') {
+                if (mode === 'all' || cardMode === mode) {
                     card.style.display = '';
-                } else if (mode === 'my_account') {
-                    card.style.display = isHolding ? '' : 'none';
-                } else if (mode === 'Public' || mode === 'Private') {
-                    card.style.display = (cardMode === mode && !isHolding) ? '' : 'none';
                 } else {
-                    card.style.display = (cardMode === mode) ? '' : 'none';
+                    card.style.display = 'none';
                 }
             });
         }
