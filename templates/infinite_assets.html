@@ -159,17 +159,17 @@
     <div class="page-container">
         <!-- Top Nav -->
         <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
-            <a href="/infinite" class="nav-pill active">내 자산관리</a>
+            <a href="/my_asset" class="nav-pill active">내 자산관리</a>
             <a href="/infinite/macro" class="nav-pill">무한매수법 현황</a>
         </div>
         
         <!-- Broker Tabs -->
         <div class="broker-tabs-container">
-            <a href="/infinite?broker=samsung" class="broker-tab" style="color: {% if current_broker == 'samsung' %}#121212{% else %}#60a5fa{% endif %}; background: {% if current_broker == 'samsung' %}#60a5fa{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'samsung' %}#60a5fa{% else %}transparent{% endif %};">삼성증권</a>
-            <a href="/infinite?broker=meritz" class="broker-tab" style="color: {% if current_broker == 'meritz' %}#121212{% else %}#f87171{% endif %}; background: {% if current_broker == 'meritz' %}#f87171{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'meritz' %}#f87171{% else %}transparent{% endif %};">메리츠증권</a>
-            <a href="/infinite?broker=all" class="broker-tab" style="color: {% if current_broker == 'all' %}#121212{% else %}#cbd5e1{% endif %}; background: {% if current_broker == 'all' %}#cbd5e1{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'all' %}#cbd5e1{% else %}transparent{% endif %};">전체계좌</a>
-            <a href="/infinite?broker=family" class="broker-tab" style="color: {% if current_broker == 'family' %}#121212{% else %}#fbbf24{% endif %}; background: {% if current_broker == 'family' %}#fbbf24{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'family' %}#fbbf24{% else %}transparent{% endif %};">가족 자산</a>
-            <a href="/infinite?broker=analysis" class="broker-tab" style="color: {% if current_broker == 'analysis' %}#121212{% else %}#f472b6{% endif %}; background: {% if current_broker == 'analysis' %}#f472b6{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'analysis' %}#f472b6{% else %}transparent{% endif %};">📊 자산 분석</a>
+            <a href="/my_asset?broker=samsung" class="broker-tab" style="color: {% if current_broker == 'samsung' %}#121212{% else %}#60a5fa{% endif %}; background: {% if current_broker == 'samsung' %}#60a5fa{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'samsung' %}#60a5fa{% else %}transparent{% endif %};">삼성증권</a>
+            <a href="/my_asset?broker=meritz" class="broker-tab" style="color: {% if current_broker == 'meritz' %}#121212{% else %}#f87171{% endif %}; background: {% if current_broker == 'meritz' %}#f87171{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'meritz' %}#f87171{% else %}transparent{% endif %};">메리츠증권</a>
+            <a href="/my_asset?broker=all" class="broker-tab" style="color: {% if current_broker == 'all' %}#121212{% else %}#cbd5e1{% endif %}; background: {% if current_broker == 'all' %}#cbd5e1{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'all' %}#cbd5e1{% else %}transparent{% endif %};">전체계좌</a>
+            <a href="/my_asset?broker=family" class="broker-tab" style="color: {% if current_broker == 'family' %}#121212{% else %}#fbbf24{% endif %}; background: {% if current_broker == 'family' %}#fbbf24{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'family' %}#fbbf24{% else %}transparent{% endif %};">가족 자산</a>
+            <a href="/my_asset?broker=analysis" class="broker-tab" style="color: {% if current_broker == 'analysis' %}#121212{% else %}#f472b6{% endif %}; background: {% if current_broker == 'analysis' %}#f472b6{% else %}rgba(255,255,255,0.1){% endif %}; border: 1px solid {% if current_broker == 'analysis' %}#f472b6{% else %}transparent{% endif %};">📊 자산 분석</a>
             <a href="/infinite/macro" class="broker-tab" style="color: #c084fc; background: rgba(192, 132, 252, 0.15); border: 1px solid rgba(192, 132, 252, 0.3);">🚀 무한매수법</a>
         </div>
         

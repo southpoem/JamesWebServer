@@ -824,11 +824,12 @@ def toggle_exclude():
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
         return jsonify({'status': 'success', 'is_excluded': is_excluded})
         
-    return redirect(url_for('infinite.infinite_assets', broker=current_broker))
+    return redirect(url_for('infinite.my_asset', broker=current_broker))
 
+@infinite_bp.route('/my_asset', methods=['GET'])
 @infinite_bp.route('/infinite', methods=['GET'])
 @login_required
-def infinite_assets():
+def my_asset():
     try:
         conn = sqlite3.connect(DB_PATH)
         df = pd.read_sql_query("SELECT * FROM asset_history", conn)
@@ -1240,6 +1241,9 @@ def infinite_assets():
     }
     
     return render_template('infinite_assets.html', data=data, current_broker=broker_filter)
+
+# Alias for backward compatibility
+infinite_assets = my_asset
 
 
 @infinite_bp.route('/macro', methods=['GET'])
@@ -2130,7 +2134,7 @@ def route_add_family_asset():
             FamilyDBHelper.add_family_asset(account_name, asset_type, amount)
         except Exception as e:
             logging.error(f"Error adding family asset: {e}")
-    return redirect(url_for('infinite.infinite_assets', broker='family'))
+    return redirect(url_for('infinite.my_asset', broker='family'))
 
 @infinite_bp.route('/update_family_asset', methods=['POST'])
 @infinite_bp.route('/infinite/update_family_asset', methods=['POST'])
@@ -2147,7 +2151,7 @@ def route_update_family_asset():
             FamilyDBHelper.update_family_asset(orig_account_name, account_name, asset_type, amount)
         except Exception as e:
             logging.error(f"Error updating family asset: {e}")
-    return redirect(url_for('infinite.infinite_assets', broker='family'))
+    return redirect(url_for('infinite.my_asset', broker='family'))
 
 @infinite_bp.route('/delete_family_asset', methods=['POST'])
 @infinite_bp.route('/infinite/delete_family_asset', methods=['POST'])
@@ -2160,4 +2164,4 @@ def route_delete_family_asset():
             FamilyDBHelper.delete_family_asset(account_name)
         except Exception as e:
             logging.error(f"Error deleting family asset: {e}")
-    return redirect(url_for('infinite.infinite_assets', broker='family'))
+    return redirect(url_for('infinite.my_asset', broker='family'))

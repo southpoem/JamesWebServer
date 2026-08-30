@@ -39,7 +39,7 @@ def login():
         if username == Secret.id and password == Secret.password:
             session.permanent = True
             session['logged_in'] = True
-            return redirect(url_for('infinite.infinite_assets'))
+            return redirect(url_for('infinite.my_asset'))
         else:
             return "Login Failed. Please try again."
 
