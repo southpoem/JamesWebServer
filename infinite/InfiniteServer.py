@@ -181,330 +181,151 @@ def fetch_fear_and_greed():
         }
 
 
-@infinite_bp.route('/infinite/macro', methods=['GET', 'POST'])
+@infinite_bp.route('/infinite', methods=['GET'])
+@infinite_bp.route('/infinite/macro', methods=['GET'])
 @login_required
 def show_recent_ticker_data():
     engine = create_engine(f"sqlite:///{DB_PATH}")
     account_filter = request.args.get("account", None)
-    active_tab = request.args.get("tab", "dashboard")
+    active_tab = "my_account"
 
-    # =========================================================================
-    # TAB 1: '내 계좌' (오늘 기준 실제 해외 주식 보유 현황 - overseas_holdings 전용)
-    # =========================================================================
-    if active_tab == 'my_account':
-        ticker_cards = []
-        latest_date = ""
-        try:
-            # Load settings
-            settings = {}
-            if os.path.exists(SETTINGS_FILE):
-                try:
-                    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                        settings = json.load(f)
-                except Exception as e:
-                    logging.error(f"Error loading settings: {e}")
-
-            with engine.connect() as conn:
-                table_check = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='overseas_holdings'")).scalar()
-                if table_check:
-                    latest_oversea_date = conn.execute(text("SELECT MAX(date) FROM overseas_holdings")).scalar()
-                    latest_date = str(latest_oversea_date) if latest_oversea_date else ""
-                    if latest_oversea_date:
-                        ov_query = """
-                            SELECT date, account_num, account_type, ticker, ticker_name, quantity,
-                                   average_price_usd, current_price_usd, total_investment_usd,
-                                   total_evaluation_usd, profit_loss_usd, profit_rate, broker
-                            FROM overseas_holdings
-                            WHERE date = :dt AND quantity > 0
-                        """
-                        if account_filter:
-                            ov_query += " AND account_type LIKE :account_filter"
-                        ov_query += " ORDER BY account_type, ticker"
-
-                        params = {"dt": latest_oversea_date}
-                        if account_filter:
-                            params["account_filter"] = f"%{account_filter}%"
-
-                        ov_df = pd.read_sql(text(ov_query), conn, params=params)
-
-                        rate = 1380.0
-                        for _, r in ov_df.iterrows():
-                            t_symbol = str(r['ticker']).strip().upper()
-                            t_name = str(r['ticker_name']).strip() if pd.notnull(r['ticker_name']) else t_symbol
-                            qty = float(r['quantity'])
-                            avg_usd = float(r['average_price_usd'])
-                            curr_usd = float(r['current_price_usd'])
-                            invest_usd = float(r['total_investment_usd'])
-                            eval_usd = float(r['total_evaluation_usd'])
-                            pl_usd = float(r['profit_loss_usd'])
-                            profit_pct = float(r['profit_rate'])
-                            
-                            acc_type = str(r['account_type']).capitalize()
-                            acc_num = str(r['account_num']) if r['account_num'] else f"Super365({acc_type})"
-                            broker_name = str(r['broker']) if r['broker'] else "메리츠증권"
-                            broker_badge = "badge-blue" if "삼성" in broker_name or "SAMSUNG" in broker_name.upper() else "badge-yellow"
-
-                            setting_key = f"{acc_type.lower()}_{t_symbol.upper()}"
-                            setting_info = settings.get(setting_key)
-
-                            if setting_info:
-                                # 전략 설정이 완료된 상태 -> 대시보드 형태의 전체 진행률 카드 렌더링
-                                capital = float(setting_info.get("capital", 20000) or 20000)
-                                split = int(setting_info.get("split", 40) or 40)
-                                target_rate = str(setting_info.get("target", "12.0")).replace("%", "")
-                                strategy_name = setting_info.get("strategy", "v2.2")
-                                auto_enabled = bool(setting_info.get("auto", False))
-                                
-                                one_round_amt = (capital / split) if split > 0 else 1.0
-                                curr_rnd = round(invest_usd / one_round_amt, 1) if one_round_amt > 0 else 0.0
-                                progress_pct = min(100, int((curr_rnd / split) * 100)) if split > 0 else 0
-
-                                ticker_cards.append({
-                                    "ticker": t_symbol,
-                                    "account_id": setting_key,
-                                    "broker": broker_name,
-                                    "broker_badge": broker_badge,
-                                    "is_private": acc_type.lower() == "private",
-                                    "mode": acc_type,
-                                    "account_name": f"{acc_num}",
-                                    "start_date": setting_info.get("start_date", str(latest_oversea_date)),
-                                    "strategy": strategy_name,
-                                    "current_round": int(curr_rnd) if curr_rnd.is_integer() else curr_rnd,
-                                    "total_splits": split,
-                                    "quantity": int(qty) if qty.is_integer() else qty,
-                                    "average_price": f"${avg_usd:.2f}",
-                                    "current_price": f"${curr_usd:.2f}",
-                                    "profit_rate": f"{profit_pct:+.2f}",
-                                    "profit_val": profit_pct,
-                                    "total_buy": f"${invest_usd:,.2f}",
-                                    "total_invest": f"${capital:,.0f}",
-                                    "total_eval": f"${eval_usd:,.2f}",
-                                    "target_profit_rate": target_rate,
-                                    "progress_percent": progress_pct,
-                                    "has_strategy": True,
-                                    "is_holding_only": False,
-                                    "capital_raw": capital,
-                                    "split_raw": split,
-                                    "target_raw": target_rate,
-                                    "strategy_raw": strategy_name,
-                                    "auto_raw": auto_enabled
-                                })
-                            else:
-                                # 전략 미설정 상태 -> 일반 보유 카드 (클릭 시 전략 설정 팝업)
-                                ticker_cards.append({
-                                    "ticker": t_symbol,
-                                    "account_id": setting_key,
-                                    "broker": broker_name,
-                                    "broker_badge": broker_badge,
-                                    "is_private": acc_type.lower() == "private",
-                                    "mode": acc_type,
-                                    "account_name": f"{acc_num}",
-                                    "start_date": str(latest_oversea_date),
-                                    "strategy": "미설정 (클릭하여 전략 설정)",
-                                    "current_round": 0,
-                                    "total_splits": 0,
-                                    "quantity": int(qty) if qty.is_integer() else qty,
-                                    "average_price": f"${avg_usd:.2f}",
-                                    "current_price": f"${curr_usd:.2f}",
-                                    "profit_rate": f"{profit_pct:+.2f}",
-                                    "profit_val": profit_pct,
-                                    "total_buy": f"${invest_usd:,.2f}",
-                                    "total_invest": f"${invest_usd:,.0f}",
-                                    "total_eval": f"${eval_usd:,.2f}",
-                                    "total_buy_krw": f"{invest_usd * rate:,.0f}원",
-                                    "total_eval_krw": f"{eval_usd * rate:,.0f}원",
-                                    "profit_loss_str": f"{'+' if pl_usd >= 0 else ''}${pl_usd:,.2f} ({profit_pct:+.2f}%)",
-                                    "target_profit_rate": "-",
-                                    "progress_percent": 0,
-                                    "has_strategy": False,
-                                    "is_holding_only": True,
-                                    "capital_raw": 20000,
-                                    "split_raw": 40,
-                                    "target_raw": "12.0",
-                                    "strategy_raw": "v2.2",
-                                    "auto_raw": False
-                                })
-        except Exception as e:
-            logging.error(f"Error loading overseas_holdings for my account tab: {e}")
-
-        fear_greed = fetch_fear_and_greed()
-        return render_template("infinite_main.html", latest_date=latest_date, table_rows="", ticker_cards=ticker_cards, fear_greed=fear_greed, active_tab=active_tab)
-
-    # =========================================================================
-    # TAB 2: '대시보드' (무한매수법 진행 전략 현황 - account_daily & ticker_info 전용)
-    # =========================================================================
-    with engine.connect() as conn:
-        latest_date = conn.execute(
-            text("SELECT MAX(date) FROM account_daily")
-        ).scalar()
-
-    if not latest_date:
-        return "저장된 계좌 데이터가 없습니다. 먼저 계좌 업데이트를 실행해 주세요."
-
-    base_query = """
-    SELECT ad.account_id, ad.date, ti.ticker, ti.current_round, ti.target_profit_rate,
-           ti.total_investment, ti.total_shares, ti.current_price, ti.average_buy_price
-    FROM ticker_info ti
-    JOIN account_daily ad ON ti.account_daily_id = ad.id
-    WHERE ad.date = :latest_date
-    """
-
-    if account_filter:
-        base_query += " AND ad.account_id LIKE :account_filter"
-    base_query += " ORDER BY ad.account_id, ti.ticker"
-
-    with engine.connect() as conn:
-        if account_filter:
-            df = pd.read_sql(text(base_query), conn, params={
-                "latest_date": latest_date,
-                "account_filter": f"%{account_filter}%"
-            })
-        else:
-            df = pd.read_sql(text(base_query), conn, params={"latest_date": latest_date})
-
-    df["date"] = pd.to_datetime(df["date"]).dt.strftime("%m-%d")
-    df["구분"] = df["account_id"].apply(lambda x: "Private" if "private" in x.lower() else "Public")
-    
-    def get_row_color(row):
-        try:
-            shares = float(str(row["total_shares"]).replace(",", ""))
-            if shares > 0:
-                return "yellow"
-        except:
-            pass
-        return "white"
-    df["계좌색상"] = df.apply(get_row_color, axis=1)
-
-    current_prices = {}
-    df["현재가"] = ""
-    df["평단가(수익률)"] = ""
-
-    for i, row in df.iterrows():
-        ticker = row["ticker"]
-        avg = float(row["average_buy_price"]) if row["average_buy_price"] else 0.0
-        try:
-            db_curr = float(row["current_price"]) if ("current_price" in row and pd.notnull(row["current_price"]) and float(row["current_price"]) > 0) else avg
-            current = current_prices.get(ticker) or db_curr
-            current_prices[ticker] = current
-            df.at[i, "현재가"] = f"{current:.2f}"
-            profit = ((current - avg) / avg) * 100 if avg > 0 else 0.0
-            df.at[i, "평단가(수익률)"] = f"{avg:.2f} ({profit:+.2f}%)"
-        except Exception as e:
-            logging.error(f"Error processing ticker {ticker}: {e}", exc_info=True)
-            df.at[i, "현재가"] = "N/A"
-            df.at[i, "평단가(수익률)"] = "N/A"
-
-    df["총투자금액"] = (df["total_shares"].astype(float) * df["current_price"].astype(float)).astype(int)
-    if not df.empty:
-        clean_target = df["target_profit_rate"].astype(str).str.replace("%", "").str.strip()
-        df["총투자금액(목표수익율)"] = (
-                df["total_investment"].astype(str) +
-                " (" +
-                clean_target +
-                "%)"
-        )
-    else:
-        df["총투자금액(목표수익율)"] = ""
-
-    # Load settings to get start_date
-    settings = {}
-    if os.path.exists(SETTINGS_FILE):
-        try:
-            with open(SETTINGS_FILE, "r") as f:
-                settings = json.load(f)
-        except Exception as e:
-            logging.error(f"Error loading settings: {e}")
-
-    df["시작일"] = ""
-    df["전략"] = ""
-    for idx, row in df.iterrows():
-        key = f"{row['account_id'].lower()}_{row['ticker'].upper()}"
-        start_date = settings.get(key, {}).get("start_date", "2026-07-11")
-        strategy_val = settings.get(key, {}).get("strategy", "v2.2")
-        readable_strategy = "v2.2" if strategy_val == "v2.2" else "Only Buying"
-        df.at[idx, "시작일"] = start_date
-        df.at[idx, "전략"] = readable_strategy
-
-    df = df[[
-        "계좌색상", "시작일", "구분", "ticker", "전략", "current_round", "total_shares",
-        "평단가(수익률)", "현재가", "총투자금액", "총투자금액(목표수익율)"
-    ]]
-    df.columns = ["계좌색상", "시작일", "구분", "티커", "전략", "회차", "개수", "평단가(수익률)", "현재가", "총매입금액", "총투자금액(목표수익율)"]
-
-    table_rows = ""
     ticker_cards = []
-    for _, row in df.iterrows():
-        row_html = f"<tr style='color:{row['계좌색상']}'>" + "".join(
-            f"<td>{row[col]}</td>" for col in [
-                "시작일", "구분", "티커", "전략", "회차", "개수", "평단가(수익률)", "현재가", "총매입금액", "총투자금액(목표수익율)"
-            ]
-        ) + "</tr>"
-        table_rows += row_html
+    latest_date = ""
+    try:
+        # Load settings
+        settings = {}
+        if os.path.exists(SETTINGS_FILE):
+            try:
+                with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                    settings = json.load(f)
+            except Exception as e:
+                logging.error(f"Error loading settings: {e}")
 
-        try:
-            curr_rnd = int(row["회차"])
-        except:
-            curr_rnd = 0
-        try:
-            tot_split = int(str(row["총투자금액(목표수익율)"]).split("(")[0]) if "(" in str(row["총투자금액(목표수익율)"]) else 40
-        except:
-            tot_split = 40
-        
-        key = f"{row['account_id'].lower()}_{row['티커'].upper()}" if 'account_id' in row else f"public_{row['티커'].upper()}"
-        setting_info = settings.get(key, {})
-        tot_split = int(setting_info.get("split", 40))
-        target_rate = setting_info.get("target", "12")
-        tot_invest = setting_info.get("capital", "0")
+        with engine.connect() as conn:
+            table_check = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='overseas_holdings'")).scalar()
+            if table_check:
+                latest_oversea_date = conn.execute(text("SELECT MAX(date) FROM overseas_holdings")).scalar()
+                latest_date = str(latest_oversea_date) if latest_oversea_date else ""
+                if latest_oversea_date:
+                    ov_query = """
+                        SELECT date, account_num, account_type, ticker, ticker_name, quantity,
+                               average_price_usd, current_price_usd, total_investment_usd,
+                               total_evaluation_usd, profit_loss_usd, profit_rate, broker
+                        FROM overseas_holdings
+                        WHERE date = :dt AND quantity > 0
+                    """
+                    if account_filter:
+                        ov_query += " AND account_type LIKE :account_filter"
+                    ov_query += " ORDER BY account_type, ticker"
 
-        progress_pct = min(100, int((curr_rnd / tot_split) * 100)) if tot_split > 0 else 0
-        
-        try:
-            avg_str = str(row["평단가(수익률)"])
-            avg_val = float(avg_str.split(" ")[0]) if " " in avg_str else float(avg_str)
-        except:
-            avg_val = 0.0
-            
-        try:
-            curr_val = float(row["현재가"])
-        except:
-            curr_val = avg_val
+                    params = {"dt": latest_oversea_date}
+                    if account_filter:
+                        params["account_filter"] = f"%{account_filter}%"
 
-        profit_pct = ((curr_val - avg_val) / avg_val * 100) if avg_val > 0 else 0.0
+                    ov_df = pd.read_sql(text(ov_query), conn, params=params)
 
-        try:
-            qty_val = float(row["개수"])
-        except:
-            qty_val = 0.0
+                    rate = 1380.0
+                    for _, r in ov_df.iterrows():
+                        t_symbol = str(r['ticker']).strip().upper()
+                        t_name = str(r['ticker_name']).strip() if pd.notnull(r['ticker_name']) else t_symbol
+                        qty = float(r['quantity'])
+                        avg_usd = float(r['average_price_usd'])
+                        curr_usd = float(r['current_price_usd'])
+                        invest_usd = float(r['total_investment_usd'])
+                        eval_usd = float(r['total_evaluation_usd'])
+                        pl_usd = float(r['profit_loss_usd'])
+                        profit_pct = float(r['profit_rate'])
+                        
+                        acc_type = str(r['account_type']).capitalize()
+                        acc_num = str(r['account_num']) if r['account_num'] else f"Super365({acc_type})"
+                        broker_name = str(r['broker']) if r['broker'] else "메리츠증권"
+                        broker_badge = "badge-blue" if "삼성" in broker_name or "SAMSUNG" in broker_name.upper() else "badge-yellow"
 
-        acc_id_str = str(row.get('account_id', '')).lower() if 'account_id' in row else ''
-        broker_name = "삼성증권" if "samsung" in acc_id_str else "메리츠증권"
-        broker_badge = "badge-blue" if "samsung" in acc_id_str else "badge-yellow"
+                        setting_key = f"{acc_type.lower()}_{t_symbol.upper()}"
+                        setting_info = settings.get(setting_key)
 
-        ticker_cards.append({
-            "ticker": row["티커"],
-            "account_id": key,
-            "broker": broker_name,
-            "broker_badge": broker_badge,
-            "is_private": row["구분"] == "Private",
-            "mode": row["구분"],
-            "start_date": row["시작일"],
-            "strategy": row["전략"],
-            "current_round": curr_rnd,
-            "total_splits": tot_split,
-            "quantity": int(qty_val) if qty_val.is_integer() else qty_val,
-            "average_price": f"${avg_val:.2f}" if avg_val > 0 else "$0.00",
-            "current_price": f"${curr_val:.2f}" if curr_val > 0 else "$0.00",
-            "profit_rate": f"{profit_pct:+.2f}",
-            "profit_val": profit_pct,
-            "total_buy": f"${(qty_val * avg_val):,.2f}",
-            "total_invest": f"${float(tot_invest):,.0f}" if tot_invest.isdigit() else f"${tot_invest}",
-            "target_profit_rate": target_rate,
-            "progress_percent": progress_pct,
-            "is_holding_only": False
-        })
+                        if setting_info:
+                            # 전략 설정이 완료된 상태 -> 대시보드 형태의 전체 진행률 카드 렌더링
+                            capital = float(setting_info.get("capital", 20000) or 20000)
+                            split = int(setting_info.get("split", 40) or 40)
+                            target_rate = str(setting_info.get("target", "12.0")).replace("%", "")
+                            strategy_name = setting_info.get("strategy", "v2.2")
+                            auto_enabled = bool(setting_info.get("auto", False))
+                            
+                            one_round_amt = (capital / split) if split > 0 else 1.0
+                            curr_rnd = round(invest_usd / one_round_amt, 1) if one_round_amt > 0 else 0.0
+                            progress_pct = min(100, int((curr_rnd / split) * 100)) if split > 0 else 0
+
+                            ticker_cards.append({
+                                "ticker": t_symbol,
+                                "account_id": setting_key,
+                                "broker": broker_name,
+                                "broker_badge": broker_badge,
+                                "is_private": acc_type.lower() == "private",
+                                "mode": acc_type,
+                                "account_name": f"{acc_num}",
+                                "start_date": setting_info.get("start_date", str(latest_oversea_date)),
+                                "strategy": strategy_name,
+                                "current_round": int(curr_rnd) if curr_rnd.is_integer() else curr_rnd,
+                                "total_splits": split,
+                                "quantity": int(qty) if qty.is_integer() else qty,
+                                "average_price": f"${avg_usd:.2f}",
+                                "current_price": f"${curr_usd:.2f}",
+                                "profit_rate": f"{profit_pct:+.2f}",
+                                "profit_val": profit_pct,
+                                "total_buy": f"${invest_usd:,.2f}",
+                                "total_invest": f"${capital:,.0f}",
+                                "total_eval": f"${eval_usd:,.2f}",
+                                "target_profit_rate": target_rate,
+                                "progress_percent": progress_pct,
+                                "has_strategy": True,
+                                "is_holding_only": False,
+                                "capital_raw": capital,
+                                "split_raw": split,
+                                "target_raw": target_rate,
+                                "strategy_raw": strategy_name,
+                                "auto_raw": auto_enabled
+                            })
+                        else:
+                            # 전략 미설정 상태 -> 일반 보유 카드 (클릭 시 전략 설정 팝업)
+                            ticker_cards.append({
+                                "ticker": t_symbol,
+                                "account_id": setting_key,
+                                "broker": broker_name,
+                                "broker_badge": broker_badge,
+                                "is_private": acc_type.lower() == "private",
+                                "mode": acc_type,
+                                "account_name": f"{acc_num}",
+                                "start_date": str(latest_oversea_date),
+                                "strategy": f"{acc_type} 계좌",
+                                "current_round": 0,
+                                "total_splits": 0,
+                                "quantity": int(qty) if qty.is_integer() else qty,
+                                "average_price": f"${avg_usd:.2f}",
+                                "current_price": f"${curr_usd:.2f}",
+                                "profit_rate": f"{profit_pct:+.2f}",
+                                "profit_val": profit_pct,
+                                "total_buy": f"${invest_usd:,.2f}",
+                                "total_invest": f"${invest_usd:,.0f}",
+                                "total_eval": f"${eval_usd:,.2f}",
+                                "total_buy_krw": f"{invest_usd * rate:,.0f}원",
+                                "total_eval_krw": f"{eval_usd * rate:,.0f}원",
+                                "profit_loss_str": f"{'+' if pl_usd >= 0 else ''}${pl_usd:,.2f} ({profit_pct:+.2f}%)",
+                                "target_profit_rate": "-",
+                                "progress_percent": 0,
+                                "has_strategy": False,
+                                "is_holding_only": True,
+                                "capital_raw": 20000,
+                                "split_raw": 40,
+                                "target_raw": "12.0",
+                                "strategy_raw": "v2.2",
+                                "auto_raw": False
+                            })
+    except Exception as e:
+        logging.error(f"Error loading overseas_holdings for unified dashboard: {e}")
 
     fear_greed = fetch_fear_and_greed()
-    return render_template("infinite_main.html", latest_date=latest_date, table_rows=table_rows, ticker_cards=ticker_cards, fear_greed=fear_greed, active_tab=active_tab)
+    return render_template("infinite_main.html", latest_date=latest_date, table_rows="", ticker_cards=ticker_cards, fear_greed=fear_greed, active_tab=active_tab)
 
 
 def fetch_macro_indicators():

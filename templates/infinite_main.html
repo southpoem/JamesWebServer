@@ -123,10 +123,8 @@
         <!-- raoni.xyz Top Pill Navigation Bar -->
         <div class="top-nav-row">
             <nav class="top-nav">
-                <a href="/infinite/macro" class="nav-link {% if active_tab != 'my_account' %}active{% endif %}">대시보드</a>
-                <a href="/infinite/macro?tab=my_account" class="nav-link {% if active_tab == 'my_account' %}active{% endif %}">내 계좌</a>
+                <a href="/infinite/macro" class="nav-link active">내 계좌</a>
                 <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
-                <a href="/infinite_settings" class="nav-link">매매 설정</a>
                 <a href="/infinite_help" class="nav-link">전략 가이드</a>
             </nav>
         </div>
@@ -139,11 +137,9 @@
                 <button type="button" class="sub-tab" onclick="filterAccountTab('Private', this)">Private 계좌</button>
             </div>
 
-            {% if active_tab != 'my_account' %}
             <form action="/run_infinite_buying" method="post" style="margin: 0;">
                 <button type="submit" class="btn btn-primary exec-btn">⚡ 무한매수 실행</button>
             </form>
-            {% endif %}
         </div>
 
         <!-- Image 2 Style Ticker Cards Grid -->
