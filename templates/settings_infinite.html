@@ -78,10 +78,41 @@
         .col-span-2 {
             grid-column: span 2;
         }
+        /* Global Navigation Tabs */
+        .global-tabs {
+            display: flex;
+            background: #1e1e28;
+            padding: 0.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            gap: 0.5rem;
+        }
+        .global-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem;
+            color: #888;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .global-tab.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Global Navigation -->
+        <div class="global-tabs">
+            <a href="/my_asset" class="global-tab">내 자산관리</a>
+            <a href="/infinite/macro" class="global-tab active">무한매수법</a>
+            <a href="/macro" class="global-tab">매크로</a>
+        </div>
+
         <!-- Header -->
         <header class="brand-header">
             <a href="/infinite/macro" class="brand-logo-group">
