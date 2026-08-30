@@ -178,11 +178,20 @@
         
         .title-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
         .title-row h1 { font-size: 1.6rem; font-weight: 800; margin: 0; color: #fff; }
-        .action-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .action-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
         .action-pill {
             background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.05);
             color: #ccc; padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
             cursor: pointer; display: inline-flex; align-items: center; text-decoration: none;
+        }
+        .btn-sm {
+            padding: 0.45rem 0.85rem;
+            font-size: 0.75rem;
+            width: auto;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         
         .total-amount { font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; letter-spacing: -0.5px; }
@@ -288,12 +297,16 @@
             <h1>총 자산</h1>
             <div class="action-pills">
                 {% if current_broker == 'samsung' %}
-                <form action="/run_samsung_account" method="post" style="margin:0;"><button type="submit" class="action-pill">🔄 삼성</button></form>
+                <form action="/run_samsung_account" method="post" style="margin:0;">
+                    <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
+                </form>
                 {% endif %}
                 {% if current_broker == 'meritz' %}
-                <form action="/run_meritz_account" method="post" style="margin:0;"><button type="submit" class="action-pill">🔄 메리츠</button></form>
+                <form action="/run_meritz_account" method="post" style="margin:0;">
+                    <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
+                </form>
                 {% endif %}
-                <button type="button" class="action-pill" id="btnToggleOverMarket" onclick="toggleOverMarket()" title="장외/프리/애프터마켓 시세 포함 여부 토글" style="transition: all 0.2s;">🌙 장외 <span id="overMarketStatusBadge" style="font-weight: 700; margin-left: 2px;">OFF</span></button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btnToggleOverMarket" onclick="toggleOverMarket()" title="장외/프리/애프터마켓 시세 포함 여부 토글" style="transition: all 0.2s;">🌙 장외 <span id="overMarketStatusBadge" style="font-weight: 700; margin-left: 2px;">OFF</span></button>
             </div>
         </div>
         
