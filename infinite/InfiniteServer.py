@@ -182,6 +182,7 @@ def fetch_fear_and_greed():
 
 
 @infinite_bp.route('/infinite', methods=['GET'])
+@infinite_bp.route('/infinite/', methods=['GET'])
 @infinite_bp.route('/infinite/macro', methods=['GET'])
 @login_required
 def show_recent_ticker_data():
