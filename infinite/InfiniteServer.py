@@ -913,7 +913,7 @@ def my_asset():
                     'profit_loss': 0
                 })
                 
-            fam_df = FamilyDBHelper.get_family_history_df()
+            fam_df = FamilyDBHelper.get_family_history_df(target_dates=df['date'].unique())
             if not fam_df.empty:
                 fam_df['date'] = pd.to_datetime(fam_df['date'])
                 df = pd.concat([df, fam_df], ignore_index=True)

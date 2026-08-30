@@ -73,7 +73,7 @@ def delete_family_asset(account_name):
 
 
 import pandas as pd
-def get_family_history_df():
+def get_family_history_df(target_dates=None):
     init_db()
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql_query("SELECT * FROM family_asset_history", conn)
@@ -81,7 +81,21 @@ def get_family_history_df():
     if df.empty:
         return pd.DataFrame()
     df['date'] = pd.to_datetime(df['updated_at']).dt.strftime('%Y-%m-%d')
-    df_grouped = df.groupby(['date', 'account_name'])['amount'].last().reset_index()
-    df_grouped = df_grouped.rename(columns={'account_name': 'account_type', 'amount': 'total_evaluation'})
-    df_grouped['broker'] = '가족'
-    return df_grouped
+    piv = df.pivot_table(index='date', columns='account_name', values='amount', aggfunc='last')
+    
+    if target_dates is not None and len(target_dates) > 0:
+        target_dates_str = [pd.to_datetime(d).strftime('%Y-%m-%d') for d in target_dates]
+        all_dates = sorted(set(list(piv.index) + target_dates_str))
+    else:
+        all_dates = sorted(list(piv.index))
+        
+    piv_full = piv.reindex(all_dates).ffill().bfill()
+    
+    melted = piv_full.reset_index().melt(id_vars=['date'], var_name='account_type', value_name='total_evaluation')
+    melted['broker'] = '가족'
+    melted['total_investment'] = melted['total_evaluation']
+    melted['profit_loss'] = 0.0
+    melted['quantity'] = 1.0
+    melted['ticker'] = melted['account_type']
+    melted['account_num'] = ''
+    return melted
