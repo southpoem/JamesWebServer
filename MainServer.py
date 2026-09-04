@@ -15,7 +15,7 @@ from infinite.InfiniteServer import infinite_bp
 
 app = Flask(__name__)
 app.secret_key = 'thisismyworld'  # 꼭 있어야 세션 작동함 (아무 문자열이나)
-app.permanent_session_lifetime = timedelta(minutes=30)  # 세션 30분 유지
+app.permanent_session_lifetime = timedelta(hours=1)  # 세션 1시간 유지
 app.register_blueprint(infinite_bp)
 
 # 이미지 저장 디렉터리 설정
