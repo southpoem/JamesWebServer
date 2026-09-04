@@ -110,5 +110,12 @@ def suwon_match_center():
     return render_template('suwon.html')
 
 
+# 마블 시네마틱 유니버스(MCU) 어벤져스 & 히어로 타임라인 페이지
+@app.route('/marvel')
+def marvel_timeline():
+    return render_template('marvel.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1508)
+

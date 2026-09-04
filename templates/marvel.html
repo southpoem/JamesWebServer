@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마블 시네마틱 유니버스(MCU) 개봉 순서 도감 - 어벤져스와 히어로들</title>
+    <meta name="description" content="어린이를 위한 마블 히어로 영화 개봉 순서 총정리 및 줄거리 가이드. 아이언맨부터 최신 어벤져스까지!">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Jua&family=Nanum+Gothic:wght@400;700;800&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --marvel-red: #E62429;
+            --marvel-dark-red: #9B1115;
+            --marvel-gold: #F59E0B;
+            --marvel-blue: #0284C7;
+            --marvel-purple: #8B5CF6;
+            --bg-dark: #0B0F19;
+            --card-bg: #161F33;
+            --card-hover: #1E2945;
+            --border-color: #2D3A58;
+            --text-light: #F8FAFC;
+            --text-muted: #94A3B8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(230, 36, 41, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(2, 132, 199, 0.12) 0%, transparent 40%);
+            min-height: 100vh;
+        }
+
+        /* 헤더 스타일 */
+        header.marvel-header {
+            background: linear-gradient(180deg, rgba(230, 36, 41, 0.35) 0%, rgba(11, 15, 25, 0.95) 100%);
+            padding: 40px 20px 30px;
+            text-align: center;
+            border-bottom: 3px solid var(--marvel-red);
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .marvel-logo-badge {
+            background-color: var(--marvel-red);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 2.2rem;
+            letter-spacing: -2px;
+            padding: 4px 18px;
+            display: inline-block;
+            box-shadow: 0 4px 15px rgba(230, 36, 41, 0.6);
+            transform: skew(-8deg);
+            margin-bottom: 12px;
+            border: 2px solid white;
+        }
+
+        h1.main-title {
+            font-family: 'Jua', sans-serif;
+            font-size: 2.5rem;
+            margin: 10px 0 8px;
+            background: linear-gradient(135deg, #FFFFFF 40%, #F59E0B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        p.sub-title {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin: 0 0 20px;
+            font-family: 'Jua', sans-serif;
+        }
+
+        /* 상단 네비게이션 & 퀴즈 버튼 */
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: #111;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.05rem;
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+        }
+
+        /* 메인 컨테이너 */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 30px 20px 80px;
+        }
+
+        /* 컨트롤 바 (페이즈 탭, 히어로 필터, 검색) */
+        .controls-wrapper {
+            background-color: rgba(22, 31, 51, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 35px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            background-color: #0B0F19;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: white;
+            font-family: 'Nanum Gothic', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--marvel-red);
+        }
+
+        /* 페이즈 탭 */
+        .phase-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .tab-btn {
+            background-color: transparent;
+            color: var(--text-muted);
+            font-family: 'Jua', sans-serif;
+            font-size: 1.05rem;
+            padding: 8px 18px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background-color: var(--marvel-red);
+            color: white;
+            border-color: var(--marvel-red);
+            box-shadow: 0 4px 12px rgba(230, 36, 41, 0.35);
+        }
+
+        /* 히어로 필터 칩 */
+        .hero-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-family: 'Jua', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-right: 5px;
+        }
+
+        .hero-chip {
+            background-color: #0B0F19;
+            border: 1px solid var(--border-color);
+            color: #CBD5E1;
+            font-family: 'Jua', sans-serif;
+            font-size: 0.9rem;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .hero-chip:hover {
+            border-color: var(--marvel-gold);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .hero-chip.active {
+            background-color: var(--marvel-gold);
+            color: #111;
+            border-color: var(--marvel-gold);
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+        }
+
+        /* 통계 요약 바 */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Jua', sans-serif;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding: 0 5px;
+        }
+
+        .stats-count {
+            color: var(--marvel-gold);
+            font-weight: bold;
+        }
+
+        /* 영화 그리드 */
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 25px;
+        }
+
+        /* 영화 카드 */
+        .movie-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 22px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: var(--marvel-red);
+            box-shadow: 0 14px 30px rgba(230, 36, 41, 0.25);
+            background-color: var(--card-hover);
+        }
+
+        /* 카드 상단 배지 */
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .release-order-badge {
+            font-family: 'Bangers', 'Montserrat', sans-serif;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--marvel-red), var(--marvel-dark-red));
+            color: white;
+            padding: 3px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .phase-badge {
+            font-family: 'Jua', sans-serif;
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.08);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+
+        .movie-title-kr {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.45rem;
+            color: white;
+            margin: 0 0 4px;
+            line-height: 1.3;
+        }
+
+        .movie-title-en {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0 0 15px;
+            font-weight: 700;
+        }
+
+        .movie-meta-row {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: #CBD5E1;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* 줄거리 미리보기 */
+        .movie-story-preview {
+            font-size: 0.95rem;
+            color: #CBD5E1;
+            line-height: 1.55;
+            margin: 0 0 16px;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 영웅 & 빌런 태그 */
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: auto;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .tag-hero {
+            background-color: rgba(2, 132, 199, 0.18);
+            color: #38BDF8;
+            border: 1px solid rgba(2, 132, 199, 0.4);
+            font-size: 0.8rem;
+            font-family: 'Jua', sans-serif;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .tag-stone {
+            background-color: rgba(245, 158, 11, 0.18);
+            color: #FCD34D;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            font-size: 0.8rem;
+            font-family: 'Jua', sans-serif;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .click-hint {
+            font-family: 'Jua', sans-serif;
+            font-size: 0.85rem;
+            color: var(--marvel-gold);
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        /* ==================== 상세 모달 팝업 ==================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: linear-gradient(145deg, #182238, #0E1526);
+            border: 2px solid var(--marvel-red);
+            border-radius: 24px;
+            max-width: 680px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(230, 36, 41, 0.3);
+            position: relative;
+            animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            background-color: var(--marvel-red);
+            transform: rotate(90deg);
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-right: 40px;
+        }
+
+        .modal-order-phase {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .modal-title-kr {
+            font-family: 'Jua', sans-serif;
+            font-size: 2rem;
+            color: white;
+            margin: 0 0 5px;
+        }
+
+        .modal-title-en {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .modal-section {
+            background-color: rgba(11, 15, 25, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 15px;
+        }
+
+        .section-headline {
+            font-family: 'Jua', sans-serif;
+            font-size: 1.15rem;
+            color: var(--marvel-gold);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-story-full {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #E2E8F0;
+            margin: 0;
+        }
+
+        .quote-box {
+            background: linear-gradient(135deg, rgba(230, 36, 41, 0.15), rgba(245, 158, 11, 0.1));
+            border-left: 4px solid var(--marvel-gold);
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.1rem;
+            color: #FEF08A;
+            margin-bottom: 15px;
+        }
+
+        /* 퀴즈 모달 */
+        .quiz-option-btn {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            color: white;
+            font-family: 'Jua', sans-serif;
+            font-size: 1.1rem;
+            padding: 14px 20px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quiz-option-btn:hover {
+            border-color: var(--marvel-gold);
+            background-color: rgba(245, 158, 11, 0.15);
+            transform: translateX(6px);
+        }
+
+        /* 모바일 대응 */
+        @media (max-width: 768px) {
+            h1.main-title { font-size: 1.9rem; }
+            .movie-grid { grid-template-columns: 1fr; }
+            .modal-card { padding: 20px; }
+            .modal-title-kr { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="marvel-header">
+        <div class="marvel-logo-badge">MARVEL</div>
+        <h1 class="main-title">어벤져스 & MCU 영화 개봉 순서 도감</h1>
+        <p class="sub-title">아이들을 위한 마블 영웅들의 위대한 모험과 줄거리 총정리!</p>
+        <div class="header-actions">
+            <button class="action-btn" onclick="openHeroQuiz()">🦸 나와 딱 맞는 어벤져스 영웅 찾기 테스트</button>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- 검색 및 필터 컨트롤 -->
+        <div class="controls-wrapper">
+            <div class="search-row">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 영화 제목이나 영웅 이름(아이언맨, 스파이더맨, 타노스 등)을 검색해 보세요!" oninput="filterMovies()">
+            </div>
+
+            <!-- 페이즈 탭 -->
+            <div class="phase-tabs">
+                <button class="tab-btn active" onclick="setPhaseFilter('all')">🌟 전체 영화 (36편)</button>
+                <button class="tab-btn" onclick="setPhaseFilter('Phase 1')">🛡️ 페이즈 1 (어벤져스의 시작)</button>
+                <button class="tab-btn" onclick="setPhaseFilter('Phase 2')">⚡ 페이즈 2 (영웅들의 성장)</button>
+                <button class="tab-btn" onclick="setPhaseFilter('Phase 3')">💎 페이즈 3 (인피니티 사가 완결)</button>
+                <button class="tab-btn" onclick="setPhaseFilter('Phase 4')">🌀 페이즈 4 (멀티버스의 문)</button>
+                <button class="tab-btn" onclick="setPhaseFilter('Phase 5')">🚀 페이즈 5/6 (새로운 시대)</button>
+            </div>
+
+            <!-- 주요 영웅 필터 칩 -->
+            <div class="hero-filters">
+                <span class="filter-label">영웅별 모아보기:</span>
+                <span class="hero-chip active" onclick="setHeroFilter('all')">전체</span>
+                <span class="hero-chip" onclick="setHeroFilter('아이언맨')">🔴 아이언맨</span>
+                <span class="hero-chip" onclick="setHeroFilter('캡틴 아메리카')">🛡️ 캡틴 아메리카</span>
+                <span class="hero-chip" onclick="setHeroFilter('토르')">⚡ 토르</span>
+                <span class="hero-chip" onclick="setHeroFilter('스파이더맨')">🕷️ 스파이더맨</span>
+                <span class="hero-chip" onclick="setHeroFilter('닥터 스트레인지')">🔮 닥터 스트레인지</span>
+                <span class="hero-chip" onclick="setHeroFilter('가디언즈')">🦝 가오갤</span>
+                <span class="hero-chip" onclick="setHeroFilter('블랙 팬서')">🐾 블랙 팬서</span>
+                <span class="hero-chip" onclick="setHeroFilter('앤트맨')">🐜 앤트맨</span>
+                <span class="hero-chip" onclick="setHeroFilter('어벤져스')">⭐ 어벤져스 팀업</span>
+            </div>
+        </div>
+
+        <!-- 리스트 통계 -->
+        <div class="stats-bar">
+            <span>🎬 개봉 순서대로 관람하는 마블 연대기</span>
+            <span>검색된 영화: <span id="movieCount" class="stats-count">36</span>편</span>
+        </div>
+
+        <!-- 영화 카드 그리드 -->
+        <div class="movie-grid" id="movieGrid"></div>
+    </div>
+
+    <!-- 영화 상세 모달창 -->
+    <div class="modal-overlay" id="movieModal" onclick="closeModalOnBackdrop(event)">
+        <div class="modal-card" id="modalCard">
+            <button class="modal-close-btn" onclick="closeModal()">×</button>
+            <div class="modal-header">
+                <div class="modal-order-phase">
+                    <span class="release-order-badge" id="modalOrder">#01</span>
+                    <span class="phase-badge" id="modalPhase">Phase 1</span>
+                    <span style="color:var(--text-muted); font-size:0.9rem; font-weight:bold;" id="modalYear">2008</span>
+                </div>
+                <h2 class="modal-title-kr" id="modalTitleKr">아이언맨</h2>
+                <p class="modal-title-en" id="modalTitleEn">Iron Man</p>
+            </div>
+
+            <!-- 명대사 -->
+            <div class="quote-box" id="modalQuote">"내가 바로 아이언맨이다."</div>
+
+            <!-- 줄거리 -->
+            <div class="modal-section">
+                <div class="section-headline">📖 아이들을 위한 이야기 줄거리</div>
+                <p class="modal-story-full" id="modalStory"></p>
+            </div>
+
+            <!-- 등장 영웅 및 능력 -->
+            <div class="modal-section">
+                <div class="section-headline">🦸 활약하는 영웅과 주요 능력</div>
+                <p style="margin:0; font-size:0.95rem; color:#CBD5E1; line-height:1.6;" id="modalHeroes"></p>
+            </div>
+
+            <!-- 맞서는 빌런 & 아이템 -->
+            <div class="modal-section">
+                <div class="section-headline">🦹 악당(빌런)과 인피니티 스톤/아이템</div>
+                <p style="margin:0; font-size:0.95rem; color:#CBD5E1; line-height:1.6;" id="modalVillainItem"></p>
+            </div>
+
+            <!-- 쿠키 영상 꿀팁 -->
+            <div class="modal-section" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.06);">
+                <div class="section-headline" style="color:#FBBF24;">🍪 놓치면 안 되는 쿠키 영상 힌트!</div>
+                <p style="margin:0; font-size:0.95rem; color:#FDE68A; line-height:1.6;" id="modalPostCredit"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 히어로 찾기 퀴즈 모달 -->
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-card" style="max-width: 520px;">
+            <button class="modal-close-btn" onclick="closeQuizModal()">×</button>
+            <h2 style="font-family:'Jua'; color:var(--marvel-gold); margin-top:0; font-size:1.8rem;" id="quizQuestionTitle">🦸 나의 어벤져스 영웅 찾기</h2>
+            <p style="color:#CBD5E1; font-size:1rem; margin-bottom:20px;" id="quizQuestionDesc">위험에 빠진 친구를 보았을 때 나는 어떻게 행동할까요?</p>
+            
+            <div id="quizOptionsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // MCU 전체 36편 개봉 순서 데이터
+        const mcuMovies = [
+            {
+                order: 1,
+                titleKr: "아이언맨",
+                titleEn: "Iron Man",
+                releaseDate: "2008.04.30",
+                year: "2008",
+                phase: "Phase 1",
+                heroTag: ["아이언맨"],
+                story: "천재 발명가이자 억만장자인 토니 스타크가 사막의 동굴에 납치된 후, 아크 원자로와 강력한 강철 슈트 '마크 1'을 만들어 탈출합니다! 연구소로 돌아와 최첨단 빨간색과 금색의 아이언맨 슈트를 완성하고 세계를 지키는 슈퍼히어로로 다시 태어납니다.",
+                heroes: "아이언맨(토니 스타크) - 천재적인 두뇌, 비행 능력, 리펄서 빔 무기",
+                villainItem: "빌런: 아이언 몽거(오베디아 스탠) / 핵심 아이템: 아크 리액터(소형 원자로)",
+                quote: "I am Iron Man. (내가 바로 아이언맨이다.)",
+                postCredit: "쉴드의 국장 닉 퓨리가 나타나 '어벤져스 결성 계획'을 처음으로 제안합니다!"
+            },
+            {
+                order: 2,
+                titleKr: "인크레더블 헐크",
+                titleEn: "The Incredible Hulk",
+                releaseDate: "2008.06.12",
+                year: "2008",
+                phase: "Phase 1",
+                heroTag: ["헐크"],
+                story: "감마선 실험 도중 사고로 화가 나면 무시무시한 초록색 거인 '헐크'로 변하게 된 브루스 배너 박사의 모험입니다. 배너 박사는 괴물 슈트를 입은 어보미네이션으로부터 도시를 지키기 위해 엄청난 파워로 맞서 싸웁니다.",
+                heroes: "헐크(브루스 배너) - 부술 수 없는 무한대의 완력과 점프력",
+                villainItem: "빌런: 어보미네이션(에밀 블론스키) / 아이템: 감마선 혈청",
+                quote: "Hulk, Smash! (헐크, 쾅쾅 부숴버려!)",
+                postCredit: "토니 스타크가 로스 장군을 찾아와 '팀을 만드는 중'이라고 귀띔합니다."
+            },
+            {
+                order: 3,
+                titleKr: "아이언맨 2",
+                titleEn: "Iron Man 2",
+                releaseDate: "2010.04.29",
+                year: "2010",
+                phase: "Phase 1",
+                heroTag: ["아이언맨"],
+                story: "전 세계에 자신이 아이언맨임을 밝힌 토니 스타크 앞에 전기 채찍을 휘두르는 악당 위플래시가 나타납니다. 친구 로디(워 머신)와 멋진 스파이 요원 블랙 위도우와 힘을 합쳐 드론 군단을 격파합니다.",
+                heroes: "아이언맨, 워 머신(제임스 로드), 블랙 위도우(나타샤 로마노프)",
+                villainItem: "빌런: 위플래시(이반 반코), 저스틴 해머 / 아이템: 휴대용 슈트 케이스(마크 5)",
+                quote: "슈트를 입은 든든한 친구가 곁에 있다면 두려울 게 없지!",
+                postCredit: "뉴멕시코주 분화구에 토르의 번개 망치 '묠니르'가 떨어져 있는 장면이 나옵니다!"
+            },
+            {
+                order: 4,
+                titleKr: "토르: 천둥의 신",
+                titleEn: "Thor",
+                releaseDate: "2011.04.28",
+                year: "2011",
+                phase: "Phase 1",
+                heroTag: ["토르"],
+                story: "신들의 세계 아스가르드의 왕자 토르가 거만함 때문에 힘과 망치(묠니르)를 빼앗기고 지구로 쫓겨납니다. 지구에서 친구들을 구하며 진정한 영웅의 희생정신을 깨닫고, 아스가르드를 위협하는 동생 로키의 음모를 막아냅니다.",
+                heroes: "토르 - 천둥과 번개를 부르는 신, 묠니르 망치 소유자",
+                villainItem: "빌런: 장난의 신 로키 / 아이템: 묠니르 망치, 서리거인의 상자",
+                quote: "오직 자격을 갖춘 자만이 이 망치의 힘을 얻으리라!",
+                postCredit: "닉 퓨리가 연구 중인 신비한 푸른 큐브 '테서랙트(스페이스 스톤)'를 보여줍니다."
+            },
+            {
+                order: 5,
+                titleKr: "캡틴 아메리카: 퍼스트 어벤져",
+                titleEn: "Captain America: The First Avenger",
+                releaseDate: "2011.07.28",
+                year: "2011",
+                phase: "Phase 1",
+                heroTag: ["캡틴 아메리카"],
+                story: "몸집이 작고 약하지만 누구보다 용감하고 착한 스티브 로저스가 슈퍼 솔져 혈청을 맞고 초인적인 힘을 가진 '캡틴 아메리카'가 됩니다! 비브라늄 방패를 들고 사악한 하이드라의 레드 스컬을 무찌르며 영웅으로 우뚝 섭니다.",
+                heroes: "캡틴 아메리카(스티브 로저스) - 불굴의 용기와 비브라늄 방패 액션",
+                villainItem: "빌런: 레드 스컬(하이드라) / 💎 스톤: 테서랙트 (스페이스 스톤)",
+                quote: "I can do this all day. (하루 종일도 할 수 있어.)",
+                postCredit: "70년간 얼음 속에 잠들어 있다가 현대의 뉴욕 타임스퀘어에서 깨어난 캡틴!"
+            },
+            {
+                order: 6,
+                titleKr: "어벤져스",
+                titleEn: "The Avengers",
+                releaseDate: "2012.04.26",
+                year: "2012",
+                phase: "Phase 1",
+                heroTag: ["어벤져스", "아이언맨", "캡틴 아메리카", "토르", "헐크"],
+                story: "외계 군대를 이끌고 지구를 침공한 로키에 맞서, 지구 최강의 영웅들(아이언맨, 캡틴 아메리카, 토르, 헐크, 블랙 위도우, 호크아이)이 역사상 처음으로 한 팀이 되어 뉴욕을 지켜냅니다!",
+                heroes: "어벤져스 원년 멤버 6인 전원 출동!",
+                villainItem: "빌런: 로키 & 치타우리 군단 / 💎 스톤: 스페이스 스톤(테서랙트), 마인드 스톤(치타우리 셉터)",
+                quote: "Avengers Assemble! (어벤져스, 집결!)",
+                postCredit: "우주의 거대한 보스 '타노스'가 처음으로 씩 웃으며 등장하고, 영웅들은 슈와마를 먹습니다."
+            },
+            {
+                order: 7,
+                titleKr: "아이언맨 3",
+                titleEn: "Iron Man 3",
+                releaseDate: "2013.04.25",
+                year: "2013",
+                phase: "Phase 2",
+                heroTag: ["아이언맨"],
+                story: "뉴욕 사건 이후 불안감을 느끼던 토니 스타크가 테러리스트 만다린의 습격을 받아 집을 잃습니다. 하지만 슈트 없이도 자신의 천재적인 기지로 맞서 싸우며, 40여 벌의 아이언맨 슈트 군단을 원격 조종해 화려하게 적을 제압합니다.",
+                heroes: "아이언맨, 페퍼 포츠(익스트리미스 파워 각성)",
+                villainItem: "빌런: 알드리치 킬리언 (익스트리미스 연구소)",
+                quote: "슈트는 그저 껍데기일 뿐, 내가 바로 아이언맨이다!",
+                postCredit: "토니가 브루스 배너(헐크) 박사에게 자신의 옛날이야기를 털어놓는 유쾌한 장면!"
+            },
+            {
+                order: 8,
+                titleKr: "토르: 다크 월드",
+                titleEn: "Thor: The Dark World",
+                releaseDate: "2013.10.30",
+                year: "2013",
+                phase: "Phase 2",
+                heroTag: ["토르"],
+                story: "우주를 어둠으로 물들이려는 다크엘프의 수장 말레키스가 깨어납니다. 토르는 사랑하는 제인과 온 우주를 구하기 위해 감옥에 갇혀 있던 동생 로키와 위험한 동맹을 맺고 차원을 넘나드는 번개 액션을 펼칩니다.",
+                heroes: "토르, 로키, 헤임달",
+                villainItem: "빌런: 말레키스 / 💎 스톤: 에테르 (리얼리티 스톤)",
+                quote: "형제여, 마지막으로 한 번만 날 믿어봐!",
+                postCredit: "에테르를 우주 수집가 '콜렉터'에게 맡기며 인피니티 스톤의 존재가 언급됩니다."
+            },
+            {
+                order: 9,
+                titleKr: "캡틴 아메리카: 윈터 솔져",
+                titleEn: "Captain America: The Winter Soldier",
+                releaseDate: "2014.03.26",
+                year: "2014",
+                phase: "Phase 2",
+                heroTag: ["캡틴 아메리카"],
+                story: "평화 기구인 줄 알았던 쉴드 내부에 악당 하이드라가 숨어있음을 알게 된 캡틴 아메리카! 기억을 잃고 적의 암살자가 되어 나타난 옛 친구 '버키(윈터 솔져)'와 맞닥뜨리며 친구를 구하기 위한 뜨거운 질주를 시작합니다.",
+                heroes: "캡틴 아메리카, 블랙 위도우, 팔콘(샘 윌슨)",
+                villainItem: "빌런: 윈터 솔져(버키 반즈), 알렉산더 피어스",
+                quote: "네가 날 기억하지 못해도, 끝까지 네 곁에 있을 거야.",
+                postCredit: "하이드라 기지에서 초능력 쌍둥이 '완다(스칼렛 위치)'와 '퀵실버'가 처음 등장합니다."
+            },
+            {
+                order: 10,
+                titleKr: "가디언즈 오브 갤럭시",
+                titleEn: "Guardians of the Galaxy",
+                releaseDate: "2014.07.31",
+                year: "2014",
+                phase: "Phase 2",
+                heroTag: ["가디언즈"],
+                story: "우주의 무법자 스타로드(피터 퀼), 암살자 가모라, 싸움꾼 드랙스, 귀여운 너구리 로켓과 나무 거인 그루트까지! 우연히 만난 괴짜 5인방이 은하계를 멸망시키려는 로난을 막기 위해 뭉쳐 우주 최고의 가족이 됩니다.",
+                heroes: "가오갤 팀 (스타로드, 가모라, 드랙스, 로켓, 그루트)",
+                villainItem: "빌런: 로난 / 💎 스톤: 오브 (파워 스톤)",
+                quote: "We are Groot. (우리는 그루트다.)",
+                postCredit: "아기 화분에서 춤을 추는 귀여운 '베이비 그루트'의 댄스 타임!"
+            },
+            {
+                order: 11,
+                titleKr: "어벤져스: 에이지 오브 울트론",
+                titleEn: "Avengers: Age of Ultron",
+                releaseDate: "2015.04.23",
+                year: "2015",
+                phase: "Phase 2",
+                heroTag: ["어벤져스", "아이언맨", "캡틴 아메리카", "토르", "헐크"],
+                story: "지구를 지키기 위해 만든 인공지능 '울트론'이 인류를 적으로 규정하고 세상을 위협합니다! 서울 도심과 소코비아에서 펼쳐지는 공중전, 그리고 이마에 마인드 스톤을 품은 신비한 영웅 '비전'과 '완다'가 합류합니다.",
+                heroes: "어벤져스 전원 + 비전, 완다 막시모프(스칼렛 위치), 퀵실버",
+                villainItem: "빌런: 인공지능 울트론 / 💎 스톤: 마인드 스톤 (비전의 이마)",
+                quote: "인류를 구하는 건 기계가 아니라, 우리의 마음이다.",
+                postCredit: "타노스가 인피니티 건틀렛을 손에 끼우며 '이제 내가 직접 나서겠다'고 선언합니다."
+            },
+            {
+                order: 12,
+                titleKr: "앤트맨",
+                titleEn: "Ant-Man",
+                releaseDate: "2015.09.03",
+                year: "2015",
+                phase: "Phase 2",
+                heroTag: ["앤트맨"],
+                story: "평범한 아빠 스콧 랭이 행크 핌 박사의 특수 슈트를 입고 몸을 개미만 한 크기로 줄이는 영웅 '앤트맨'이 됩니다! 크기는 작아져도 펀치력은 강철 같고, 개미 군단과 함께 장난감 기차 위에서 펼치는 기상천외한 액션!",
+                heroes: "앤트맨(스콧 랭), 행크 핌 박사, 호프 반 다인",
+                villainItem: "빌런: 옐로우자켓 / 아이템: 핌 입자 슈트",
+                quote: "크기가 작다고 얕보지 마라! 힘은 거인보다 세니까!",
+                postCredit: "캡틴 아메리카와 팔콘이 앤트맨을 자신들의 팀으로 부르기로 결정합니다."
+            },
+            {
+                order: 13,
+                titleKr: "캡틴 아메리카: 시빌 워",
+                titleEn: "Captain America: Civil War",
+                releaseDate: "2016.04.27",
+                year: "2016",
+                phase: "Phase 3",
+                heroTag: ["캡틴 아메리카", "아이언맨", "스파이더맨", "블랙 팬서"],
+                story: "슈퍼히어로를 정부가 통제해야 한다는 법안을 두고 토니 스타크(팀 아이언맨)와 스티브 로저스(팀 캡틴)의 의견이 갈라져 공항에서 정면 승부를 벌입니다! 이때 고등학생 스파이더맨과 와칸다의 왕자 블랙 팬서가 깜짝 등장합니다.",
+                heroes: "팀 캡틴 vs 팀 아이언맨 (스파이더맨, 블랙 팬서 첫 데뷔!)",
+                villainItem: "빌런: 헬무트 제모 남작",
+                quote: "그는 내 친구야. - 나도 네 친구였잖아.",
+                postCredit: "스파이더맨 피터 파커가 방에서 토니가 선물한 스파이더 시그널 조명을 켜봅니다."
+            },
+            {
+                order: 14,
+                titleKr: "닥터 스트레인지",
+                titleEn: "Doctor Strange",
+                releaseDate: "2016.10.25",
+                year: "2016",
+                phase: "Phase 3",
+                heroTag: ["닥터 스트레인지"],
+                story: "손을 다쳐 더 이상 수술을 할 수 없게 된 천재 의사 스티븐 스트레인지가 카마르-타지에서 신비한 마법을 배웁니다. 시공간을 넘나드는 미러 디멘션과 시간을 되돌리는 마법으로 어둠의 지배자 도르마무를 물러서게 만듭니다.",
+                heroes: "닥터 스트레인지, 웡, 에인션트 원, 마법의 빨간 망토",
+                villainItem: "빌런: 케실리우스, 도르마무 / 💎 스톤: 아가모토의 눈 (타임 스톤)",
+                quote: "도르마무! 거래를 하러 왔다! (시간 무한 반복!)",
+                postCredit: "닥터 스트레인지가 뉴욕 생텀에서 토르에게 아버지를 찾아주겠다고 약속합니다."
+            },
+            {
+                order: 15,
+                titleKr: "가디언즈 오브 갤럭시 Vol. 2",
+                titleEn: "Guardians of the Galaxy Vol. 2",
+                releaseDate: "2017.05.03",
+                year: "2017",
+                phase: "Phase 3",
+                heroTag: ["가디언즈"],
+                story: "우주를 구한 영웅이 된 가오갤 멤버들! 스타로드는 우주적 존재인 진짜 아버지 '에고'를 만나지만, 그 뒤에 숨겨진 무서운 야망을 알게 됩니다. 귀여운 베이비 그루트의 폭탄 버튼 누르기와 욘두의 눈물겨운 부성애가 펼쳐집니다.",
+                heroes: "가오갤 멤버들 + 욘두, 맨티스, 네뷸라",
+                villainItem: "빌런: 살아있는 행성 에고",
+                quote: "그는 네 아비였을지 몰라도, 네 아버지는 아니었어.",
+                postCredit: "황금 종족 소버린의 대사제가 완벽한 존재 '아담 워록'의 고치를 만듭니다."
+            },
+            {
+                order: 16,
+                titleKr: "스파이더맨: 홈커밍",
+                titleEn: "Spider-Man: Homecoming",
+                releaseDate: "2017.07.05",
+                year: "2017",
+                phase: "Phase 3",
+                heroTag: ["스파이더맨", "아이언맨"],
+                story: "시빌 워 이후 진짜 어벤져스가 되고 싶은 15살 고등학생 피터 파커! 토니 스타크의 인정받고 싶어 날개 달린 악당 벌처에 홀로 맞섭니다. 화려한 첨단 슈트 없이도 자신의 용기로 진정한 친절한 이웃 스파이더맨으로 성장합니다.",
+                heroes: "스파이더맨(피터 파커), 멘토 아이언맨(토니 스타크)",
+                villainItem: "빌런: 벌처(에이드리언 툼스) / 치타우리 외계 기술 무기",
+                quote: "슈트 없이 아무것도 아니라면, 더욱 슈트를 가질 자격이 없다.",
+                postCredit: "캡틴 아메리카가 나와 어린이들에게 '인내심의 중요성'을 설명해 주는 교육 영상!"
+            },
+            {
+                order: 17,
+                titleKr: "토르: 라그나로크",
+                titleEn: "Thor: Ragnarok",
+                releaseDate: "2017.10.25",
+                year: "2017",
+                phase: "Phase 3",
+                heroTag: ["토르", "헐크"],
+                story: "죽음의 여신 헬라에 의해 망치 묠니르가 부서지고 외계 행성 사카르로 떨어진 토르! 그곳 검투사 경기장에서 뜻밖에도 어벤져스 동료 '헐크'를 만나고, 발키리, 로키와 함께 '리벤져스'를 결성해 번개 각성을 이뤄냅니다.",
+                heroes: "토르(진정한 번개의 신 각성), 헐크, 발키리, 로키",
+                villainItem: "빌런: 죽음의 여신 헬라, 수르트",
+                quote: "망치의 신이냐, 번개의 신이냐! 아스가르드는 장소가 아니라 백성들이다!",
+                postCredit: "우주선을 타고 지구로 향하던 토르 일행 앞에 거대한 타노스의 기함이 나타납니다."
+            },
+            {
+                order: 18,
+                titleKr: "블랙 팬서",
+                titleEn: "Black Panther",
+                releaseDate: "2018.02.14",
+                year: "2018",
+                phase: "Phase 3",
+                heroTag: ["블랙 팬서"],
+                story: "비브라늄 광석을 바탕으로 세계 최고의 기술을 숨겨둔 아프리카의 황금 왕국 와칸다! 새로운 국왕이 된 티찰라(블랙 팬서)가 사촌 킬몽거의 도전을 이겨내고, 와칸다의 문을 열어 세계의 어려운 이웃을 돕기로 결심합니다.",
+                heroes: "블랙 팬서(티찰라), 천재 공학자 슈리, 장군 오코예",
+                villainItem: "빌런: 에릭 킬몽거 / 아이템: 비브라늄 전신 슈트",
+                quote: "Wakanda Forever! (와칸다 포에버!)",
+                postCredit: "와칸다 시골 마을에서 평화롭게 치료를 마친 버키 반즈(화이트 울프)가 등장합니다."
+            },
+            {
+                order: 19,
+                titleKr: "어벤져스: 인피니티 워",
+                titleEn: "Avengers: Infinity War",
+                releaseDate: "2018.04.25",
+                year: "2018",
+                phase: "Phase 3",
+                heroTag: ["어벤져스", "아이언맨", "토르", "스파이더맨", "닥터 스트레인지"],
+                story: "우주의 절반을 없애려는 최악의 거인 타노스가 6개의 인피니티 스톤을 모으기 시작합니다. 지구와 우주에서 모든 히어로들이 총력을 다해 맞서 싸우지만, 타노스는 결국 핑거 스냅을 일으키고 맙니다.",
+                heroes: "아이언맨, 캡틴, 토르(스톰브레이커), 스파이더맨, 가오갤, 닥터 등 전원",
+                villainItem: "빌런: 타노스 & 블랙 오더 / 💎 6개 인피니티 스톤 완성",
+                quote: "가장 강력한 의지를 가진 자만이 우주의 균형을 맞출 수 있다.",
+                postCredit: "재로 변해가던 닉 퓨리가 호출기를 누르자 '캡틴 마블'의 황금빛 로고가 뜹니다!"
+            },
+            {
+                order: 20,
+                titleKr: "앤트맨과 와스프",
+                titleEn: "Ant-Man and the Wasp",
+                releaseDate: "2018.07.04",
+                year: "2018",
+                phase: "Phase 3",
+                heroTag: ["앤트맨"],
+                story: "시빌 워 이후 가택연금 중이던 스콧 랭이 날개와 블래스터를 장착한 파트너 '와스프(호프)'와 함께 양자 영역에 갇힌 재닛 반 다인을 구출하기 위해 나섭니다! 건물과 차를 장난감처럼 줄였다 키우는 신나는 액션!",
+                heroes: "앤트맨, 와스프, 행크 핌 박사",
+                villainItem: "빌런: 고스트(에이바 스타) / 양자 터널 장치",
+                quote: "너한테 날개가 있어?! - 핌 박사가 나한테만 준 거지!",
+                postCredit: "양자 영역에 들어간 순간 타노스의 스냅이 일어나 현실의 동료들이 먼지가 되어 갇혀버립니다."
+            },
+            {
+                order: 21,
+                titleKr: "캡틴 마블",
+                titleEn: "Captain Marvel",
+                releaseDate: "2019.03.06",
+                year: "2019",
+                phase: "Phase 3",
+                heroTag: ["캡틴 마블"],
+                story: "기억을 잃고 크리족의 전사로 살아가던 캐럴 댄버스가 1995년의 지구로 불시착합니다. 젊은 시절의 닉 퓨리 요원과 귀여운 외계 고양이 구스를 만나 자신의 과거와 무한한 광자 에너지를 각성하고 우주 최강 히어로로 거듭납니다.",
+                heroes: "캡틴 마블(캐럴 댄버스), 닉 퓨리, 플러큰 고양이 구스",
+                villainItem: "빌런: 욘-로그 / 💎 스톤: 테서랙트 (스페이스 스톤의 에너지 흡수)",
+                quote: "Higher, Further, Faster, Baby! (더 높이, 더 멀리, 더 빠르게!)",
+                postCredit: "어벤져스 본부에 나타나 '퓨리는 어디 있지?'라고 묻는 캡틴 마블!"
+            },
+            {
+                order: 22,
+                titleKr: "어벤져스: 엔드게임",
+                titleEn: "Avengers: Endgame",
+                releaseDate: "2019.04.24",
+                year: "2019",
+                phase: "Phase 3",
+                heroTag: ["어벤져스", "아이언맨", "캡틴 아메리카", "토르", "헐크", "스파이더맨"],
+                story: "절망 속에서도 포기하지 않은 생존 영웅들이 앤트맨의 양자 영역 아이디어를 통해 '시간 여행 강탈 작전'을 펼칩니다! 과거에서 인피니티 스톤을 모아 사라졌던 소중한 가족과 친구들을 되돌리고, 영웅들이 총집결해 타노스 군단과 최후의 결전을 벌입니다.",
+                heroes: "MCU 11년간 등장한 모든 영웅들의 기적 같은 대집결!",
+                villainItem: "빌런: 과거의 타노스 군단 / 💎 나노 건틀렛 핑거 스냅",
+                quote: "Avengers... Assemble! (어벤져스... 집결!) / 3000만큼 사랑해.",
+                postCredit: "쿠키 영상 대신 토니 스타크가 처음 동굴에서 아머를 두드리던 망치 소리가 울려 퍼집니다."
+            },
+            {
+                order: 23,
+                titleKr: "스파이더맨: 파 프롬 홈",
+                titleEn: "Spider-Man: Far From Home",
+                releaseDate: "2019.07.02",
+                year: "2019",
+                phase: "Phase 3",
+                heroTag: ["스파이더맨"],
+                story: "토니 스타크를 잃고 슬픔에 잠겨 유럽 수학여행을 떠난 피터 파커! 하지만 드론 환영 기술로 세계를 속이려는 사기꾼 빌런 미스테리오를 마주하고, 자신의 스파이더 센스를 믿으며 아이언맨의 진정한 후계자로 일어섭니다.",
+                heroes: "스파이더맨, 해피 호건, MJ",
+                villainItem: "빌런: 미스테리오(쿠엔틴 벡) / 이디스(E.D.I.T.H.) 인공지능 안경",
+                quote: "피터 팅글(스파이더 센스)을 믿어봐!",
+                postCredit: "미스테리오의 조작 영상으로 전 세계에 스파이더맨의 정체가 '피터 파커'임이 폭로됩니다!"
+            },
+            {
+                order: 24,
+                titleKr: "블랙 위도우",
+                titleEn: "Black Widow",
+                releaseDate: "2021.07.07",
+                year: "2021",
+                phase: "Phase 4",
+                heroTag: ["어벤져스"],
+                story: "시빌 워 직후 쫓기는 신세가 된 나타샤 로마노프가 어린 시절의 가짜 가족들(동생 옐레나, 어머니 멜리나, 레드 가디언)과 재회합니다. 자신들을 살인 병기로 훈련시켰던 어둠의 조직 '레드룸'을 공중에서 통쾌하게 폭파시킵니다.",
+                heroes: "블랙 위도우(나타샤), 옐레나 벨로바, 레드 가디언",
+                villainItem: "빌런: 태스크마스터, 드레이코프",
+                quote: "내겐 가족이 없다고 생각했지만, 언제나 내 곁에 있었어.",
+                postCredit: "엔드게임 이후 나타샤의 묘비를 찾은 동생 옐레나에게 호크아이를 타겟으로 지목하는 의문의 여인 발렌티나!"
+            },
+            {
+                order: 25,
+                titleKr: "샹치와 텐 링즈의 전설",
+                titleEn: "Shang-Chi and the Legend of the Ten Rings",
+                releaseDate: "2021.09.01",
+                year: "2021",
+                phase: "Phase 4",
+                heroTag: ["샹치"],
+                story: "평범하게 주차 요원으로 살아가던 샹치가 아버지 웬우의 텐 링즈 무기에 맞서 자신의 운명을 마주합니다. 신비한 어머니의 고향 '탈로'로 향해 용의 힘을 얻고, 10개의 신비한 링을 다루는 마블 최초의 쿵푸 마스터 히어로로 탄생합니다.",
+                heroes: "샹치, 케이티, 쑤 샤링, 웡",
+                villainItem: "빌런: 웬우(진짜 만다린), 어둠의 드웰러 / 💎 신비의 무기 텐 링즈",
+                quote: "네 과거를 두려워하지 말고, 네 힘을 받아들여라!",
+                postCredit: "캡틴 마블과 브루스 배너가 텐 링즈가 우주 어딘가로 신호를 보내고 있음을 발견합니다."
+            },
+            {
+                order: 26,
+                titleKr: "이터널스",
+                titleEn: "Eternals",
+                releaseDate: "2021.11.03",
+                year: "2021",
+                phase: "Phase 4",
+                heroTag: ["이터널스"],
+                story: "7천 년 전 지구로 파견되어 인류의 문명을 지켜온 불멸의 외계 히어로 군단 이터널스(마동석의 길가메시 포함)! 지구 내부에서 부화하려는 거대한 우주신 셀레스티얼로부터 인류를 구하기 위해 힘을 합쳐 지구를 지켜냅니다.",
+                heroes: "이터널스 10인 (길가메시-마동석, 이카리스, 세르시, 테나-안젤리나 졸리 등)",
+                villainItem: "빌런: 데비안츠 크로, 셀레스티얼 아리솀",
+                quote: "우리가 사랑한 이 인류를 지키는 것이 우리의 진정한 사명이다.",
+                postCredit: "타노스의 동생 에로스(스타폭스)가 나타나 남은 이터널스에게 인사를 건넵니다!"
+            },
+            {
+                order: 27,
+                titleKr: "스파이더맨: 노 웨이 홈",
+                titleEn: "Spider-Man: No Way Home",
+                releaseDate: "2021.12.15",
+                year: "2021",
+                phase: "Phase 4",
+                heroTag: ["스파이더맨", "닥터 스트레인지"],
+                story: "정체가 탄로 나 일상이 무너진 피터가 닥터 스트레인지에게 기억을 지우는 마법을 부탁하다 멀티버스의 문이 열립니다! 다른 차원의 스파이더맨들(토비 맥과이어, 앤드류 가필드)이 찾아와 삼형제 스파이더맨이 힘을 합쳐 빌런들을 치료합니다.",
+                heroes: "삼스파 대통합 (톰 홀랜드, 토비 맥과이어, 앤드류 가필드) + 닥터 스트레인지",
+                villainItem: "빌런: 그린 고블린, 닥터 옥토퍼스, 일렉트로, 샌드맨, 리자드",
+                quote: "큰 힘에는 큰 책임이 따른다.",
+                postCredit: "베놈(에디 브록)이 다른 차원으로 돌아가며 작은 심비오트 조각을 남기고 갑니다."
+            },
+            {
+                order: 28,
+                titleKr: "닥터 스트레인지: 대혼돈의 멀티버스",
+                titleEn: "Doctor Strange in the Multiverse of Madness",
+                releaseDate: "2022.05.04",
+                year: "2022",
+                phase: "Phase 4",
+                heroTag: ["닥터 스트레인지"],
+                story: "차원을 이동하는 신비한 소녀 '아메리카 차베즈'가 나타납니다. 흑마법 다크홀드에 물들어 아이들을 되찾기 위해 폭주하는 스칼렛 위치(완다)를 막기 위해, 닥터 스트레인지가 무수한 평행우주를 넘나드는 마법 대결을 펼칩니다.",
+                heroes: "닥터 스트레인지, 아메리카 차베즈, 웡, 일루미나티",
+                villainItem: "빌런: 폭주한 스칼렛 위치(완다) / 마법서: 다크홀드 vs 비샨티의 책",
+                quote: "모든 우주에서, 나는 널 사랑해.",
+                postCredit: "보라색 옷을 입은 마법사 클레아가 나타나 닥터와 함께 다크 디멘션으로 떠납니다."
+            },
+            {
+                order: 29,
+                titleKr: "토르: 러브 앤 썬더",
+                titleEn: "Thor: Love and Thunder",
+                releaseDate: "2022.07.06",
+                year: "2022",
+                phase: "Phase 4",
+                heroTag: ["토르", "가디언즈"],
+                story: "모든 신을 없애려는 신 도살자 '고르'가 나타납니다. 토르는 옛 연인이자 부서진 묠니르를 다시 쥐고 번개를 쓰는 '마이티 토르(제인 포스터)'와 힘을 합치고, 아이들에게 번개의 힘을 나누어주며 우주를 지켜냅니다.",
+                heroes: "토르, 마이티 토르(제인 포스터), 발키리, 코르그",
+                villainItem: "빌런: 신 도살자 고르 / 무기: 네크로소드, 제우스의 썬더볼트",
+                quote: "토르의 번개 군단, 출격하라!",
+                postCredit: "올림포스의 신 제우스가 아들 헤라클레스에게 토르를 상대하라고 지시합니다."
+            },
+            {
+                order: 30,
+                titleKr: "블랙 팬서: 와칸다 포에버",
+                titleEn: "Black Panther: Wakanda Forever",
+                releaseDate: "2022.11.09",
+                year: "2022",
+                phase: "Phase 4",
+                heroTag: ["블랙 팬서"],
+                story: "국왕 티찰라를 잃고 슬픔에 빠진 와칸다 앞에 심해 왕국 탈로칸의 지배자 '네이머'가 나타나 위협합니다. 슬픔을 딛고 천재 동생 슈리가 하트 허브를 복원하여 새로운 '블랙 팬서'로 각성하고 와칸다를 지켜냅니다.",
+                heroes: "2대 블랙 팬서(슈리), 아이언하트(리리 윌리엄스), 오코예, 나키아",
+                villainItem: "빌런: 바다의 쿠쿨칸 네이머",
+                quote: "우리의 영웅은 영원히 우리 가슴속에 살아있다. 와칸다 포에버!",
+                postCredit: "아이티에서 나키아와 함께 자라난 티찰라 국왕의 비밀스러운 어린 아들이 등장합니다."
+            },
+            {
+                order: 31,
+                titleKr: "앤트맨과 와스프: 퀀텀매니아",
+                titleEn: "Ant-Man and the Wasp: Quantumania",
+                releaseDate: "2023.02.15",
+                year: "2023",
+                phase: "Phase 5",
+                heroTag: ["앤트맨"],
+                story: "딸 캐시의 실수로 앤트맨 가족 전체가 미지의 양자 영역 세계로 빨려 들어갑니다! 그곳에서 시간과 차원을 지배하려는 무시무시한 정복자 '캉'의 제국과 마주하고, 앤트맨은 거대화 능력과 개미 군단으로 가족을 지켜냅니다.",
+                heroes: "앤트맨(스콧 랭), 와스프, 캐시 랭, 행크 핌, 재닛",
+                villainItem: "빌런: 정복자 캉, 모독(M.O.D.O.K.) / 양자 시간 코어",
+                quote: "내가 이길 필요는 없어. 우리가 둘 다 지면 그만이지!",
+                postCredit: "수없이 많은 멀티버스의 캉 변종들이 모여 작전을 꾸미는 '캉 의회'가 등장합니다."
+            },
+            {
+                order: 32,
+                titleKr: "가디언즈 오브 갤럭시 Volume 3",
+                titleEn: "Guardians of the Galaxy Vol. 3",
+                releaseDate: "2023.05.03",
+                year: "2023",
+                phase: "Phase 5",
+                heroTag: ["가디언즈"],
+                story: "로켓이 치명적인 부상을 입자, 친구를 구하기 위해 가오갤 멤버들이 뭉칩니다. 동물을 잔인하게 개조하던 사악한 창조주 '하이 에볼루셔너리'에 맞서 로켓의 아픈 과거를 치유하고, 완전체 가족으로서 최고의 감동 피날레를 선사합니다.",
+                heroes: "가오갤 전원 (스타로드, 로켓, 그루트, 드랙스, 맨티스, 네뷸라, 아담 워록)",
+                villainItem: "빌런: 하이 에볼루셔너리",
+                quote: "내 이름은 로켓, 로켓 라쿤이다.",
+                postCredit: "지구로 돌아와 할아버지와 평온한 아침을 먹는 피터 퀼(전설적인 스타로드)!"
+            },
+            {
+                order: 33,
+                titleKr: "더 마블스",
+                titleEn: "The Marvels",
+                releaseDate: "2023.11.08",
+                year: "2023",
+                phase: "Phase 5",
+                heroTag: ["캡틴 마블"],
+                story: "빛 에너지를 쓸 때마다 서로 위치가 바뀌는 마법 같은 저주에 걸린 캡틴 마블, 모니카 램보, 그리고 여고생 히어로 미즈 마블(카말라 칸)! 셋이 힘을 합쳐 춤추는 행성 알라드나를 구하고 웜홀을 닫기 위한 화려한 스위칭 액션을 선보입니다.",
+                heroes: "캡틴 마블, 미즈 마블(카말라 칸), 모니카 램보, 닉 퓨리, 플러큰 고양이들",
+                villainItem: "빌런: 다르-벤 / 양자 밴드 팔찌",
+                quote: "하나, 둘, 셋에 점프해서 위치를 바꾸는 거야!",
+                postCredit: "다른 차원으로 넘어간 모니카 램보 앞에 엑스맨의 천재 과학자 '비스트'가 나타납니다!"
+            },
+            {
+                order: 34,
+                titleKr: "데드풀과 울버린",
+                titleEn: "Deadpool & Wolverine",
+                releaseDate: "2024.07.24",
+                year: "2024",
+                phase: "Phase 5",
+                heroTag: ["데드풀", "울버린"],
+                story: "자신의 세계가 소멸될 위기에 처하자, 입담 넘치는 데드풀이 아다만티움 클로를 가진 거친 영웅 울버린을 찾아가 설득합니다! 시간변이관리국(TVA)과 쓰레기장 차원 보이드에서 티격태격하며 세상을 구하는 환상의 콤비 액션!",
+                heroes: "데드풀(웨이드 윌슨), 울버린(로건), 도그풀",
+                villainItem: "빌런: 카산드라 노바, 미스터 패러독스",
+                quote: "우린 언제나 세상을 구하는 최고의 콤비지!",
+                postCredit: "데드풀이 TVA 기록 영상을 통해 조니 스톰(휴먼 토치)의 억울한 누명을 풀어줍니다."
+            },
+            {
+                order: 35,
+                titleKr: "캡틴 아메리카: 브레이브 뉴 월드",
+                titleEn: "Captain America: Brave New World",
+                releaseDate: "2025.02",
+                year: "2025",
+                phase: "Phase 5",
+                heroTag: ["캡틴 아메리카"],
+                story: "스티브 로저스로부터 방패를 물려받은 2대 캡틴 아메리카 '샘 윌슨'! 비브라늄 날개와 방패를 휘두르며 백악관과 대통령 로스 장군을 둘러싼 거대한 음모에 맞서 싸우고, 붉은 거인 '레드 헐크'와 공중전을 펼칩니다.",
+                heroes: "새로운 캡틴 아메리카(샘 윌슨), 신임 팔콘(호아킨 토레스)",
+                villainItem: "빌런: 레드 헐크(새디우스 로스 대통령), 리더(사무엘 스턴스)",
+                quote: "방패를 든 자가 바로 세상을 지키는 캡틴이다!",
+                postCredit: "새로운 어벤져스 팀을 모으기 위한 신호탄이 쏘아 올려집니다."
+            },
+            {
+                order: 36,
+                titleKr: "썬더볼츠*",
+                titleEn: "Thunderbolts*",
+                releaseDate: "2025.05",
+                year: "2025",
+                phase: "Phase 5",
+                heroTag: ["어벤져스"],
+                story: "옐레나 벨로바, 버키 반즈(윈터 솔져), 레드 가디언, 고스트, 태스크마스터 등 어딘가 삐딱하고 사연 많은 안티 히어로들이 뭉친 특수 특공대! 정부의 위험한 미션을 해결하며 진정한 영웅의 정의를 찾아갑니다.",
+                heroes: "썬더볼츠 팀 (옐레나, 버키, 레드 가디언, 고스트, US 에이전트)",
+                villainItem: "빌런: 발렌티나 알레그라 드 폰테인 / 센트리(밥)",
+                quote: "우리가 완벽한 착한 영웅은 아닐지 몰라도, 악당을 잡는 덴 최고지!",
+                postCredit: "어벤져스 타워의 새로운 주인과 다가오는 거대한 위협이 암시됩니다."
+            }
+        ];
+
+        let currentPhaseFilter = 'all';
+        let currentHeroFilter = 'all';
+
+        // 렌더링 함수
+        function renderMovies() {
+            const grid = document.getElementById("movieGrid");
+            const searchKeyword = document.getElementById("searchInput").value.toLowerCase().trim();
+            grid.innerHTML = "";
+
+            let filtered = mcuMovies.filter(movie => {
+                // Phase filter
+                if (currentPhaseFilter !== 'all') {
+                    if (currentPhaseFilter === 'Phase 5') {
+                        if (!movie.phase.includes('Phase 5') && !movie.phase.includes('Phase 6')) return false;
+                    } else if (movie.phase !== currentPhaseFilter) {
+                        return false;
+                    }
+                }
+
+                // Hero filter
+                if (currentHeroFilter !== 'all') {
+                    if (!movie.heroTag.includes(currentHeroFilter)) return false;
+                }
+
+                // Search keyword
+                if (searchKeyword) {
+                    const matchTitle = movie.titleKr.toLowerCase().includes(searchKeyword) || movie.titleEn.toLowerCase().includes(searchKeyword);
+                    const matchHero = movie.heroes.toLowerCase().includes(searchKeyword);
+                    const matchVillain = movie.villainItem.toLowerCase().includes(searchKeyword);
+                    const matchStory = movie.story.toLowerCase().includes(searchKeyword);
+                    if (!matchTitle && !matchHero && !matchVillain && !matchStory) return false;
+                }
+
+                return true;
+            });
+
+            document.getElementById("movieCount").innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card-bg); border-radius:20px; border:2px dashed var(--border-color);">
+                        <p style="font-size:2.5rem; margin:0 0 10px;">🔍</p>
+                        <h3 style="font-family:'Jua'; color:var(--marvel-gold); margin:0 0 10px; font-size:1.4rem;">검색 결과가 없어요!</h3>
+                        <p style="color:var(--text-muted); margin:0;">다른 영웅 이름이나 영화 제목으로 다시 검색해 보세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(movie => {
+                const card = document.createElement("div");
+                card.className = "movie-card";
+                card.onclick = () => openMovieDetail(movie);
+
+                let heroBadges = movie.heroTag.map(h => `<span class="tag-hero">🦸 ${h}</span>`).join(" ");
+
+                card.innerHTML = `
+                    <div class="card-top">
+                        <span class="release-order-badge">#${String(movie.order).padStart(2, '0')}</span>
+                        <span class="phase-badge">${movie.phase}</span>
+                    </div>
+                    <h3 class="movie-title-kr">${movie.titleKr}</h3>
+                    <p class="movie-title-en">${movie.titleEn}</p>
+                    
+                    <div class="movie-meta-row">
+                        <span class="meta-item">📅 ${movie.releaseDate}</span>
+                    </div>
+
+                    <p class="movie-story-preview">${movie.story}</p>
+
+                    <div class="card-tags">
+                        ${heroBadges}
+                    </div>
+                    <div class="click-hint">👉 터치해서 줄거리와 쿠키 영상 보기!</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // 필터 설정
+        function setPhaseFilter(phase) {
+            currentPhaseFilter = phase;
+            const tabs = document.querySelectorAll(".tab-btn");
+            tabs.forEach(btn => {
+                if (btn.getAttribute("onclick").includes(`'${phase}'`)) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+            renderMovies();
+        }
+
+        function setHeroFilter(hero) {
+            currentHeroFilter = hero;
+            const chips = document.querySelectorAll(".hero-chip");
+            chips.forEach(chip => {
+                if (chip.getAttribute("onclick").includes(`'${hero}'`)) {
+                    chip.classList.add("active");
+                } else {
+                    chip.classList.remove("active");
+                }
+            });
+            renderMovies();
+        }
+
+        function filterMovies() {
+            renderMovies();
+        }
+
+        // 모달 열기/닫기
+        function openMovieDetail(movie) {
+            document.getElementById("modalOrder").innerText = `#${String(movie.order).padStart(2, '0')}`;
+            document.getElementById("modalPhase").innerText = movie.phase;
+            document.getElementById("modalYear").innerText = movie.year + "년 개봉";
+            document.getElementById("modalTitleKr").innerText = movie.titleKr;
+            document.getElementById("modalTitleEn").innerText = movie.titleEn;
+            document.getElementById("modalQuote").innerText = movie.quote;
+            document.getElementById("modalStory").innerText = movie.story;
+            document.getElementById("modalHeroes").innerText = movie.heroes;
+            document.getElementById("modalVillainItem").innerText = movie.villainItem;
+            document.getElementById("modalPostCredit").innerText = movie.postCredit;
+
+            document.getElementById("movieModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("movieModal").style.display = "none";
+        }
+
+        function closeModalOnBackdrop(e) {
+            if (e.target.id === "movieModal") {
+                closeModal();
+            }
+        }
+
+        // ==================== 영웅 찾기 미니 퀴즈 ====================
+        const quizQuestions = [
+            {
+                title: "🦸 1단계: 나의 성격은?",
+                desc: "새로운 장난감이나 과학 실험을 볼 때 나의 반응은?",
+                options: [
+                    { text: "💡 원리를 파헤치고 내가 직접 멋진 기계를 만들고 싶다!", hero: "아이언맨" },
+                    { text: "🛡️ 규칙을 지키고 친구들과 사이좋게 나누어 쓴다!", hero: "캡틴 아메리카" },
+                    { text: "⚡ 와하하! 일단 만져보고 신나게 시험해 본다!", hero: "토르" },
+                    { text: "🕷️ 호기심 폭발! 요리조리 장난치며 탐험한다!", hero: "스파이더맨" }
+                ]
+            }
+        ];
+
+        function openHeroQuiz() {
+            const container = document.getElementById("quizOptionsContainer");
+            const q = quizQuestions[0];
+            document.getElementById("quizQuestionTitle").innerText = q.title;
+            document.getElementById("quizQuestionDesc").innerText = q.desc;
+            container.innerHTML = "";
+
+            q.options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "quiz-option-btn";
+                btn.innerText = opt.text;
+                btn.onclick = () => showQuizResult(opt.hero);
+                container.appendChild(btn);
+            });
+
+            document.getElementById("quizModal").style.display = "flex";
+        }
+
+        function showQuizResult(hero) {
+            const container = document.getElementById("quizOptionsContainer");
+            document.getElementById("quizQuestionTitle").innerText = "🎉 찰떡궁합 히어로 탄생!";
+            document.getElementById("quizQuestionDesc").innerText = "당신과 가장 닮은 어벤져스 영웅은 바로...";
+
+            let resultHtml = "";
+            if (hero === "아이언맨") {
+                resultHtml = `
+                    <div style="text-align:center; padding:20px; background:rgba(230,36,41,0.15); border-radius:16px; border:2px solid var(--marvel-red);">
+                        <div style="font-size:3.5rem; margin-bottom:10px;">🔴 🤖 💡</div>
+                        <h3 style="font-family:'Jua'; color:var(--marvel-gold); font-size:1.8rem; margin:0 0 10px;">천재 발명가 아이언맨!</h3>
+                        <p style="color:#CBD5E1; line-height:1.6; font-size:0.95rem;">당신은 호기심이 많고 영리한 두뇌를 가졌어요! 멋진 아이디어로 세상을 놀라게 만드는 리더가 될 수 있습니다.</p>
+                        <button class="action-btn" style="margin:15px auto 0;" onclick="setHeroFilter('아이언맨'); closeQuizModal();">🎬 아이언맨 영화들만 모아보기</button>
+                    </div>
+                `;
+            } else if (hero === "캡틴 아메리카") {
+                resultHtml = `
+                    <div style="text-align:center; padding:20px; background:rgba(2,132,199,0.15); border-radius:16px; border:2px solid var(--marvel-blue);">
+                        <div style="font-size:3.5rem; margin-bottom:10px;">🛡️ 🇺🇸 ⭐</div>
+                        <h3 style="font-family:'Jua'; color:#38BDF8; font-size:1.8rem; margin:0 0 10px;">용감무쌍 리더 캡틴 아메리카!</h3>
+                        <p style="color:#CBD5E1; line-height:1.6; font-size:0.95rem;">당신은 친구를 배려하고 절대 포기하지 않는 굳센 마음을 가졌어요! 어벤져스를 이끄는 진정한 대장님입니다.</p>
+                        <button class="action-btn" style="margin:15px auto 0;" onclick="setHeroFilter('캡틴 아메리카'); closeQuizModal();">🎬 캡틴 영화들만 모아보기</button>
+                    </div>
+                `;
+            } else if (hero === "토르") {
+                resultHtml = `
+                    <div style="text-align:center; padding:20px; background:rgba(245,158,11,0.15); border-radius:16px; border:2px solid var(--marvel-gold);">
+                        <div style="font-size:3.5rem; margin-bottom:10px;">⚡ 🔨 👑</div>
+                        <h3 style="font-family:'Jua'; color:var(--marvel-gold); font-size:1.8rem; margin:0 0 10px;">천둥의 신 토르!</h3>
+                        <p style="color:#CBD5E1; line-height:1.6; font-size:0.95rem;">당신은 에너지가 넘치고 친구들을 위해 언제나 앞장서는 용기를 가졌어요! 묠니르를 번쩍 들 자격이 있습니다.</p>
+                        <button class="action-btn" style="margin:15px auto 0;" onclick="setHeroFilter('토르'); closeQuizModal();">🎬 토르 영화들만 모아보기</button>
+                    </div>
+                `;
+            } else {
+                resultHtml = `
+                    <div style="text-align:center; padding:20px; background:rgba(230,36,41,0.15); border-radius:16px; border:2px solid var(--marvel-red);">
+                        <div style="font-size:3.5rem; margin-bottom:10px;">🕷️ 🕸️ 🎒</div>
+                        <h3 style="font-family:'Jua'; color:#F87171; font-size:1.8rem; margin:0 0 10px;">친절한 이웃 스파이더맨!</h3>
+                        <p style="color:#CBD5E1; line-height:1.6; font-size:0.95rem;">당신은 유쾌하고 친절하며 언제나 주변 사람들을 도와주는 다정한 영웅이에요! 거미줄처럼 끈기 있게 도전해 보세요.</p>
+                        <button class="action-btn" style="margin:15px auto 0;" onclick="setHeroFilter('스파이더맨'); closeQuizModal();">🎬 스파이더맨 영화들만 모아보기</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = resultHtml;
+        }
+
+        function closeQuizModal() {
+            document.getElementById("quizModal").style.display = "none";
+        }
+
+        // 초기 실행
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMovies();
+        });
+    </script>
+</body>
+</html>
