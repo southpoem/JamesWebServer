@@ -192,6 +192,15 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            transition: all 0.2s ease;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spin-icon {
+            display: inline-block;
+            animation: spin 1s linear infinite;
         }
         
         .total-amount { font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem; letter-spacing: -0.5px; }
@@ -297,12 +306,12 @@
             <h1>총 자산</h1>
             <div class="action-pills">
                 {% if current_broker == 'samsung' %}
-                <form action="/run_samsung_account" method="post" style="margin:0;">
+                <form action="/run_samsung_account" method="post" style="margin:0;" onsubmit="handleAccountUpdate(event, this)">
                     <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
                 </form>
                 {% endif %}
                 {% if current_broker == 'meritz' %}
-                <form action="/run_meritz_account" method="post" style="margin:0;">
+                <form action="/run_meritz_account" method="post" style="margin:0;" onsubmit="handleAccountUpdate(event, this)">
                     <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
                 </form>
                 {% endif %}
@@ -591,6 +600,41 @@
             {% endif %}
             
             <script>
+                async function handleAccountUpdate(e, form) {
+                    e.preventDefault();
+                    const btn = form.querySelector('button');
+                    if (!btn || btn.disabled) return;
+
+                    const origHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.style.opacity = '0.9';
+                    btn.style.borderColor = 'rgba(56, 189, 248, 0.45)';
+                    btn.style.background = 'rgba(56, 189, 248, 0.15)';
+                    btn.innerHTML = '<span class="spin-icon">🔄</span> 업데이트 중...';
+
+                    // 백엔드 매크로 비동기 호출
+                    try {
+                        fetch(form.action, { method: 'POST' }).catch(err => console.error('Account update request error:', err));
+                    } catch (err) {
+                        console.error('Account update error:', err);
+                    }
+
+                    // 사용자가 요청한 약 5초간 '업데이트 중...' 상태 유지
+                    setTimeout(() => {
+                        btn.innerHTML = '✅ 요청 완료';
+                        btn.style.borderColor = 'rgba(74, 222, 128, 0.45)';
+                        btn.style.background = 'rgba(74, 222, 128, 0.15)';
+
+                        setTimeout(() => {
+                            btn.disabled = false;
+                            btn.style.opacity = '';
+                            btn.style.borderColor = '';
+                            btn.style.background = '';
+                            btn.innerHTML = origHtml;
+                        }, 1500);
+                    }, 5000);
+                }
+
                 function toggleSettingsModal() {
                     const el = document.getElementById('settingsPanel');
                     if (el) {

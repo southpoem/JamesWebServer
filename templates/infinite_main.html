@@ -22,6 +22,15 @@
             padding: 0.45rem 0.85rem;
             font-size: 0.75rem;
             width: auto;
+            transition: all 0.2s ease;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spin-icon {
+            display: inline-block;
+            animation: spin 1s linear infinite;
         }
         .exec-btn {
             width: auto;
@@ -114,7 +123,7 @@
             </a>
             <div class="header-meta">
                 <span class="pill"><span class="label">기준일자:</span> <b>{{ latest_date }}</b></span>
-                <form action="/run_infinite_account" method="post" style="margin: 0;">
+                <form action="/run_infinite_account" method="post" style="margin: 0;" onsubmit="handleAccountUpdate(event, this)">
                     <button type="submit" class="btn btn-secondary btn-sm">🔄 계좌 업데이트</button>
                 </form>
             </div>
@@ -942,6 +951,41 @@
                 btn.disabled = false;
                 btn.innerHTML = origText;
             }
+        }
+
+        async function handleAccountUpdate(e, form) {
+            e.preventDefault();
+            const btn = form.querySelector('button');
+            if (!btn || btn.disabled) return;
+
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.style.opacity = '0.9';
+            btn.style.borderColor = 'rgba(56, 189, 248, 0.45)';
+            btn.style.background = 'rgba(56, 189, 248, 0.15)';
+            btn.innerHTML = '<span class="spin-icon">🔄</span> 업데이트 중...';
+
+            // 백엔드 매크로 비동기 호출
+            try {
+                fetch(form.action, { method: 'POST' }).catch(err => console.error('Account update request error:', err));
+            } catch (err) {
+                console.error('Account update error:', err);
+            }
+
+            // 5초간 업데이트 중 상태 유지 후 복원
+            setTimeout(() => {
+                btn.innerHTML = '✅ 요청 완료';
+                btn.style.borderColor = 'rgba(74, 222, 128, 0.45)';
+                btn.style.background = 'rgba(74, 222, 128, 0.15)';
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.style.opacity = '';
+                    btn.style.borderColor = '';
+                    btn.style.background = '';
+                    btn.innerHTML = origHtml;
+                }, 1500);
+            }, 5000);
         }
     </script>
 
