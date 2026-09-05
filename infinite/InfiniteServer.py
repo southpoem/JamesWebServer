@@ -1585,6 +1585,30 @@ def api_run_ticker_comparison():
     return jsonify(result)
 
 
+@infinite_bp.route('/simulation/api/run_vr', methods=['POST'])
+def api_run_vr():
+    from infinite.BacktestEngine import BacktestEngine
+    data = request.get_json() or {}
+    ticker = data.get("ticker", "TQQQ").upper().strip()
+    start_date = data.get("start_date", "2020-01-01")
+    end_date = data.get("end_date", datetime.now().strftime("%Y-%m-%d"))
+    initial_capital = float(data.get("initial_capital", 100000))
+    initial_stock_ratio = float(data.get("initial_stock_ratio", 0.5))
+    G = float(data.get("G", 10.0))
+    band_percent = float(data.get("band_percent", 15.0))
+    rebalance_interval = int(data.get("rebalance_interval", 10))
+    mode = data.get("mode", "lump_sum")
+    periodic_amount = float(data.get("periodic_amount", 0.0))
+
+    result = BacktestEngine.simulate_vr_detailed(
+        ticker=ticker, start_date=start_date, end_date=end_date,
+        initial_capital=initial_capital, initial_stock_ratio=initial_stock_ratio,
+        G=G, band_percent=band_percent, rebalance_interval=rebalance_interval,
+        mode=mode, periodic_amount=periodic_amount
+    )
+    return jsonify(result)
+
+
 @infinite_bp.route('/run_infinite_buying', methods=['POST'])
 @login_required
 def run_infinite_buying():

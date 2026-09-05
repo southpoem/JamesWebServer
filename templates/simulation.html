@@ -406,6 +406,94 @@
         .strategy-stat-card.qqq { border-color: rgba(148, 163, 184, 0.3); background: linear-gradient(135deg, rgba(71, 85, 105, 0.15), rgba(15, 23, 42, 0.6)); }
 
         .hidden { display: none !important; }
+        .mode-btn.active-sim3 {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(52, 211, 153, 0.15));
+            border-color: #34d399;
+            color: #fff;
+            box-shadow: 0 0 16px rgba(52, 211, 153, 0.25);
+        }
+        .badge-zone {
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-safe {
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.4);
+        }
+        .badge-sell {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.4);
+        }
+        .badge-buy {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+        }
+        .vr-box {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 0.85rem 0.75rem;
+            text-align: center;
+        }
+        .vr-box-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .vr-box-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            font-family: monospace;
+            margin-bottom: 2px;
+        }
+        .vr-box-sub {
+            font-size: 0.72rem;
+            color: #94a3b8;
+        }
+        .vr-gauge-track {
+            position: relative;
+            height: 14px;
+            background: linear-gradient(to right, #10b981 0%, #38bdf8 30%, #c084fc 50%, #f59e0b 75%, #ef4444 100%);
+            border-radius: 999px;
+            margin: 28px 0 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .vr-gauge-pin {
+            position: absolute;
+            top: -26px;
+            transform: translateX(-50%);
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+        .pin-bubble {
+            background: #fff;
+            color: #0b0f19;
+            font-weight: 800;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+        .pin-marker {
+            width: 3px;
+            height: 32px;
+            background: #fff;
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(255,255,255,0.8);
+        }
         .spinner {
             display: inline-block;
             width: 18px;
@@ -453,6 +541,9 @@
             </button>
             <button type="button" class="mode-btn" id="tabBtn2" onclick="switchSimMode('sim2')">
                 <span>⚖️</span> 시안 2: 다중 전략 비교 매트릭스
+            </button>
+            <button type="button" class="mode-btn" id="tabBtn3" onclick="switchSimMode('sim3')">
+                <span>🛡️</span> 시안 3: VR 밸류리밸런싱 & 실시간 밴드 포지션
             </button>
         </div>
 
@@ -744,22 +835,310 @@
                 </div>
             </div>
         </div>
+
+        <!-- VIEW 3: VR 밸류리밸런싱 정밀 시뮬레이터 & 실시간 밴드 포지션 -->
+        <div id="viewSim3" class="sim-grid hidden">
+            <!-- Left Control Panel -->
+            <div class="glass-card">
+                <h3 style="font-size: 1rem; font-weight: 800; margin-top: 0; margin-bottom: 1.25rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>⚙️</span> VR 파라미터 제어
+                </h3>
+
+                <div class="control-group">
+                    <label>대상 종목 (Ticker)</label>
+                    <div class="pill-group" style="margin-bottom: 8px;">
+                        <span class="ticker-pill active" onclick="selectVrTicker(this, 'TQQQ')">TQQQ</span>
+                        <span class="ticker-pill" onclick="selectVrTicker(this, 'QLD')">QLD</span>
+                        <span class="ticker-pill" onclick="selectVrTicker(this, 'QQQ')">QQQ</span>
+                        <span class="ticker-pill" onclick="selectVrTicker(this, 'SOXL')">SOXL</span>
+                        <span class="ticker-pill" onclick="selectVrTicker(this, 'LABU')">LABU</span>
+                    </div>
+                    <input type="text" id="vr_ticker" value="TQQQ" placeholder="티커 직접 입력 (예: TQQQ)">
+                </div>
+
+                <div class="control-group">
+                    <label>초기 총 자본금 ($ USD)</label>
+                    <input type="number" id="vr_capital" value="100000" step="5000">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>초기 주식 비중 (%)</span>
+                        <span class="slider-val" id="vrStockRatioVal">50%</span>
+                    </label>
+                    <div class="slider-wrap">
+                        <input type="range" id="vr_stock_ratio" min="20" max="80" step="5" value="50" oninput="document.getElementById('vrStockRatioVal').textContent = this.value + '%'">
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 3px;">주식 50% / 현금 Pool 50% 시작 권장</div>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>기울기 G 계수</span>
+                        <span class="slider-val" id="vrGVal">10.0</span>
+                    </label>
+                    <div class="slider-wrap">
+                        <input type="range" id="vr_G" min="5" max="25" step="0.5" value="10.0" oninput="document.getElementById('vrGVal').textContent = Number(this.value).toFixed(1)">
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 3px;">V 증가 속도 (G=10 표준: Pool의 10%를 V에 매주기 반영)</div>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>밴드 폭 (Band ±%)</span>
+                        <span class="slider-val" id="vrBandVal">±15%</span>
+                    </label>
+                    <div class="slider-wrap">
+                        <input type="range" id="vr_band" min="5" max="30" step="1" value="15" oninput="document.getElementById('vrBandVal').textContent = '±' + this.value + '%'">
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 3px;">상한 매도선(+15%) / 하한 매수선(-15%)</div>
+                </div>
+
+                <div class="control-group">
+                    <label>리밸런싱 주기 (영업일)</label>
+                    <select id="vr_interval">
+                        <option value="5">5 영업일 (매 1주일)</option>
+                        <option value="10" selected>10 영업일 (매 2주일 / 라오어 표준)</option>
+                        <option value="15">15 영업일 (매 3주일)</option>
+                        <option value="20">20 영업일 (매 4주일 / 약 1달)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>운영 모드</label>
+                    <select id="vr_mode" onchange="toggleVrPeriodicInput(this.value)">
+                        <option value="lump_sum" selected>거치식 (초기 자본금만으로 운용)</option>
+                        <option value="dca">적립식 (주기마다 현금 Pool 추가 입금)</option>
+                        <option value="withdrawal">인출식 (주기마다 생활비/수익금 현금 인출)</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="vrPeriodicGroup" style="display: none;">
+                    <label id="vrPeriodicLabel">주기별 투입액 ($ USD)</label>
+                    <input type="number" id="vr_periodic" value="500" step="100">
+                </div>
+
+                <div class="control-group">
+                    <label>프리셋 기간 빠른 선택</label>
+                    <div class="preset-grid">
+                        <button type="button" class="preset-btn active" onclick="applyVrPreset('2020-01-01', '2026-09-04', this)">
+                            <span>전체 기간 (2020~현재)</span>
+                            <span style="opacity: 0.6;">6.7년</span>
+                        </button>
+                        <button type="button" class="preset-btn" onclick="applyVrPreset('2020-01-01', '2021-12-31', this)">
+                            <span>코로나 랠리 (대세 상승장)</span>
+                            <span style="opacity: 0.6;">2020~2021</span>
+                        </button>
+                        <button type="button" class="preset-btn" onclick="applyVrPreset('2022-01-01', '2022-12-31', this)">
+                            <span>금리인상 대폭락 (스트레스 테스트)</span>
+                            <span style="opacity: 0.6;">2022년 MDD -80%</span>
+                        </button>
+                        <button type="button" class="preset-btn" onclick="applyVrPreset('2023-01-01', '2024-12-31', this)">
+                            <span>AI 랠리 & 회복장</span>
+                            <span style="opacity: 0.6;">2023~2024</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>시작일</label>
+                    <input type="date" id="vr_start" value="2020-01-01">
+                </div>
+
+                <div class="control-group">
+                    <label>종료일</label>
+                    <input type="date" id="vr_end" value="2026-09-04">
+                </div>
+
+                <button type="button" class="btn-run" id="btnRunVr" onclick="runVrSimulation()" style="background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);">
+                    <span>🛡️</span> VR 시뮬레이션 & 밴드 분석 실행
+                </button>
+            </div>
+
+            <!-- Right Visuals & Analytics -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- 1. 실시간 주가 밴드 위치 & 매매 진단 카드 (핵심) -->
+                <div class="glass-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(52, 211, 153, 0.35);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 1.6rem;">🎯</span>
+                            <div>
+                                <h4 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #fff;">TQQQ 실시간 주가 밴드 위치 & 투자 행동 진단</h4>
+                                <div style="font-size: 0.8rem; color: var(--text-dim);" id="vrPosDate">기준일: 분석 대기 중</div>
+                            </div>
+                        </div>
+                        <div id="vrZoneBadge" class="badge-zone badge-safe">안전 밴드 내 (HOLD: 매매 불필요)</div>
+                    </div>
+
+                    <!-- 4-Box Price Summary -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem; margin-bottom: 1.25rem;">
+                        <div class="vr-box">
+                            <div class="vr-box-label">현재 주가 (TQQQ Close)</div>
+                            <div class="vr-box-val" id="vrCurPrice" style="color: #38bdf8;">$0.00</div>
+                            <div class="vr-box-sub">최근 시장 종가</div>
+                        </div>
+                        <div class="vr-box">
+                            <div class="vr-box-label">하한 매수선 (Buy Trigger)</div>
+                            <div class="vr-box-val" id="vrLowerPrice" style="color: #34d399;">$0.00</div>
+                            <div class="vr-box-sub" id="vrDistLower">-</div>
+                        </div>
+                        <div class="vr-box">
+                            <div class="vr-box-label">중심 목표가 (Target V Price)</div>
+                            <div class="vr-box-val" id="vrTargetPrice" style="color: #c084fc;">$0.00</div>
+                            <div class="vr-box-sub">V ÷ 보유주수</div>
+                        </div>
+                        <div class="vr-box">
+                            <div class="vr-box-label">상한 매도선 (Sell Trigger)</div>
+                            <div class="vr-box-val" id="vrUpperPrice" style="color: #f87171;">$0.00</div>
+                            <div class="vr-box-sub" id="vrDistUpper">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Band Gauge Bar -->
+                    <div style="margin-bottom: 1.25rem; padding: 0.25rem 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700;">
+                            <span style="color: #34d399;">📉 하한선 (저가 추가매수 구간)</span>
+                            <span style="color: #c084fc;">⚖️ 목표가 V (중심선)</span>
+                            <span style="color: #f87171;">📈 상한선 (수익실현 매도 구간)</span>
+                        </div>
+                        <div class="vr-gauge-track">
+                            <div class="vr-gauge-pin" id="vrGaugePin" style="left: 50%;">
+                                <div class="pin-bubble" id="vrPinLabel">$0.00</div>
+                                <div class="pin-marker"></div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-top: 6px; font-family: monospace;">
+                            <span id="vrGaugeMin">하한: $0.00</span>
+                            <span id="vrGaugeMid">중심: $0.00</span>
+                            <span id="vrGaugeMax">상한: $0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Guidance Box -->
+                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: flex-start; gap: 14px;">
+                        <span style="font-size: 1.5rem; line-height: 1;">💡</span>
+                        <div style="font-size: 0.88rem; line-height: 1.55; flex: 1;">
+                            <div style="font-weight: 800; color: #fff; margin-bottom: 3px;" id="vrActionTitle">투자 행동 가이드</div>
+                            <div style="color: #cbd5e1;" id="vrActionDesc">시뮬레이션을 실행하여 주가 위치에 따른 실시간 투자 가이드를 확인하세요.</div>
+                            <div style="color: #38bdf8; font-size: 0.8rem; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1);" id="vrUserSlotHint">
+                                📌 <strong>내 실계좌(250주 보유 포트폴리오) 기준</strong>: 하한가 $68.00 / 중심목표가 $80.00 / 상한가 $92.00
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. VR KPI 지표 카드 6개 -->
+                <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="kpi-card">
+                        <div class="label">VR 총 수익률 / CAGR</div>
+                        <div class="val" id="vrKpiReturn" style="color: #34d399;">+0.0%</div>
+                        <div class="sub" id="vrKpiCagr">CAGR: +0.0%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">VR MDD (최대 낙폭)</div>
+                        <div class="val" id="vrKpiMdd" style="color: #f87171;">-0.0%</div>
+                        <div class="sub" id="vrKpiBenchMdd">QQQ: -0% / QLD: -0%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">샤프 지수 / 변동성</div>
+                        <div class="val" id="vrKpiSharpe" style="color: #38bdf8;">0.00</div>
+                        <div class="sub" id="vrKpiVol">연간 변동성: 0.0%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">최종 총 자산 평가액</div>
+                        <div class="val" id="vrKpiFinalVal" style="color: #fff;">$0</div>
+                        <div class="sub" id="vrKpiNetProfit">순이익: +$0</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">보유 주식수 / 평가액</div>
+                        <div class="val" id="vrKpiStockEval" style="color: #c084fc;">$0</div>
+                        <div class="sub" id="vrKpiShares">0 주 보유</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="label">현금 Pool 잔액 / 비중</div>
+                        <div class="val" id="vrKpiPool" style="color: #fbbf24;">$0</div>
+                        <div class="sub" id="vrKpiPoolRatio">현금 비중: 0%</div>
+                    </div>
+                </div>
+
+                <!-- 3. Dual Charts -->
+                <!-- Chart A: Asset Valuation & Cash Pool -->
+                <div class="glass-card">
+                    <h4 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 800; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                        <span>📊 자산 평가액 & 현금 Pool 누적 추이 ($ USD)</span>
+                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-dim);">총자산 = 주식 평가액 + 현금 Pool</span>
+                    </h4>
+                    <div style="height: 380px; position: relative;">
+                        <canvas id="vrEquityChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart B: TQQQ Price & Conversion Band -->
+                <div class="glass-card">
+                    <h4 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 800; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                        <span>📈 주가 환산 밴드 & TQQQ 주가 추이 ($ USD)</span>
+                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-dim);">상한 매도선(Red) / 하한 매수선(Green) / 중심선(Purple)</span>
+                    </h4>
+                    <div style="height: 380px; position: relative;">
+                        <canvas id="vrPriceChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- 4. Cycle Rebalance Log Table -->
+                <div class="glass-card">
+                    <h4 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 800; color: #fff; display: flex; justify-content: space-between; align-items: center;">
+                        <span>📜 리밸런싱 회차별 매매 및 자산 조정 내역</span>
+                        <span style="font-size: 0.8rem; color: var(--text-dim);" id="vrHistoryCount">총 0회 리밸런싱</span>
+                    </h4>
+                    <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>회차</th>
+                                    <th>날짜</th>
+                                    <th>매매 액션</th>
+                                    <th>체결 수량</th>
+                                    <th>체결 주가</th>
+                                    <th>목표 V ($)</th>
+                                    <th>주식 평가액 ($)</th>
+                                    <th>현금 Pool ($)</th>
+                                    <th>총 자산 ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vrHistoryBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <script>
         let equityChart = null;
         let compChart = null;
+        let vrEquityChart = null;
+        let vrPriceChart = null;
 
         function switchSimMode(mode) {
             const isSim1 = (mode === 'sim1');
+            const isSim2 = (mode === 'sim2');
+            const isSim3 = (mode === 'sim3');
             document.getElementById('viewSim1').classList.toggle('hidden', !isSim1);
-            document.getElementById('viewSim2').classList.toggle('hidden', isSim1);
+            document.getElementById('viewSim2').classList.toggle('hidden', !isSim2);
+            document.getElementById('viewSim3').classList.toggle('hidden', !isSim3);
 
             document.getElementById('tabBtn1').className = isSim1 ? 'mode-btn active-sim1' : 'mode-btn';
-            document.getElementById('tabBtn2').className = !isSim1 ? 'mode-btn active-sim2' : 'mode-btn';
+            document.getElementById('tabBtn2').className = isSim2 ? 'mode-btn active-sim2' : 'mode-btn';
+            document.getElementById('tabBtn3').className = isSim3 ? 'mode-btn active-sim3' : 'mode-btn';
 
-            if (!isSim1 && !compChart) {
+            if (isSim2 && !compChart) {
                 runComparisonSimulation();
+            } else if (isSim3 && !vrEquityChart) {
+                runVrSimulation();
             }
         }
 
@@ -1116,6 +1495,335 @@
                             borderWidth: 1,
                             callbacks: {
                                 label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ================= VR 밸류리밸런싱 제어 & 차트 스크립트 =================
+        function selectVrTicker(el, ticker) {
+            document.querySelectorAll('#viewSim3 .ticker-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('vr_ticker').value = ticker;
+        }
+
+        function applyVrPreset(start, end, btn) {
+            document.querySelectorAll('#viewSim3 .preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('vr_start').value = start;
+            document.getElementById('vr_end').value = end;
+        }
+
+        function toggleVrPeriodicInput(val) {
+            const grp = document.getElementById('vrPeriodicGroup');
+            const lbl = document.getElementById('vrPeriodicLabel');
+            if (val === 'dca') {
+                grp.style.display = 'block';
+                lbl.textContent = '주기별 추가 입금액 ($ USD)';
+            } else if (val === 'withdrawal') {
+                grp.style.display = 'block';
+                lbl.textContent = '주기별 생활비 인출액 ($ USD)';
+            } else {
+                grp.style.display = 'none';
+            }
+        }
+
+        async function runVrSimulation() {
+            const btn = document.getElementById('btnRunVr');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> VR 시뮬레이션 계산 중...';
+
+            try {
+                const payload = {
+                    ticker: document.getElementById('vr_ticker').value.trim(),
+                    initial_capital: parseFloat(document.getElementById('vr_capital').value),
+                    initial_stock_ratio: parseFloat(document.getElementById('vr_stock_ratio').value) / 100.0,
+                    G: parseFloat(document.getElementById('vr_G').value),
+                    band_percent: parseFloat(document.getElementById('vr_band').value),
+                    rebalance_interval: parseInt(document.getElementById('vr_interval').value),
+                    mode: document.getElementById('vr_mode').value,
+                    periodic_amount: parseFloat(document.getElementById('vr_periodic').value || 0),
+                    start_date: document.getElementById('vr_start').value,
+                    end_date: document.getElementById('vr_end').value
+                };
+
+                const res = await fetch('/simulation/api/run_vr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert('VR 시뮬레이션 오류: ' + data.error);
+                    return;
+                }
+
+                // 1. Live Position Card
+                const pos = data.current_position;
+                document.getElementById('vrPosDate').textContent = `기준일: ${pos.date} | 종목: ${pos.ticker} (${pos.shares.toLocaleString()}주 보유)`;
+                document.getElementById('vrCurPrice').textContent = `$${pos.current_price.toFixed(2)}`;
+                document.getElementById('vrLowerPrice').textContent = `$${pos.price_lower.toFixed(2)}`;
+                document.getElementById('vrTargetPrice').textContent = `$${pos.price_target.toFixed(2)}`;
+                document.getElementById('vrUpperPrice').textContent = `$${pos.price_upper.toFixed(2)}`;
+
+                document.getElementById('vrDistLower').textContent = `현재가 대비 -${pos.dist_lower_pct}%`;
+                document.getElementById('vrDistUpper').textContent = `현재가 대비 +${pos.dist_upper_pct}%`;
+
+                // Gauge pin
+                const clampGauge = Math.max(0, Math.min(100, pos.gauge_pct));
+                document.getElementById('vrGaugePin').style.left = `${clampGauge}%`;
+                document.getElementById('vrPinLabel').textContent = `$${pos.current_price.toFixed(2)}`;
+                document.getElementById('vrGaugeMin').textContent = `하한: $${pos.price_lower.toFixed(2)}`;
+                document.getElementById('vrGaugeMid').textContent = `중심: $${pos.price_target.toFixed(2)}`;
+                document.getElementById('vrGaugeMax').textContent = `상한: $${pos.price_upper.toFixed(2)}`;
+
+                // Badge & Guidance
+                const badge = document.getElementById('vrZoneBadge');
+                if (pos.zone === 'SAFE') {
+                    badge.className = 'badge-zone badge-safe';
+                    badge.textContent = '🛡️ ' + pos.zone_kr;
+                    document.getElementById('vrActionTitle').textContent = '투자 행동 지침: 편안하게 관망 (HOLD)';
+                } else if (pos.zone === 'OVER_UPPER') {
+                    badge.className = 'badge-zone badge-sell';
+                    badge.textContent = '🔥 ' + pos.zone_kr;
+                    document.getElementById('vrActionTitle').textContent = '투자 행동 지침: 상한 돌파 수익실현 (SELL)';
+                } else {
+                    badge.className = 'badge-zone badge-buy';
+                    badge.textContent = '💎 ' + pos.zone_kr;
+                    document.getElementById('vrActionTitle').textContent = '투자 행동 지침: 하한 이탈 저가매수 (BUY)';
+                }
+                document.getElementById('vrActionDesc').textContent = pos.recommended_action;
+
+                // 2. KPI Cards
+                const kpi = data.kpi;
+                document.getElementById('vrKpiReturn').textContent = `${kpi.total_return >= 0 ? '+' : ''}${kpi.total_return.toFixed(1)}%`;
+                document.getElementById('vrKpiCagr').textContent = `CAGR: +${kpi.cagr.toFixed(1)}%`;
+                document.getElementById('vrKpiMdd').textContent = `${kpi.mdd.toFixed(1)}%`;
+                document.getElementById('vrKpiBenchMdd').textContent = `QQQ MDD: ${kpi.benchmark_mdd.toFixed(1)}% | QLD MDD: ${kpi.qld_mdd.toFixed(1)}%`;
+                document.getElementById('vrKpiSharpe').textContent = kpi.sharpe.toFixed(2);
+                document.getElementById('vrKpiVol').textContent = `연간 변동성: ${kpi.volatility.toFixed(1)}%`;
+                document.getElementById('vrKpiFinalVal').textContent = `$${Math.round(kpi.final_balance).toLocaleString()}`;
+                const netProf = Math.round(kpi.final_balance - payload.initial_capital);
+                document.getElementById('vrKpiNetProfit').textContent = `순이익: ${netProf >= 0 ? '+' : ''}$${netProf.toLocaleString()}`;
+                document.getElementById('vrKpiStockEval').textContent = `$${Math.round(kpi.final_stock_eval).toLocaleString()}`;
+                document.getElementById('vrKpiShares').textContent = `${kpi.final_shares.toLocaleString()} 주 보유`;
+                document.getElementById('vrKpiPool').textContent = `$${Math.round(kpi.final_pool).toLocaleString()}`;
+                const poolRatio = ((kpi.final_pool / kpi.final_balance) * 100).toFixed(1);
+                document.getElementById('vrKpiPoolRatio').textContent = `현금 비중: ${poolRatio}%`;
+
+                // 3. Render Charts
+                renderVrCharts(data.daily_equity, data.trade_markers);
+
+                // 4. Rebalance History Table
+                const tbody = document.getElementById('vrHistoryBody');
+                tbody.innerHTML = '';
+                document.getElementById('vrHistoryCount').textContent = `총 ${data.rebalance_history.length}회 리밸런싱 (${kpi.trade_count}회 매매 체결)`;
+                data.rebalance_history.forEach(item => {
+                    const tr = document.createElement('tr');
+                    let actionBadge = '<span style="color: #94a3b8; font-weight: 600;">관망 (HOLD)</span>';
+                    if (item.action === 'BUY') {
+                        actionBadge = '<span style="color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.15); padding: 2px 6px; border-radius: 4px;">저가매수 (BUY)</span>';
+                    } else if (item.action === 'SELL') {
+                        actionBadge = '<span style="color: #f87171; font-weight: 700; background: rgba(248,113,113,0.15); padding: 2px 6px; border-radius: 4px;">수익매도 (SELL)</span>';
+                    }
+                    tr.innerHTML = `
+                        <td style="font-weight: 700;">${item.cycle}회차</td>
+                        <td>${item.date}</td>
+                        <td>${actionBadge}</td>
+                        <td>${item.traded_shares > 0 ? item.traded_shares.toLocaleString() + '주' : '-'}</td>
+                        <td>$${item.price.toFixed(2)}</td>
+                        <td>$${item.new_V.toLocaleString()}</td>
+                        <td>$${item.stock_eval.toLocaleString()}</td>
+                        <td>$${item.cash_pool.toLocaleString()}</td>
+                        <td style="font-weight: 700; color: #fff;">$${item.total_val.toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch(e) {
+                console.error(e);
+                alert('VR 시뮬레이션 중 오류가 발생했습니다.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
+
+        function renderVrCharts(dailyData, tradeMarkers) {
+            const labels = dailyData.map(d => d.date);
+
+            // Chart A: Asset Valuation
+            const ctx1 = document.getElementById('vrEquityChartCanvas').getContext('2d');
+            if (vrEquityChart) vrEquityChart.destroy();
+
+            vrEquityChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '총 자산 (Total Assets)',
+                            data: dailyData.map(d => d.total_value),
+                            borderColor: '#34d399',
+                            borderWidth: 2.5,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '주식 평가액 (Stock Value)',
+                            data: dailyData.map(d => d.stock_val),
+                            borderColor: '#38bdf8',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '현금 Pool (Cash Pool)',
+                            data: dailyData.map(d => d.cash_pool),
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '목표 가치 V (Target V)',
+                            data: dailyData.map(d => d.V),
+                            borderColor: '#c084fc',
+                            borderWidth: 1.5,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'QQQ 단순보유',
+                            data: dailyData.map(d => d.benchmark_value),
+                            borderColor: 'rgba(148, 163, 184, 0.4)',
+                            borderWidth: 1.2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 11 },
+                                callback: val => `$${val.toLocaleString()}`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#e2e8f0', font: { size: 11, weight: 600 } } },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart B: Price & Conversion Band
+            const ctx2 = document.getElementById('vrPriceChartCanvas').getContext('2d');
+            if (vrPriceChart) vrPriceChart.destroy();
+
+            vrPriceChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'TQQQ 시장 종가 (Close Price)',
+                            data: dailyData.map(d => d.close),
+                            borderColor: '#38bdf8',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '상한 매도선 (Upper Sell Trigger)',
+                            data: dailyData.map(d => d.price_upper),
+                            borderColor: '#f87171',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '중심 목표가선 (Target V Price)',
+                            data: dailyData.map(d => d.price_target),
+                            borderColor: '#c084fc',
+                            borderWidth: 1.2,
+                            borderDash: [2, 2],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '하한 매수선 (Lower Buy Trigger)',
+                            data: dailyData.map(d => d.price_lower),
+                            borderColor: '#34d399',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 11 },
+                                callback: val => `$${val.toFixed(2)}`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#e2e8f0', font: { size: 11, weight: 600 } } },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toFixed(2)}`
                             }
                         }
                     }

@@ -835,6 +835,245 @@ class BacktestEngine:
         return daily_equity
 
     @classmethod
+    def simulate_vr_detailed(cls, ticker="TQQQ", start_date="2020-01-01", end_date="2026-09-04",
+                             initial_capital=100000, initial_stock_ratio=0.5, G=10.0,
+                             band_percent=15.0, rebalance_interval=10, mode="lump_sum",
+                             periodic_amount=0.0):
+        """
+        밸류 리밸런싱 (Value Rebalancing - VR) 정밀 시뮬레이션 및 실시간 밴드 포지션 분석
+        - 현금(Pool)과 주식을 함께 보유하며 V(목표가치) 기준 ±15% 밴드로 매수/매도
+        - 주가 환산 밴드 (Price Upper/Target/Lower) 산출 및 현재 주가 위치 진단
+        """
+        df = cls.get_price_df(ticker, start_date, end_date)
+        df_bench = cls.get_price_df("QQQ", start_date, end_date)
+        df_qld = cls.get_price_df("QLD", start_date, end_date)
+
+        if df.empty or len(df) < 10:
+            return {"error": f"데이터를 불러올 수 없습니다: {ticker}"}
+
+        common_dates = df.index.intersection(df_bench.index if not df_bench.empty else df.index)
+        df = df.loc[common_dates]
+
+        init_stock_alloc = float(initial_capital) * float(initial_stock_ratio)
+        cash_pool = float(initial_capital) - init_stock_alloc
+        start_close = float(df.iloc[0]['Close'])
+        shares = math.floor(init_stock_alloc / start_close)
+        cash_pool += (init_stock_alloc - shares * start_close)
+        V = shares * start_close
+
+        bench_start = float(df_bench.iloc[0]['Close']) if not df_bench.empty else 1.0
+        bench_shares = float(initial_capital) / bench_start
+
+        qld_start = float(df_qld.iloc[0]['Close']) if not df_qld.empty else 1.0
+        qld_shares = float(initial_capital) / qld_start
+
+        daily_equity = []
+        benchmark_equity = []
+        trade_markers = []
+        rebalance_history = []
+        step = 0
+        cycle_num = 1
+
+        for date_str in common_dates:
+            row = df.loc[date_str]
+            open_p = float(row['Open'])
+            high_p = float(row['High'])
+            low_p = float(row['Low'])
+            close_p = float(row['Close'])
+            step += 1
+
+            bench_close = float(df_bench.loc[date_str]['Close']) if not df_bench.empty and date_str in df_bench.index else close_p
+            qld_close = float(df_qld.loc[date_str]['Close']) if not df_qld.empty and date_str in df_qld.index else close_p
+
+            bench_val = bench_shares * bench_close
+            qld_val = qld_shares * qld_close
+
+            benchmark_equity.append({
+                "date": date_str,
+                "total_value": round(bench_val, 2)
+            })
+
+            stock_eval = shares * close_p
+            upper_band_val = V * (1.0 + float(band_percent) / 100.0)
+            lower_band_val = V * (1.0 - float(band_percent) / 100.0)
+
+            price_target = round(V / shares, 2) if shares > 0 else 0.0
+            price_upper = round(upper_band_val / shares, 2) if shares > 0 else 0.0
+            price_lower = round(lower_band_val / shares, 2) if shares > 0 else 0.0
+
+            action_type = "HOLD"
+            traded_shares = 0
+
+            # 2주(rebalance_interval 거래일) 주기 리밸런싱
+            if step > 1 and step % int(rebalance_interval) == 0:
+                periodic_flow = 0.0
+                if mode == "dca" and float(periodic_amount) > 0:
+                    periodic_flow = float(periodic_amount)
+                    cash_pool += periodic_flow
+                elif mode == "withdrawal" and float(periodic_amount) > 0:
+                    periodic_flow = -float(periodic_amount)
+                    cash_pool = max(cash_pool - float(periodic_amount), 0.0)
+
+                old_V = V
+
+                if stock_eval > upper_band_val:
+                    # 상단 돌파: 초과액 매도하여 현금 Pool 채우기
+                    sell_amount = (stock_eval - V) * 0.5
+                    sell_shares = math.floor(sell_amount / close_p)
+                    if sell_shares > 0 and sell_shares < shares:
+                        shares -= sell_shares
+                        proceeds = sell_shares * close_p
+                        cash_pool += proceeds
+                        action_type = "SELL"
+                        traded_shares = sell_shares
+                        trade_markers.append({
+                            "date": date_str,
+                            "type": "SELL",
+                            "price": round(close_p, 2),
+                            "shares": sell_shares,
+                            "note": f"상단 돌파 수익실현 매도 ({sell_shares}주)"
+                        })
+
+                elif stock_eval < lower_band_val:
+                    # 하단 이탈: 부족액 매수하여 현금 Pool에서 주식 매수
+                    buy_amount = min((V - stock_eval) * 0.5, cash_pool * 0.5)
+                    buy_shares = math.floor(buy_amount / close_p)
+                    cost = buy_shares * close_p
+                    if buy_shares > 0 and cash_pool >= cost:
+                        shares += buy_shares
+                        cash_pool -= cost
+                        action_type = "BUY"
+                        traded_shares = buy_shares
+                        trade_markers.append({
+                            "date": date_str,
+                            "type": "BUY",
+                            "price": round(close_p, 2),
+                            "shares": buy_shares,
+                            "note": f"하단 이탈 저가 분할매수 ({buy_shares}주)"
+                        })
+
+                stock_eval = shares * close_p
+                # 다음 사이클 V 갱신 공식
+                V = max(V + (cash_pool / float(G)) + periodic_flow, 1000.0)
+
+                rebalance_history.append({
+                    "cycle": cycle_num,
+                    "date": date_str,
+                    "action": action_type,
+                    "traded_shares": traded_shares,
+                    "price": round(close_p, 2),
+                    "old_V": round(old_V, 2),
+                    "new_V": round(V, 2),
+                    "shares": shares,
+                    "stock_eval": round(stock_eval, 2),
+                    "cash_pool": round(cash_pool, 2),
+                    "total_val": round(stock_eval + cash_pool, 2)
+                })
+                cycle_num += 1
+
+                upper_band_val = V * (1.0 + float(band_percent) / 100.0)
+                lower_band_val = V * (1.0 - float(band_percent) / 100.0)
+                price_target = round(V / shares, 2) if shares > 0 else 0.0
+                price_upper = round(upper_band_val / shares, 2) if shares > 0 else 0.0
+                price_lower = round(lower_band_val / shares, 2) if shares > 0 else 0.0
+
+            total_val = cash_pool + stock_eval
+            daily_equity.append({
+                "date": date_str,
+                "close": round(close_p, 2),
+                "shares": shares,
+                "stock_val": round(stock_eval, 2),
+                "cash_pool": round(cash_pool, 2),
+                "total_value": round(total_val, 2),
+                "V": round(V, 2),
+                "upper_band": round(upper_band_val, 2),
+                "lower_band": round(lower_band_val, 2),
+                "price_target": price_target,
+                "price_upper": price_upper,
+                "price_lower": price_lower,
+                "benchmark_value": round(bench_val, 2),
+                "qld_value": round(qld_val, 2)
+            })
+
+        kpi = cls.calculate_quant_metrics(daily_equity, initial_capital, benchmark_equity)
+        qld_vals = [d["qld_value"] for d in daily_equity]
+        qld_ret = round(((qld_vals[-1] - initial_capital) / initial_capital) * 100, 2) if qld_vals else 0.0
+        qld_peak = qld_vals[0] if qld_vals else initial_capital
+        qld_mdd = 0.0
+        for qv in qld_vals:
+            if qv > qld_peak:
+                qld_peak = qv
+            q_dd = ((qv - qld_peak) / qld_peak) * 100
+            if q_dd < qld_mdd:
+                qld_mdd = q_dd
+
+        kpi["qld_return"] = qld_ret
+        kpi["qld_mdd"] = round(qld_mdd, 2)
+        kpi["rebalance_count"] = len(rebalance_history)
+        kpi["trade_count"] = len(trade_markers)
+        kpi["final_shares"] = shares
+        kpi["final_pool"] = round(cash_pool, 2)
+        kpi["final_stock_eval"] = round(shares * float(df.iloc[-1]['Close']), 2)
+
+        # 최신 밴드 포지션 진단
+        last_d = daily_equity[-1]
+        cur_p = last_d["close"]
+        p_up = last_d["price_upper"]
+        p_lo = last_d["price_lower"]
+        p_tgt = last_d["price_target"]
+
+        if cur_p > p_up:
+            zone = "OVER_UPPER"
+            zone_kr = "상단 돌파 (수익실현 분할매도 권장)"
+            rec_action = f"상한선(${p_up})을 돌파했습니다! 초과 평가액의 약 50%를 매도하여 현금 Pool을 확보하세요."
+            gauge_pct = 100.0
+        elif cur_p < p_lo:
+            zone = "BELOW_LOWER"
+            zone_kr = "하단 이탈 (저가 분할매수 권장)"
+            rec_action = f"하한선(${p_lo}) 아래로 떨어졌습니다! 현금 Pool의 자금으로 저가 추가 매수하여 주식 수를 늘리세요."
+            gauge_pct = 0.0
+        else:
+            zone = "SAFE"
+            zone_kr = "밴드 안전 구간 (HOLD: 매매 불필요 / 관망)"
+            rec_action = f"현재 주가(${cur_p})는 하한선(${p_lo})과 상한선(${p_up}) 사이의 안전 밴드 내에 있습니다. 매매 없이 편안하게 관망하세요."
+            band_width = p_up - p_lo
+            gauge_pct = round(((cur_p - p_lo) / band_width) * 100.0, 1) if band_width > 0 else 50.0
+
+        current_position = {
+            "date": last_d["date"],
+            "ticker": ticker,
+            "current_price": cur_p,
+            "shares": shares,
+            "stock_eval": last_d["stock_val"],
+            "cash_pool": last_d["cash_pool"],
+            "total_value": last_d["total_value"],
+            "V": last_d["V"],
+            "upper_band_eval": last_d["upper_band"],
+            "lower_band_eval": last_d["lower_band"],
+            "price_target": p_tgt,
+            "price_upper": p_up,
+            "price_lower": p_lo,
+            "dist_upper_pct": round((p_up - cur_p) / cur_p * 100.0, 1),
+            "dist_lower_pct": round((cur_p - p_lo) / cur_p * 100.0, 1),
+            "zone": zone,
+            "zone_kr": zone_kr,
+            "recommended_action": rec_action,
+            "gauge_pct": gauge_pct
+        }
+
+        return {
+            "strategy": f"밸류 리밸런싱 (VR) - {ticker}",
+            "ticker": ticker,
+            "period": f"{start_date} ~ {end_date}",
+            "initial_capital": initial_capital,
+            "kpi": kpi,
+            "current_position": current_position,
+            "daily_equity": daily_equity,
+            "trade_markers": trade_markers[-50:],
+            "rebalance_history": rebalance_history[::-1]
+        }
+
+    @classmethod
     def simulate_dca(cls, ticker="TQQQ", start_date="2020-01-01", end_date="2024-01-01", initial_capital=50000):
         """정기 적립식 분할매수 (DCA)"""
         df = cls.get_price_df(ticker, start_date, end_date)
