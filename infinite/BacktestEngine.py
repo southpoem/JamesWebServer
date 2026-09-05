@@ -279,95 +279,111 @@ class BacktestEngine:
                 if current_round > cycle_max_round:
                     cycle_max_round = current_round
 
-                # 별 퍼센트 계산
+                # 별 퍼센트 및 매도 가격 계산
                 half_split = total_splits / 2.0
                 per_round = (target_rate * 100.0) / half_split
                 star_percent = (target_rate * 100.0) - (per_round * current_round)
                 star_rate = star_percent / 100.0
 
                 star_point_price = round(average_price * (1 + star_rate), 2)
-                quarter_sell_price = star_point_price
-                full_sell_price = round(average_price * (1 + target_rate), 2)
+                loc_sell_price = star_point_price  # 50% 물량 LOC 매도가
+                full_sell_price = round(average_price * (1 + target_rate), 2)  # 50% 물량 목표가 지정가 매도가
 
-                quarter_sell_quantity = int(round(total_shares * 0.25))
-                total_sell_quantity = total_shares - quarter_sell_quantity
+                # 매도는 LOC 매도 50% + 목표가 지정가 매도 50%로 분할
+                loc_sell_quantity = math.floor(total_shares * 0.5)
+                limit_sell_quantity = total_shares - loc_sell_quantity
 
                 discounted_buy_price = round(star_point_price - 0.01, 2)
 
-                # --- 1) 전량 지정가 익절 매도 체결 확인 (장중 High >= 목표가) ---
-                if high_p >= full_sell_price:
-                    exec_price = max(open_p, full_sell_price)
-                    sell_proceeds = total_shares * exec_price
-                    realized_profit = sell_proceeds - total_cost
-                    cash += sell_proceeds
+                # --- 1) 매도 체결 확인 ---
+                sold_shares = 0
+                sell_proceeds = 0.0
 
-                    duration = (datetime.strptime(date_str, "%Y-%m-%d") - datetime.strptime(cycle_start_date, "%Y-%m-%d")).days
-                    return_pct = (realized_profit / cycle_start_capital) * 100.0
-
+                # A. 목표가 지정가 매도 (50%): 장중 High >= 목표가
+                if high_p >= full_sell_price and limit_sell_quantity > 0:
+                    exec_p = max(open_p, full_sell_price)
+                    proceeds = limit_sell_quantity * exec_p
+                    cash += proceeds
+                    sold_shares += limit_sell_quantity
+                    sell_proceeds += proceeds
+                    cycle_trades_count += 1
                     trade_markers.append({
                         "date": date_str,
                         "type": "SELL",
-                        "price": round(exec_price, 2),
-                        "shares": total_shares,
-                        "note": f"사이클 {cycle_num} 전량 익절 (+{return_pct:.1f}%)"
+                        "price": round(exec_p, 2),
+                        "shares": limit_sell_quantity,
+                        "note": f"지정가 목표 매도 ({limit_sell_quantity}주)"
                     })
 
-                    cycle_history.append({
-                        "cycle": cycle_num,
-                        "start_date": cycle_start_date,
-                        "end_date": date_str,
-                        "duration_days": duration,
-                        "trades": cycle_trades_count,
-                        "max_round": round(cycle_max_round, 1),
-                        "gain_pct": round(return_pct, 2),
-                        "net_profit": round(realized_profit, 2),
-                        "final_capital": round(cash, 2)
+                # B. LOC 매도 (50%): 당일 종가 Close >= LOC 매도가
+                if close_p >= loc_sell_price and loc_sell_quantity > 0:
+                    proceeds = loc_sell_quantity * close_p
+                    cash += proceeds
+                    sold_shares += loc_sell_quantity
+                    sell_proceeds += proceeds
+                    cycle_trades_count += 1
+                    trade_markers.append({
+                        "date": date_str,
+                        "type": "SELL",
+                        "price": round(close_p, 2),
+                        "shares": loc_sell_quantity,
+                        "note": f"LOC 매도 ({loc_sell_quantity}주)"
                     })
 
-                    # 복리 옵션 적용
-                    if compounding:
-                        current_capital = cash
-                    daily_investment = current_capital / float(total_splits)
+                if sold_shares > 0:
+                    cost_of_sold = sold_shares * average_price
+                    total_cost -= cost_of_sold
+                    total_shares -= sold_shares
 
-                    # 사이클 리셋
-                    total_shares = 0
-                    total_cost = 0.0
-                    average_price = 0.0
-                    current_round = 0.0
-                    cycle_ended = True
-                    cycle_num += 1
-                    cycle_start_date = date_str
-                    cycle_start_capital = current_capital
-                    cycle_trades_count = 0
-                    cycle_max_round = 0.0
+                    # 보유 주식을 모두 매도한 경우 -> 사이클 완성!
+                    if total_shares == 0:
+                        profit = cash - cycle_start_capital
+                        duration = (datetime.strptime(date_str, "%Y-%m-%d") - datetime.strptime(cycle_start_date, "%Y-%m-%d")).days
+                        return_pct = (profit / cycle_start_capital) * 100.0
 
-                else:
-                    # --- 2) 쿼터 매도 (LOC 매도: 당일 종가 Close >= 쿼터매도가) ---
-                    if quarter_sell_quantity > 0 and close_p >= quarter_sell_price:
-                        q_proceeds = quarter_sell_quantity * close_p
-                        cash += q_proceeds
-                        total_shares -= quarter_sell_quantity
-                        total_cost -= (quarter_sell_quantity * average_price)
-                        cycle_trades_count += 1
-                        trade_markers.append({
-                            "date": date_str,
-                            "type": "SELL",
-                            "price": round(close_p, 2),
-                            "shares": quarter_sell_quantity,
-                            "note": f"쿼터 LOC 매도 ({quarter_sell_quantity}주)"
+                        cycle_history.append({
+                            "cycle": cycle_num,
+                            "start_date": cycle_start_date,
+                            "end_date": date_str,
+                            "duration_days": duration,
+                            "trades": cycle_trades_count,
+                            "max_round": round(cycle_max_round, 1),
+                            "gain_pct": round(return_pct, 2),
+                            "net_profit": round(profit, 2),
+                            "final_capital": round(cash, 2)
                         })
 
-                    # --- 3) LOC 분할 매수 체결 (종가 Close가 지정가 이하일 때 종가 Close로 체결!) ---
+                        # 복리 재투자 여부
+                        if compounding:
+                            current_capital = cash
+                        daily_investment = current_capital / float(total_splits)
+
+                        # 다음 사이클 리셋
+                        total_shares = 0
+                        total_cost = 0.0
+                        average_price = 0.0
+                        current_round = 0.0
+                        cycle_ended = True
+                        cycle_num += 1
+                        cycle_start_date = date_str
+                        cycle_start_capital = current_capital
+                        cycle_trades_count = 0
+                        cycle_max_round = 0.0
+                    else:
+                        average_price = total_cost / total_shares if total_shares > 0 else 0
+
+                # --- 2) LOC 매수 체결 (주식이 남아 있는 경우에만 진행) ---
+                if not cycle_ended and total_shares > 0:
                     if current_round <= half_split:
-                        # 전반전: 할인매수(0.5회분) + 평단매수(0.5회분)
+                        # 전반전: 할인매수(0.5회분 LOC) + 평단매수(0.5회분 LOC)
                         disc_qty = math.floor((daily_investment / 2.0) / discounted_buy_price) if discounted_buy_price > 0 else 0
                         avg_qty = math.floor((daily_investment / 2.0) / average_price) if average_price > 0 else 0
 
                         bought_qty = 0
-                        # 종가가 할인매수가 이하이면 할인매수 체결
+                        # 종가 Close <= 할인매수가이면 할인매수 체결
                         if close_p <= discounted_buy_price and disc_qty > 0:
                             bought_qty += disc_qty
-                        # 종가가 평단가 이하이면 평단매수 체결
+                        # 종가 Close <= 평단가이면 평단매수 체결
                         if close_p <= average_price and avg_qty > 0:
                             bought_qty += avg_qty
 
@@ -386,7 +402,7 @@ class BacktestEngine:
                                 "note": f"전반전 LOC 매수 ({bought_qty}주)"
                             })
                     else:
-                        # 후반전: 1회분 전체로 할인매수만 주문
+                        # 후반전: 1.0회분 전체로 할인매수만 LOC 주문
                         disc_qty = math.floor(daily_investment / discounted_buy_price) if discounted_buy_price > 0 else 0
                         if close_p <= discounted_buy_price and disc_qty > 0 and cash >= (disc_qty * close_p):
                             buy_cost = disc_qty * close_p
