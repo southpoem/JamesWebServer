@@ -814,10 +814,10 @@
                 document.getElementById('kpi_total_return').className = kpi.total_return >= 0 ? 'kpi-sub up' : 'kpi-sub down';
 
                 document.getElementById('kpi_cagr').innerText = `${kpi.cagr >= 0 ? '+' : ''}${kpi.cagr}%`;
-                document.getElementById('kpi_bench_cagr').innerText = `QQQ 보유: ${kpi.benchmark_return >= 0 ? '+' : ''}${kpi.benchmark_return}%`;
+                document.getElementById('kpi_bench_cagr').innerText = `QQQ: ${kpi.benchmark_return >= 0 ? '+' : ''}${kpi.benchmark_return}% | QLD: +${kpi.qld_return || 0}%`;
 
                 document.getElementById('kpi_mdd').innerText = `${kpi.mdd}%`;
-                document.getElementById('kpi_bench_mdd').innerText = `QQQ 보유: ${kpi.benchmark_mdd}%`;
+                document.getElementById('kpi_bench_mdd').innerText = `QQQ: ${kpi.benchmark_mdd}% | QLD: ${kpi.qld_mdd || 0}%`;
 
                 document.getElementById('kpi_cycles').innerText = `${kpi.total_cycles}회 완료`;
                 document.getElementById('kpi_winrate').innerText = `승률 ${kpi.win_rate}% (평균 ${kpi.avg_cycle_days}일)`;
@@ -842,6 +842,7 @@
             const labels = dailyEquity.map(d => d.date);
             const stratValues = dailyEquity.map(d => d.total_value);
             const benchValues = dailyEquity.map(d => d.benchmark_value);
+            const qldValues = dailyEquity.map(d => d.qld_value || d.benchmark_value);
 
             if (equityChart) equityChart.destroy();
 
@@ -866,6 +867,16 @@
                             borderColor: '#64748b',
                             borderWidth: 1.5,
                             borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'QLD 단순보유 벤치마크 ($)',
+                            data: qldValues,
+                            borderColor: '#c084fc',
+                            borderWidth: 1.8,
+                            borderDash: [2, 2],
                             fill: false,
                             tension: 0.1,
                             pointRadius: 0

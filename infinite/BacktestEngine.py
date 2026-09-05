@@ -205,6 +205,7 @@ class BacktestEngine:
 
         df = cls.get_price_df(ticker, start_date, end_date)
         df_bench = cls.get_price_df("QQQ", start_date, end_date)
+        df_qld = cls.get_price_df("QLD", start_date, end_date)
 
         if df.empty:
             return {"error": f"데이터를 불러올 수 없습니다: {ticker}"}
@@ -216,9 +217,14 @@ class BacktestEngine:
         df = df.loc[common_dates]
         if not df_bench.empty:
             df_bench = df_bench.loc[common_dates]
+        if not df_qld.empty:
+            df_qld = df_qld.loc[df_qld.index.intersection(common_dates)]
 
         bench_start_price = float(df_bench.iloc[0]['Close']) if not df_bench.empty else 1.0
         bench_shares = initial_capital / bench_start_price
+
+        qld_start_price = float(df_qld.iloc[0]['Close']) if not df_qld.empty else 1.0
+        qld_shares = initial_capital / qld_start_price
 
         current_capital = float(initial_capital)
         cash = float(current_capital)
@@ -248,12 +254,15 @@ class BacktestEngine:
             low_p = float(row['Low'])
             close_p = float(row['Close'])
 
-            bench_close = float(df_bench.loc[date_str]['Close']) if not df_bench.empty else close_p
+            bench_close = float(df_bench.loc[date_str]['Close']) if not df_bench.empty and date_str in df_bench.index else close_p
             bench_val = bench_shares * bench_close
             benchmark_equity.append({
                 "date": date_str,
                 "total_value": round(bench_val, 2)
             })
+
+            qld_close = float(df_qld.loc[date_str]['Close']) if not df_qld.empty and date_str in df_qld.index else close_p
+            qld_val = qld_shares * qld_close
 
             cycle_ended = False
 
@@ -584,7 +593,8 @@ class BacktestEngine:
                 "total_value": round(total_val, 2),
                 "cash": round(cash, 2),
                 "stock_value": round(stock_val, 2),
-                "benchmark_value": round(bench_val, 2)
+                "benchmark_value": round(bench_val, 2),
+                "qld_value": round(qld_val, 2)
             })
 
         if total_shares > 0:
@@ -607,6 +617,20 @@ class BacktestEngine:
         win_rate = (len([c for c in completed_cycles if c["net_profit"] > 0]) / len(completed_cycles) * 100) if completed_cycles else 100.0
         avg_days = sum([c["duration_days"] for c in completed_cycles]) / len(completed_cycles) if completed_cycles else 0.0
 
+        # QLD 단순보유 벤치마크 지표 산출
+        qld_vals = [d["qld_value"] for d in daily_equity]
+        qld_ret = round(((qld_vals[-1] - initial_capital) / initial_capital) * 100, 2) if qld_vals else 0.0
+        qld_peak = qld_vals[0] if qld_vals else initial_capital
+        qld_mdd = 0.0
+        for qv in qld_vals:
+            if qv > qld_peak:
+                qld_peak = qv
+            q_dd = ((qv - qld_peak) / qld_peak) * 100
+            if q_dd < qld_mdd:
+                qld_mdd = q_dd
+
+        kpi["qld_return"] = qld_ret
+        kpi["qld_mdd"] = round(qld_mdd, 2)
         kpi["total_cycles"] = len(completed_cycles)
         kpi["win_rate"] = round(win_rate, 1)
         kpi["avg_cycle_days"] = round(avg_days, 1)
