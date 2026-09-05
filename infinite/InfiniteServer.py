@@ -1520,12 +1520,13 @@ def api_run_single():
     target_profit_rate = float(data.get("target_profit_rate", 12.0))
     compounding = bool(data.get("compounding", True))
     strategy_type = data.get("strategy_type", "v2.2")
+    sell_ratio = float(data.get("sell_ratio", 0.5))
 
     result = BacktestEngine.simulate_infinite_buying(
         ticker=ticker, start_date=start_date, end_date=end_date,
         initial_capital=initial_capital, total_splits=total_splits,
         target_profit_rate=target_profit_rate, compounding=compounding,
-        strategy_type=strategy_type
+        strategy_type=strategy_type, sell_ratio=sell_ratio
     )
     return jsonify(result)
 

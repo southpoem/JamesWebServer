@@ -517,6 +517,15 @@
                     </label>
                 </div>
 
+                <div class="control-group">
+                    <label>매도 분할 방식 (LOC vs 지정가)</label>
+                    <select id="sim1_sell_ratio">
+                        <option value="0.5" selected>50% LOC 매도 + 50% 목표가 지정가 (기본 권장)</option>
+                        <option value="0.25">25% 쿼터 LOC 매도 + 75% 목표가 지정가 (v2.2)</option>
+                        <option value="0.0">100% 목표가 전량 지정가 매도</option>
+                    </select>
+                </div>
+
                 <!-- Crisis Presets -->
                 <div class="control-group">
                     <label>역사적 위기 구간 프리셋</label>
@@ -743,6 +752,7 @@
                 total_splits: parseInt(document.getElementById('sim1_splits').value),
                 target_profit_rate: parseFloat(document.getElementById('sim1_target').value),
                 compounding: document.getElementById('sim1_compounding').checked,
+                sell_ratio: parseFloat(document.getElementById('sim1_sell_ratio').value),
                 start_date: document.getElementById('sim1_start').value,
                 end_date: document.getElementById('sim1_end').value
             };

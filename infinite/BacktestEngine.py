@@ -189,9 +189,11 @@ class BacktestEngine:
     @classmethod
     def simulate_infinite_buying(cls, ticker="TQQQ", start_date="2020-01-01", end_date="2024-01-01",
                                  initial_capital=50000, total_splits=40, target_profit_rate=12.0,
-                                 compounding=True, strategy_type="v2.2"):
+                                 compounding=True, strategy_type="v2.2", sell_ratio=0.5):
         """
-        라오어 무한매수법 v2.2 (또는 v2.1, v1) 일별 백테스트 실행
+        라오어 무한매수법 일별 백테스트 실행
+        - 매수: 100% LOC 매수 (종가 Close가 지정가 이하일 때 종가 체결)
+        - 매도: sell_ratio 비율에 따른 LOC 매도 + 목표가 지정가 매도 혼합
         """
         df = cls.get_price_df(ticker, start_date, end_date)
         df_bench = cls.get_price_df("QQQ", start_date, end_date)
@@ -289,8 +291,8 @@ class BacktestEngine:
                 loc_sell_price = star_point_price  # 50% 물량 LOC 매도가
                 full_sell_price = round(average_price * (1 + target_rate), 2)  # 50% 물량 목표가 지정가 매도가
 
-                # 매도는 LOC 매도 50% + 목표가 지정가 매도 50%로 분할
-                loc_sell_quantity = math.floor(total_shares * 0.5)
+                # 매도는 LOC 매도 + 목표가 지정가 매도로 분할 (sell_ratio 기준)
+                loc_sell_quantity = int(round(total_shares * float(sell_ratio)))
                 limit_sell_quantity = total_shares - loc_sell_quantity
 
                 discounted_buy_price = round(star_point_price - 0.01, 2)
