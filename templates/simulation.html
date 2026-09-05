@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>전략 시뮬레이션 & 백테스트 - Infinite</title>
-    <!-- Chart.js CDN -->
+    <!-- Chart.js CDN & Zoom Plugin -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -506,6 +508,53 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Zoom Toolbar */
+        .chart-zoom-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .zoom-hint {
+            font-size: 0.73rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .zoom-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-zoom {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--card-border);
+            color: var(--text-dim);
+            font-size: 0.73rem;
+            font-weight: 600;
+            padding: 0.28rem 0.65rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-zoom:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .btn-zoom-reset:hover {
+            color: #f87171;
+            border-color: rgba(248, 113, 113, 0.4);
+            background: rgba(248, 113, 113, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -687,13 +736,24 @@
 
                 <!-- Main Chart Card -->
                 <div class="glass-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                         <h3 style="font-size: 1rem; font-weight: 800; margin: 0; color: #fff;">
                             자산 성장 곡선 (Equity Curve) vs QQQ 단순보유
                         </h3>
                         <div style="font-size: 0.75rem; color: var(--text-dim);">
                             <span style="display: inline-block; width: 8px; height: 8px; background: var(--accent-cyan); border-radius: 50%; margin-right: 4px;"></span> 전략 누적 자산
                             <span style="display: inline-block; width: 8px; height: 8px; background: #64748b; border-radius: 50%; margin-left: 12px; margin-right: 4px;"></span> QQQ 보유
+                        </div>
+                    </div>
+                    <!-- Zoom toolbar -->
+                    <div class="chart-zoom-toolbar">
+                        <div class="zoom-hint">
+                            <span>🖱️</span> 휠 스크롤(확대/축소) & 드래그(이동) | 더블클릭(초기화)
+                        </div>
+                        <div class="zoom-btn-group">
+                            <button type="button" class="btn-zoom" onclick="zoomChart(equityChart, 1.2)" title="20% 확대">🔍 확대</button>
+                            <button type="button" class="btn-zoom" onclick="zoomChart(equityChart, 0.8)" title="20% 축소">🔍 축소</button>
+                            <button type="button" class="btn-zoom btn-zoom-reset" onclick="resetChartZoom(equityChart)" title="초기 배율로 리셋">🔄 줌 초기화</button>
                         </div>
                     </div>
                     <div class="chart-box">
@@ -801,9 +861,22 @@
 
             <!-- Comparison Chart -->
             <div class="glass-card">
-                <h3 style="font-size: 1rem; font-weight: 800; margin-top: 0; margin-bottom: 1rem; color: #fff;">
-                    4대 전략 누적 자산 성장 궤적 비교
-                </h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h3 style="font-size: 1rem; font-weight: 800; margin: 0; color: #fff;">
+                        4대 전략 누적 자산 성장 궤적 비교
+                    </h3>
+                </div>
+                <!-- Zoom toolbar -->
+                <div class="chart-zoom-toolbar">
+                    <div class="zoom-hint">
+                        <span>🖱️</span> 휠 스크롤(확대/축소) & 드래그(이동) | 더블클릭(초기화)
+                    </div>
+                    <div class="zoom-btn-group">
+                        <button type="button" class="btn-zoom" onclick="zoomChart(compChart, 1.2)" title="20% 확대">🔍 확대</button>
+                        <button type="button" class="btn-zoom" onclick="zoomChart(compChart, 0.8)" title="20% 축소">🔍 축소</button>
+                        <button type="button" class="btn-zoom btn-zoom-reset" onclick="resetChartZoom(compChart)" title="초기 배율로 리셋">🔄 줌 초기화</button>
+                    </div>
+                </div>
                 <div class="chart-box" style="height: 420px;">
                     <canvas id="compChartCanvas"></canvas>
                 </div>
@@ -1065,10 +1138,23 @@
                 <!-- 3. Dual Charts -->
                 <!-- Chart A: Asset Valuation & Cash Pool -->
                 <div class="glass-card">
-                    <h4 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 800; color: #fff; display: flex; justify-content: space-between; align-items: center;">
-                        <span>📊 자산 평가액 & 현금 Pool 누적 추이 ($ USD)</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">
+                            📊 자산 평가액 & 현금 Pool 누적 추이 ($ USD)
+                        </h4>
                         <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-dim);">총자산 = 주식 평가액 + 현금 Pool</span>
-                    </h4>
+                    </div>
+                    <!-- Zoom toolbar -->
+                    <div class="chart-zoom-toolbar">
+                        <div class="zoom-hint">
+                            <span>🖱️</span> 휠 스크롤(확대/축소) & 드래그(이동) | 더블클릭(초기화)
+                        </div>
+                        <div class="zoom-btn-group">
+                            <button type="button" class="btn-zoom" onclick="zoomChart(vrEquityChart, 1.2)" title="20% 확대">🔍 확대</button>
+                            <button type="button" class="btn-zoom" onclick="zoomChart(vrEquityChart, 0.8)" title="20% 축소">🔍 축소</button>
+                            <button type="button" class="btn-zoom btn-zoom-reset" onclick="resetChartZoom(vrEquityChart)" title="초기 배율로 리셋">🔄 줌 초기화</button>
+                        </div>
+                    </div>
                     <div style="height: 380px; position: relative;">
                         <canvas id="vrEquityChartCanvas"></canvas>
                     </div>
@@ -1076,10 +1162,23 @@
 
                 <!-- Chart B: TQQQ Price & Conversion Band -->
                 <div class="glass-card">
-                    <h4 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 800; color: #fff; display: flex; justify-content: space-between; align-items: center;">
-                        <span>📈 주가 환산 밴드 & TQQQ 주가 추이 ($ USD)</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #fff;">
+                            📈 주가 환산 밴드 & TQQQ 주가 추이 ($ USD)
+                        </h4>
                         <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-dim);">상한 매도선(Red) / 하한 매수선(Green) / 중심선(Purple)</span>
-                    </h4>
+                    </div>
+                    <!-- Zoom toolbar -->
+                    <div class="chart-zoom-toolbar">
+                        <div class="zoom-hint">
+                            <span>🖱️</span> 휠 스크롤(확대/축소) & 드래그(이동) | 더블클릭(초기화)
+                        </div>
+                        <div class="zoom-btn-group">
+                            <button type="button" class="btn-zoom" onclick="zoomChart(vrPriceChart, 1.2)" title="20% 확대">🔍 확대</button>
+                            <button type="button" class="btn-zoom" onclick="zoomChart(vrPriceChart, 0.8)" title="20% 축소">🔍 축소</button>
+                            <button type="button" class="btn-zoom btn-zoom-reset" onclick="resetChartZoom(vrPriceChart)" title="초기 배율로 리셋">🔄 줌 초기화</button>
+                        </div>
+                    </div>
                     <div style="height: 380px; position: relative;">
                         <canvas id="vrPriceChartCanvas"></canvas>
                     </div>
@@ -1122,6 +1221,36 @@
         let compChart = null;
         let vrEquityChart = null;
         let vrPriceChart = null;
+
+        const zoomPluginConfig = {
+            pan: {
+                enabled: true,
+                mode: 'x',
+                modifierKey: null
+            },
+            zoom: {
+                wheel: {
+                    enabled: true,
+                    speed: 0.08
+                },
+                pinch: {
+                    enabled: true
+                },
+                mode: 'x'
+            }
+        };
+
+        function zoomChart(chartInstance, factor) {
+            if (chartInstance) {
+                chartInstance.zoom(factor);
+            }
+        }
+
+        function resetChartZoom(chartInstance) {
+            if (chartInstance) {
+                chartInstance.resetZoom();
+            }
+        }
 
         function switchSimMode(mode) {
             const isSim1 = (mode === 'sim1');
@@ -1291,7 +1420,8 @@
                             callbacks: {
                                 label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
                             }
-                        }
+                        },
+                        zoom: zoomPluginConfig
                     }
                 }
             });
@@ -1496,7 +1626,8 @@
                             callbacks: {
                                 label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
                             }
-                        }
+                        },
+                        zoom: zoomPluginConfig
                     }
                 }
             });
@@ -1741,7 +1872,8 @@
                             callbacks: {
                                 label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
                             }
-                        }
+                        },
+                        zoom: zoomPluginConfig
                     }
                 }
             });
@@ -1825,15 +1957,33 @@
                             callbacks: {
                                 label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toFixed(2)}`
                             }
-                        }
+                        },
+                        zoom: zoomPluginConfig
                     }
                 }
             });
         }
 
-        // 초기 로딩 시 단일 시뮬레이션 1회 자동 실행
+        // 초기 로딩 시 단일 시뮬레이션 1회 자동 실행 및 캔버스 더블클릭 줌 리셋 연동
         document.addEventListener('DOMContentLoaded', () => {
             runSingleSimulation();
+
+            const canvasMap = [
+                { id: 'equityChartCanvas', getChart: () => equityChart },
+                { id: 'compChartCanvas', getChart: () => compChart },
+                { id: 'vrEquityChartCanvas', getChart: () => vrEquityChart },
+                { id: 'vrPriceChartCanvas', getChart: () => vrPriceChart }
+            ];
+
+            canvasMap.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (el) {
+                    el.addEventListener('dblclick', () => {
+                        const chart = item.getChart();
+                        if (chart) chart.resetZoom();
+                    });
+                }
+            });
         });
     </script>
 </body>
