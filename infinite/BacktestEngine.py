@@ -254,21 +254,21 @@ class BacktestEngine:
 
             # Case A: 보유 주식이 0인 경우 (사이클의 첫날)
             if total_shares == 0:
-                buy_shares = math.floor(daily_investment / open_p)
-                if buy_shares > 0 and cash >= buy_shares * open_p:
-                    cost = buy_shares * open_p
+                buy_shares = math.floor(daily_investment / close_p)
+                if buy_shares > 0 and cash >= buy_shares * close_p:
+                    cost = buy_shares * close_p
                     cash -= cost
                     total_shares += buy_shares
                     total_cost += cost
-                    average_price = open_p
+                    average_price = close_p
                     current_round = 1.0
                     cycle_trades_count += 1
                     trade_markers.append({
                         "date": date_str,
                         "type": "BUY",
-                        "price": round(open_p, 2),
+                        "price": round(close_p, 2),
                         "shares": buy_shares,
-                        "note": f"사이클 {cycle_num} 시작 (1회차 매수)"
+                        "note": f"사이클 {cycle_num} 시작 (1회차 LOC 종가 매수)"
                     })
 
             # Case B: 보유 주식이 있는 경우 (전략 계산 및 매도/매수 체결)
@@ -294,18 +294,10 @@ class BacktestEngine:
 
                 discounted_buy_price = round(star_point_price - 0.01, 2)
 
-                if current_round <= total_splits / 2.0:
-                    discounted_buy_quantity = math.floor((daily_investment / 2.0) / discounted_buy_price) if discounted_buy_price > 0 else 0
-                    remain_inv = daily_investment - (discounted_buy_quantity * discounted_buy_price)
-                    average_buy_quantity = math.floor(remain_inv / average_price) if average_price > 0 else 0
-                else:
-                    discounted_buy_quantity = math.floor(daily_investment / discounted_buy_price) if discounted_buy_price > 0 else 0
-                    average_buy_quantity = 0
-
-                # --- 1) 전량 지정가 익절 매도 체결 확인 ---
+                # --- 1) 전량 지정가 익절 매도 체결 확인 (장중 High >= 목표가) ---
                 if high_p >= full_sell_price:
-                    # 목표가 전량 매도 체결! 사이클 완성
-                    sell_proceeds = total_shares * full_sell_price
+                    exec_price = max(open_p, full_sell_price)
+                    sell_proceeds = total_shares * exec_price
                     realized_profit = sell_proceeds - total_cost
                     cash += sell_proceeds
 
@@ -315,7 +307,7 @@ class BacktestEngine:
                     trade_markers.append({
                         "date": date_str,
                         "type": "SELL",
-                        "price": round(full_sell_price, 2),
+                        "price": round(exec_price, 2),
                         "shares": total_shares,
                         "note": f"사이클 {cycle_num} 전량 익절 (+{return_pct:.1f}%)"
                     })
@@ -350,9 +342,9 @@ class BacktestEngine:
                     cycle_max_round = 0.0
 
                 else:
-                    # --- 2) 쿼터 매도 (LOC/별점) 체결 확인 ---
-                    if high_p >= quarter_sell_price and quarter_sell_quantity > 0:
-                        q_proceeds = quarter_sell_quantity * quarter_sell_price
+                    # --- 2) 쿼터 매도 (LOC 매도: 당일 종가 Close >= 쿼터매도가) ---
+                    if quarter_sell_quantity > 0 and close_p >= quarter_sell_price:
+                        q_proceeds = quarter_sell_quantity * close_p
                         cash += q_proceeds
                         total_shares -= quarter_sell_quantity
                         total_cost -= (quarter_sell_quantity * average_price)
@@ -360,43 +352,55 @@ class BacktestEngine:
                         trade_markers.append({
                             "date": date_str,
                             "type": "SELL",
-                            "price": round(quarter_sell_price, 2),
+                            "price": round(close_p, 2),
                             "shares": quarter_sell_quantity,
-                            "note": f"쿼터 매도 ({quarter_sell_quantity}주)"
+                            "note": f"쿼터 LOC 매도 ({quarter_sell_quantity}주)"
                         })
 
-                    # --- 3) 할인 매수 체결 확인 ---
-                    if low_p <= discounted_buy_price and discounted_buy_quantity > 0:
-                        buy_cost = discounted_buy_quantity * discounted_buy_price
-                        if cash >= buy_cost:
-                            cash -= buy_cost
-                            total_shares += discounted_buy_quantity
-                            total_cost += buy_cost
-                            average_price = total_cost / total_shares if total_shares > 0 else 0
-                            cycle_trades_count += 1
-                            trade_markers.append({
-                                "date": date_str,
-                                "type": "BUY",
-                                "price": round(discounted_buy_price, 2),
-                                "shares": discounted_buy_quantity,
-                                "note": f"할인 매수 ({discounted_buy_quantity}주)"
-                            })
+                    # --- 3) LOC 분할 매수 체결 (종가 Close가 지정가 이하일 때 종가 Close로 체결!) ---
+                    if current_round <= half_split:
+                        # 전반전: 할인매수(0.5회분) + 평단매수(0.5회분)
+                        disc_qty = math.floor((daily_investment / 2.0) / discounted_buy_price) if discounted_buy_price > 0 else 0
+                        avg_qty = math.floor((daily_investment / 2.0) / average_price) if average_price > 0 else 0
 
-                    # --- 4) 평단 매수 체결 확인 (전반전) ---
-                    if low_p <= average_price and average_buy_quantity > 0:
-                        buy_cost = average_buy_quantity * average_price
-                        if cash >= buy_cost:
+                        bought_qty = 0
+                        # 종가가 할인매수가 이하이면 할인매수 체결
+                        if close_p <= discounted_buy_price and disc_qty > 0:
+                            bought_qty += disc_qty
+                        # 종가가 평단가 이하이면 평단매수 체결
+                        if close_p <= average_price and avg_qty > 0:
+                            bought_qty += avg_qty
+
+                        if bought_qty > 0 and cash >= (bought_qty * close_p):
+                            buy_cost = bought_qty * close_p
                             cash -= buy_cost
-                            total_shares += average_buy_quantity
+                            total_shares += bought_qty
                             total_cost += buy_cost
                             average_price = total_cost / total_shares if total_shares > 0 else 0
                             cycle_trades_count += 1
                             trade_markers.append({
                                 "date": date_str,
                                 "type": "BUY",
-                                "price": round(average_price, 2),
-                                "shares": average_buy_quantity,
-                                "note": f"평단 매수 ({average_buy_quantity}주)"
+                                "price": round(close_p, 2),
+                                "shares": bought_qty,
+                                "note": f"전반전 LOC 매수 ({bought_qty}주)"
+                            })
+                    else:
+                        # 후반전: 1회분 전체로 할인매수만 주문
+                        disc_qty = math.floor(daily_investment / discounted_buy_price) if discounted_buy_price > 0 else 0
+                        if close_p <= discounted_buy_price and disc_qty > 0 and cash >= (disc_qty * close_p):
+                            buy_cost = disc_qty * close_p
+                            cash -= buy_cost
+                            total_shares += disc_qty
+                            total_cost += buy_cost
+                            average_price = total_cost / total_shares if total_shares > 0 else 0
+                            cycle_trades_count += 1
+                            trade_markers.append({
+                                "date": date_str,
+                                "type": "BUY",
+                                "price": round(close_p, 2),
+                                "shares": disc_qty,
+                                "note": f"후반전 LOC 할인매수 ({disc_qty}주)"
                             })
 
             # 일별 평가 총액 기록
