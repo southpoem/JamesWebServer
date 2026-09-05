@@ -56,26 +56,28 @@ class BacktestEngine:
         df_cached = pd.read_sql_query(query, conn, params=(ticker, start_date, end_date))
         conn.close()
 
-        # 충분한 데이터가 캐시되어 있는지 확인 (대략 시작일과 종료일 차이의 거래일 수)
+        # 전체 캐시 범위 확인
+        conn = sqlite3.connect(CACHE_DB_PATH)
+        cur = conn.cursor()
+        cur.execute("SELECT min(date), max(date), count(*) FROM price_history WHERE ticker = ?", (ticker,))
+        global_min, global_max, count = cur.fetchone()
+        conn.close()
+
         need_fetch = False
-        if df_cached.empty:
+        target_end_thresh = (datetime.strptime(end_date, "%Y-%m-%d") - timedelta(days=4)).strftime("%Y-%m-%d")
+        if not global_min or not global_max or count == 0:
             need_fetch = True
-        else:
-            cached_min = df_cached['date'].min()
-            cached_max = df_cached['date'].max()
-            if cached_min > start_date or cached_max < (datetime.strptime(end_date, "%Y-%m-%d") - timedelta(days=4)).strftime("%Y-%m-%d"):
-                need_fetch = True
+        elif global_min > start_date or global_max < target_end_thresh:
+            need_fetch = True
 
         if need_fetch:
             try:
                 logging.info(f"Downloading {ticker} from Yahoo Finance: {start_date} ~ {end_date}")
-                # 넉넉하게 1달 전부터 받아옴
                 fetch_start = (datetime.strptime(start_date, "%Y-%m-%d") - timedelta(days=30)).strftime("%Y-%m-%d")
                 fetch_end = (datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=2)).strftime("%Y-%m-%d")
                 raw_df = yf.download(ticker, start=fetch_start, end=fetch_end, progress=False)
 
                 if not raw_df.empty:
-                    # MultiIndex 컬럼 평탄화
                     if isinstance(raw_df.columns, pd.MultiIndex):
                         raw_df.columns = [c[0] for c in raw_df.columns]
 
@@ -97,13 +99,12 @@ class BacktestEngine:
                     """, rows_to_insert)
                     conn.commit()
                     conn.close()
-
-                    # 캐시 후 다시 조회
-                    conn = sqlite3.connect(CACHE_DB_PATH)
-                    df_cached = pd.read_sql_query(query, conn, params=(ticker, start_date, end_date))
-                    conn.close()
             except Exception as e:
                 logging.error(f"Error fetching data from Yahoo Finance for {ticker}: {e}")
+
+        conn = sqlite3.connect(CACHE_DB_PATH)
+        df_cached = pd.read_sql_query(query, conn, params=(ticker, start_date, end_date))
+        conn.close()
 
         if df_cached.empty:
             return pd.DataFrame()
