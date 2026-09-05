@@ -1547,6 +1547,44 @@ def api_run_comparison():
     return jsonify(result)
 
 
+@infinite_bp.route('/simulation/api/run_version_comparison', methods=['POST'])
+def api_run_version_comparison():
+    from infinite.BacktestEngine import BacktestEngine
+    data = request.get_json() or {}
+    ticker = data.get("ticker", "TQQQ").upper().strip()
+    start_date = data.get("start_date", "2020-01-01")
+    end_date = data.get("end_date", datetime.now().strftime("%Y-%m-%d"))
+    initial_capital = float(data.get("initial_capital", 50000))
+    target_profit_rate = float(data.get("target_profit_rate", 12.0))
+    compounding = bool(data.get("compounding", True))
+
+    result = BacktestEngine.compare_all_versions(
+        ticker=ticker, start_date=start_date, end_date=end_date,
+        initial_capital=initial_capital, target_profit_rate=target_profit_rate,
+        compounding=compounding
+    )
+    return jsonify(result)
+
+
+@infinite_bp.route('/simulation/api/run_ticker_comparison', methods=['POST'])
+def api_run_ticker_comparison():
+    from infinite.BacktestEngine import BacktestEngine
+    data = request.get_json() or {}
+    strategy_type = data.get("strategy_type", "v2.2")
+    start_date = data.get("start_date", "2020-01-01")
+    end_date = data.get("end_date", datetime.now().strftime("%Y-%m-%d"))
+    initial_capital = float(data.get("initial_capital", 50000))
+    target_profit_rate = float(data.get("target_profit_rate", 12.0))
+    compounding = bool(data.get("compounding", True))
+
+    result = BacktestEngine.compare_all_tickers(
+        strategy_type=strategy_type, start_date=start_date, end_date=end_date,
+        initial_capital=initial_capital, target_profit_rate=target_profit_rate,
+        compounding=compounding
+    )
+    return jsonify(result)
+
+
 @infinite_bp.route('/run_infinite_buying', methods=['POST'])
 @login_required
 def run_infinite_buying():

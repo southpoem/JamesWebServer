@@ -467,10 +467,12 @@
                 <div class="control-group">
                     <label>적용 전략</label>
                     <select id="sim1_strategy">
-                        <option value="v2.2" selected>무한매수법 v2.2 (추천)</option>
-                        <option value="v2.1">무한매수법 v2.1</option>
-                        <option value="v1">무한매수법 v1.0</option>
-                        <option value="only_buying">무한매수법 Only Buying</option>
+                        <option value="v2.2" selected>무한매수법 v2.2 (별퍼센트 공식 & 쿼터 LOC / 표준)</option>
+                        <option value="v3.0">무한매수법 v3.0 (20분할 고속 회전 & 반복리)</option>
+                        <option value="v4.0">무한매수법 v4.0 (원금 소진 시 리버스 모드)</option>
+                        <option value="v2.1">무한매수법 v2.1 (2단·3단 분할 & LOC 매도)</option>
+                        <option value="v2.0">무한매수법 v2.0 (전·후반전 / 큰수매수 / 쿼터손절)</option>
+                        <option value="v1.0">무한매수법 v1.0 (정액 매수 & 100% 지정가)</option>
                     </select>
                 </div>
 
@@ -479,10 +481,11 @@
                     <div class="pill-group" style="margin-bottom: 8px;">
                         <span class="ticker-pill active" onclick="selectTicker(this, 'TQQQ')">TQQQ</span>
                         <span class="ticker-pill" onclick="selectTicker(this, 'QLD')">QLD</span>
+                        <span class="ticker-pill" onclick="selectTicker(this, 'QQQ')">QQQ</span>
                         <span class="ticker-pill" onclick="selectTicker(this, 'SOXL')">SOXL</span>
-                        <span class="ticker-pill" onclick="selectTicker(this, 'UPRO')">UPRO</span>
+                        <span class="ticker-pill" onclick="selectTicker(this, 'LABU')">LABU</span>
                     </div>
-                    <input type="text" id="sim1_ticker" value="TQQQ" placeholder="티커 직접 입력 (예: TQQQ)">
+                    <input type="text" id="sim1_ticker" value="TQQQ" placeholder="티커 직접 입력 (예: TQQQ, QLD, QQQ, SOXL, LABU)">
                 </div>
 
                 <div class="control-group">
@@ -641,29 +644,63 @@
         <!-- VIEW 2: 다중 전략 비교 매트릭스 -->
         <div id="viewSim2" class="hidden" style="display: flex; flex-direction: column; gap: 1.5rem;">
             <!-- Top Controls Filter Bar -->
-            <div class="glass-card" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">비교 종목:</span>
-                    <select id="comp_ticker" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
-                        <option value="TQQQ">TQQQ (나스닥 3X 레버리지)</option>
-                        <option value="QLD">QLD (나스닥 2X 레버리지)</option>
-                        <option value="SOXL">SOXL (반도체 3X 레버리지)</option>
-                        <option value="UPRO">UPRO (S&P500 3X 레버리지)</option>
-                    </select>
+            <div class="glass-card" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-cyan);">비교 분석 모드:</span>
+                    <button type="button" class="preset-btn active" id="subModeBtn_strategies" onclick="setCompSubMode('strategies', this)">
+                        <span>⚔️ 4대 전략 비교</span>
+                        <span style="font-size:0.7rem; color:var(--text-dim);">무한매수 vs VR vs DCA vs QQQ</span>
+                    </button>
+                    <button type="button" class="preset-btn" id="subModeBtn_versions" onclick="setCompSubMode('versions', this)">
+                        <span>🏆 무한매수 6대 버전 비교</span>
+                        <span style="font-size:0.7rem; color:var(--text-dim);">v1.0 ~ v4.0 대결</span>
+                    </button>
+                    <button type="button" class="preset-btn" id="subModeBtn_tickers" onclick="setCompSubMode('tickers', this)">
+                        <span>🌐 5대 핵심 종목 비교</span>
+                        <span style="font-size:0.7rem; color:var(--text-dim);">TQQQ, QLD, QQQ, SOXL, LABU</span>
+                    </button>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">초기 원금:</span>
-                    <input type="number" id="comp_capital" value="50000" step="5000" style="width: 120px; background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
+
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem;">
+                    <div id="wrap_comp_ticker" style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">대상 종목:</span>
+                        <select id="comp_ticker" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
+                            <option value="TQQQ" selected>TQQQ (나스닥 3X 레버리지)</option>
+                            <option value="QLD">QLD (나스닥 2X 레버리지)</option>
+                            <option value="QQQ">QQQ (나스닥 1X 지수)</option>
+                            <option value="SOXL">SOXL (반도체 3X 레버리지)</option>
+                            <option value="LABU">LABU (바이오 3X 레버리지)</option>
+                        </select>
+                    </div>
+
+                    <div id="wrap_comp_strategy" style="display: none; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">적용 버전:</span>
+                        <select id="comp_strategy" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
+                            <option value="v2.2" selected>무한매수법 v2.2 (별퍼센트 공식/표준)</option>
+                            <option value="v3.0">무한매수법 v3.0 (20분할 고속 회전)</option>
+                            <option value="v4.0">무한매수법 v4.0 (리버스 모드)</option>
+                            <option value="v2.1">무한매수법 v2.1 (분할 매도/LOC)</option>
+                            <option value="v2.0">무한매수법 v2.0 (전후반/큰수/쿼터손절)</option>
+                            <option value="v1.0">무한매수법 v1.0 (정액/지정가)</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">초기 원금:</span>
+                        <input type="number" id="comp_capital" value="50000" step="5000" style="width: 110px; background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">기간:</span>
+                        <input type="date" id="comp_start" value="2020-01-01" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
+                        <span>~</span>
+                        <input type="date" id="comp_end" value="2025-01-01" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
+                    </div>
+
+                    <button type="button" class="btn-run" id="btnRunComp" onclick="runComparisonSimulation()" style="width: auto; padding: 0.55rem 1.4rem; margin: 0; font-size: 0.9rem;">
+                        <span id="btnRunCompText">⚔️ 비교 분석 실행</span>
+                    </button>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">기간:</span>
-                    <input type="date" id="comp_start" value="2020-01-01" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
-                    <span>~</span>
-                    <input type="date" id="comp_end" value="2025-01-01" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
-                </div>
-                <button type="button" class="btn-run" id="btnRunComp" onclick="runComparisonSimulation()" style="width: auto; padding: 0.55rem 1.4rem; margin: 0; font-size: 0.9rem;">
-                    <span>⚔️ 4대 전략 동시 대결 실행</span>
-                </button>
             </div>
 
             <!-- 4 Strategy Overview Cards -->
@@ -896,21 +933,57 @@
             tbody.innerHTML = html;
         }
 
+        let currentCompSubMode = 'strategies';
+
+        function setCompSubMode(mode, btn) {
+            currentCompSubMode = mode;
+            document.querySelectorAll('#viewSim2 .preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const wrapTicker = document.getElementById('wrap_comp_ticker');
+            const wrapStrat = document.getElementById('wrap_comp_strategy');
+            const btnText = document.getElementById('btnRunCompText');
+
+            if (mode === 'strategies') {
+                wrapTicker.style.display = 'flex';
+                wrapStrat.style.display = 'none';
+                btnText.innerText = '⚔️ 4대 전략 대결 실행';
+            } else if (mode === 'versions') {
+                wrapTicker.style.display = 'flex';
+                wrapStrat.style.display = 'none';
+                btnText.innerText = '🏆 6대 버전 대결 실행';
+            } else if (mode === 'tickers') {
+                wrapTicker.style.display = 'none';
+                wrapStrat.style.display = 'flex';
+                btnText.innerText = '🌐 5대 종목 대결 실행';
+            }
+
+            runComparisonSimulation();
+        }
+
         async function runComparisonSimulation() {
             const btn = document.getElementById('btnRunComp');
             const origText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> <span>대결 연산 중...</span>';
 
-            const payload = {
+            let endpoint = '/simulation/api/run_comparison';
+            let payload = {
                 ticker: document.getElementById('comp_ticker').value,
                 initial_capital: parseFloat(document.getElementById('comp_capital').value),
                 start_date: document.getElementById('comp_start').value,
                 end_date: document.getElementById('comp_end').value
             };
 
+            if (currentCompSubMode === 'versions') {
+                endpoint = '/simulation/api/run_version_comparison';
+            } else if (currentCompSubMode === 'tickers') {
+                endpoint = '/simulation/api/run_ticker_comparison';
+                payload.strategy_type = document.getElementById('comp_strategy').value;
+            }
+
             try {
-                const res = await fetch('/simulation/api/run_comparison', {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(payload)
@@ -924,15 +997,14 @@
                 // 1. Cards Populate
                 const cardsContainer = document.getElementById('compCardsGrid');
                 let cardsHtml = '';
-                const cardClasses = ['inf', 'vr', 'dca', 'qqq'];
                 data.matrix.forEach((m, idx) => {
-                    const cClass = cardClasses[idx] || 'inf';
                     cardsHtml += `
-                        <div class="strategy-stat-card ${cClass}">
+                        <div class="strategy-stat-card" style="border-left: 3px solid ${m.color}; background: rgba(15,23,42,0.6);">
                             <div style="font-size:0.85rem; font-weight:800; color:${m.color}; margin-bottom:4px;">${m.strategy}</div>
-                            <div style="font-size:1.4rem; font-weight:800; color:#fff; margin-bottom:6px;">$${m.final_balance.toLocaleString()}</div>
+                            <div style="font-size:1.35rem; font-weight:800; color:#fff; margin-bottom:6px;">$${m.final_balance.toLocaleString()}</div>
                             <div style="font-size:0.75rem; color:#94a3b8; display:flex; justify-content:space-between;">
-                                <span>총 수익률: <b style="color:${m.total_return >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${m.total_return >= 0 ? '+' : ''}${m.total_return}%</b></span>
+                                <span>수익률: <b style="color:${m.total_return >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${m.total_return >= 0 ? '+' : ''}${m.total_return}%</b></span>
+                                <span>CAGR: <b>${m.cagr >= 0 ? '+' : ''}${m.cagr}%</b></span>
                                 <span>MDD: <b style="color:var(--accent-red);">${m.mdd}%</b></span>
                             </div>
                         </div>
@@ -941,7 +1013,7 @@
                 cardsContainer.innerHTML = cardsHtml;
 
                 // 2. Multi-Line Comparison Chart
-                renderComparisonChart(data.comparison_chart);
+                renderComparisonChart(data.comparison_chart, data.matrix);
 
                 // 3. Matrix Table Populate
                 const matrixBody = document.getElementById('compMatrixBody');
@@ -973,56 +1045,34 @@
             }
         }
 
-        function renderComparisonChart(compData) {
+        function renderComparisonChart(compData, matrix) {
             const ctx = document.getElementById('compChartCanvas').getContext('2d');
             const labels = compData.map(d => d.date);
 
             if (compChart) compChart.destroy();
 
+            // Dynamic datasets based on matrix
+            const datasets = [];
+            const keyMap = ['infinite', 'vr', 'dca', 'qqq'];
+
+            matrix.forEach((m, idx) => {
+                const dataKey = m.version || m.ticker || keyMap[idx] || 'infinite';
+                datasets.push({
+                    label: m.strategy,
+                    data: compData.map(d => d[dataKey] !== undefined ? d[dataKey] : d.infinite),
+                    borderColor: m.color,
+                    borderWidth: idx === 0 ? 2.5 : 1.8,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+            });
+
             compChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: '무한매수법 v2.2',
-                            data: compData.map(d => d.infinite),
-                            borderColor: '#38bdf8',
-                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                            borderWidth: 2.5,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0
-                        },
-                        {
-                            label: '밸류 리밸런싱 (VR)',
-                            data: compData.map(d => d.vr),
-                            borderColor: '#c084fc',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0
-                        },
-                        {
-                            label: '정기 적립식 (DCA)',
-                            data: compData.map(d => d.dca),
-                            borderColor: '#fbbf24',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0
-                        },
-                        {
-                            label: 'QQQ 단순 보유 (Buy & Hold)',
-                            data: compData.map(d => d.qqq),
-                            borderColor: '#94a3b8',
-                            borderWidth: 1.5,
-                            borderDash: [4, 4],
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0
-                        }
-                    ]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -1045,7 +1095,7 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: { color: '#e2e8f0', font: { size: 12, weight: 600 } }
+                            labels: { color: '#e2e8f0', font: { size: 11, weight: 600 } }
                         },
                         tooltip: {
                             backgroundColor: '#0f172a',
