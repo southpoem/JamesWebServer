@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전략 시뮬레이션 & 백테스트 - Infinite</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(18, 26, 43, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent-cyan: #38bdf8;
+            --accent-purple: #c084fc;
+            --accent-green: #4ade80;
+            --accent-gold: #f59e0b;
+            --accent-red: #f87171;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 1.5rem 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .brand-link {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-logo-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 16px var(--accent-cyan);
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+        .brand-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .brand-title .sub {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Top Global Navigation */
+        .top-nav-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .top-nav {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(15, 23, 42, 0.7);
+            padding: 0.35rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+        .nav-link {
+            padding: 0.5rem 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-link.active {
+            color: #fff;
+            background: rgba(56, 189, 248, 0.2);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+        }
+
+        /* Mode Switch Tabs */
+        .mode-switch-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.75rem;
+        }
+        .mode-btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .mode-btn:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .mode-btn.active-sim1 {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(56, 189, 248, 0.15));
+            border-color: var(--accent-cyan);
+            color: #fff;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+        }
+        .mode-btn.active-sim2 {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.25), rgba(192, 132, 252, 0.15));
+            border-color: var(--accent-purple);
+            color: #fff;
+            box-shadow: 0 0 16px rgba(192, 132, 252, 0.25);
+        }
+
+        /* Layout Grid */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        @media (max-width: 1024px) {
+            .sim-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphic Cards */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Form Controls */
+        .control-group {
+            margin-bottom: 1.25rem;
+        }
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 0.45rem;
+        }
+        .control-group input[type="text"],
+        .control-group input[type="number"],
+        .control-group input[type="date"],
+        .control-group select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+            font-size: 0.9rem;
+            color: #fff;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .control-group input:focus,
+        .control-group select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Slider */
+        .slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-wrap input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+        .slider-val {
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 0.9rem;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* Ticker Pills */
+        .pill-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .ticker-pill {
+            padding: 0.4rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .ticker-pill.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-cyan);
+            color: #fff;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Crisis Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+        .preset-btn {
+            padding: 0.55rem 0.8rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--text-dim);
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .preset-btn.active {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        /* Submit Button */
+        .btn-run {
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+            transition: all 0.2s;
+            margin-top: 1.5rem;
+        }
+        .btn-run:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(56, 189, 248, 0.6);
+        }
+        .btn-run:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 800px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .kpi-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .kpi-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 0.4rem;
+        }
+        .kpi-val {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .kpi-sub {
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 0.35rem;
+        }
+        .kpi-sub.up { color: var(--accent-green); }
+        .kpi-sub.down { color: var(--accent-red); }
+        .kpi-sub.neutral { color: var(--text-dim); }
+
+        /* Chart Box */
+        .chart-box {
+            position: relative;
+            height: 380px;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        /* Timeline Table */
+        .cycle-table-wrap {
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+        table.cycle-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            text-align: left;
+        }
+        table.cycle-table th {
+            background: rgba(15, 23, 42, 0.95);
+            color: var(--text-dim);
+            padding: 0.75rem 1rem;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        table.cycle-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        table.cycle-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Comparison Matrix Cards */
+        .comp-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 900px) {
+            .comp-cards-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .strategy-stat-card {
+            border-radius: 14px;
+            padding: 1.25rem;
+            border: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .strategy-stat-card.inf { border-color: rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(2, 132, 199, 0.15), rgba(15, 23, 42, 0.6)); }
+        .strategy-stat-card.vr { border-color: rgba(192, 132, 252, 0.4); background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(15, 23, 42, 0.6)); }
+        .strategy-stat-card.dca { border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(15, 23, 42, 0.6)); }
+        .strategy-stat-card.qqq { border-color: rgba(148, 163, 184, 0.3); background: linear-gradient(135deg, rgba(71, 85, 105, 0.15), rgba(15, 23, 42, 0.6)); }
+
+        .hidden { display: none !important; }
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <a href="/infinite" class="brand-link">
+                <div class="brand-logo-dot"></div>
+                <div class="brand-title">
+                    전략 시뮬레이터 & 백테스트
+                    <span class="sub">Quant Strategy Backtesting Lab</span>
+                </div>
+            </a>
+            <div style="font-size: 0.8rem; color: var(--text-dim);">
+                💡 역사적 주가 데이터 기반 알고리즘 시뮬레이션
+            </div>
+        </header>
+
+        <!-- Top Navigation -->
+        <div class="top-nav-row">
+            <nav class="top-nav">
+                <a href="/infinite" class="nav-link">내 계좌</a>
+                <a href="/infinite_charts" class="nav-link">차트 모니터링</a>
+                <a href="/infinite_help" class="nav-link">전략 가이드</a>
+                <a href="/simulation" class="nav-link active">🧪 전략 시뮬레이션</a>
+            </nav>
+        </div>
+
+        <!-- Mode Switch Tabs -->
+        <div class="mode-switch-bar">
+            <button type="button" class="mode-btn active-sim1" id="tabBtn1" onclick="switchSimMode('sim1')">
+                <span>📈</span> 시안 1: 개별 전략 정밀 시뮬레이터
+            </button>
+            <button type="button" class="mode-btn" id="tabBtn2" onclick="switchSimMode('sim2')">
+                <span>⚖️</span> 시안 2: 다중 전략 비교 매트릭스
+            </button>
+        </div>
+
+        <!-- VIEW 1: 단일 전략 정밀 시뮬레이터 -->
+        <div id="viewSim1" class="sim-grid">
+            <!-- Left Control Panel -->
+            <div class="glass-card">
+                <h3 style="font-size: 1rem; font-weight: 800; margin-top: 0; margin-bottom: 1.25rem; color: #fff; display: flex; items-center; gap: 8px;">
+                    <span>⚙️</span> 전략 파라미터 제어
+                </h3>
+
+                <div class="control-group">
+                    <label>적용 전략</label>
+                    <select id="sim1_strategy">
+                        <option value="v2.2" selected>무한매수법 v2.2 (추천)</option>
+                        <option value="v2.1">무한매수법 v2.1</option>
+                        <option value="v1">무한매수법 v1.0</option>
+                        <option value="only_buying">무한매수법 Only Buying</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>대상 종목 (Ticker)</label>
+                    <div class="pill-group" style="margin-bottom: 8px;">
+                        <span class="ticker-pill active" onclick="selectTicker(this, 'TQQQ')">TQQQ</span>
+                        <span class="ticker-pill" onclick="selectTicker(this, 'QLD')">QLD</span>
+                        <span class="ticker-pill" onclick="selectTicker(this, 'SOXL')">SOXL</span>
+                        <span class="ticker-pill" onclick="selectTicker(this, 'UPRO')">UPRO</span>
+                    </div>
+                    <input type="text" id="sim1_ticker" value="TQQQ" placeholder="티커 직접 입력 (예: TQQQ)">
+                </div>
+
+                <div class="control-group">
+                    <label>초기 자본금 ($ USD)</label>
+                    <input type="number" id="sim1_capital" value="50000" step="1000">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>총 분할 회차</span>
+                        <span class="slider-val" id="splitValDisplay">40회</span>
+                    </label>
+                    <div class="slider-wrap">
+                        <input type="range" id="sim1_splits" min="20" max="60" step="5" value="40" oninput="document.getElementById('splitValDisplay').innerText = this.value + '회'">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        <span>목표 익절 수익률 (%)</span>
+                        <span class="slider-val" id="targetValDisplay">12%</span>
+                    </label>
+                    <div class="slider-wrap">
+                        <input type="range" id="sim1_target" min="5" max="30" step="1" value="12" oninput="document.getElementById('targetValDisplay').innerText = this.value + '%'">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span>익절 시 복리 재투자 (Compounding)</span>
+                        <input type="checkbox" id="sim1_compounding" checked style="width: 18px; height: 18px; accent-color: var(--accent-cyan);">
+                    </label>
+                </div>
+
+                <!-- Crisis Presets -->
+                <div class="control-group">
+                    <label>역사적 위기 구간 프리셋</label>
+                    <div class="preset-grid">
+                        <button type="button" class="preset-btn" onclick="applyPreset('2020-01-01', '2020-12-31', this)">
+                            <span>📉 2020 코로나 쇼크</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">1년 (V자반등)</span>
+                        </button>
+                        <button type="button" class="preset-btn" onclick="applyPreset('2022-01-01', '2022-12-31', this)">
+                            <span>📉 2022 역대급 하락장</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">1년 (금리인상)</span>
+                        </button>
+                        <button type="button" class="preset-btn" onclick="applyPreset('2023-01-01', '2024-12-31', this)">
+                            <span>🚀 2023~2024 AI 랠리</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">2년 (상승장)</span>
+                        </button>
+                        <button type="button" class="preset-btn active" onclick="applyPreset('2020-01-01', '2025-01-01', this)">
+                            <span>🌐 5년 통합 검증</span>
+                            <span style="font-size: 0.7rem; color: var(--text-dim);">2020 ~ 2025</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div class="control-group" style="margin: 0;">
+                        <label>시작일</label>
+                        <input type="date" id="sim1_start" value="2020-01-01">
+                    </div>
+                    <div class="control-group" style="margin: 0;">
+                        <label>종료일</label>
+                        <input type="date" id="sim1_end" value="2025-01-01">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-run" id="btnRunSim1" onclick="runSingleSimulation()">
+                    <span>⚡ 백테스트 실행하기</span>
+                </button>
+            </div>
+
+            <!-- Right Results Dashboard -->
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- 4 KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-title">최종 자산 (Final Balance)</div>
+                        <div class="kpi-val" id="kpi_final">$0.00</div>
+                        <div class="kpi-sub" id="kpi_total_return">+0.0%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">연평균 복리수익률 (CAGR)</div>
+                        <div class="kpi-val" id="kpi_cagr">0.0%</div>
+                        <div class="kpi-sub neutral" id="kpi_bench_cagr">QQQ 보유: 0.0%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">최대 낙폭 (MDD)</div>
+                        <div class="kpi-val" style="color: var(--accent-red);" id="kpi_mdd">-0.0%</div>
+                        <div class="kpi-sub neutral" id="kpi_bench_mdd">QQQ 보유: -0.0%</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">완료 사이클 / 승률</div>
+                        <div class="kpi-val" style="color: var(--accent-cyan);" id="kpi_cycles">0회</div>
+                        <div class="kpi-sub up" id="kpi_winrate">승률 100% (평균 0일)</div>
+                    </div>
+                </div>
+
+                <!-- Main Chart Card -->
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 1rem; font-weight: 800; margin: 0; color: #fff;">
+                            자산 성장 곡선 (Equity Curve) vs QQQ 단순보유
+                        </h3>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">
+                            <span style="display: inline-block; width: 8px; height: 8px; background: var(--accent-cyan); border-radius: 50%; margin-right: 4px;"></span> 전략 누적 자산
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #64748b; border-radius: 50%; margin-left: 12px; margin-right: 4px;"></span> QQQ 보유
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <canvas id="equityChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Cycle Trade History Table -->
+                <div class="glass-card">
+                    <h3 style="font-size: 1rem; font-weight: 800; margin-top: 0; margin-bottom: 0.5rem; color: #fff;">
+                        회차별 완료 사이클 내역 (Cycle History)
+                    </h3>
+                    <div class="cycle-table-wrap">
+                        <table class="cycle-table">
+                            <thead>
+                                <tr>
+                                    <th>사이클</th>
+                                    <th>운용 기간</th>
+                                    <th>소요 일수</th>
+                                    <th>최고 회차</th>
+                                    <th>실현 수익률</th>
+                                    <th>실현 손익</th>
+                                    <th>누적 자본금</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cycleTableBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">
+                                        좌측에서 '백테스트 실행하기'를 누르면 상세 사이클 결과가 표시됩니다.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: 다중 전략 비교 매트릭스 -->
+        <div id="viewSim2" class="hidden" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Top Controls Filter Bar -->
+            <div class="glass-card" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">비교 종목:</span>
+                    <select id="comp_ticker" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
+                        <option value="TQQQ">TQQQ (나스닥 3X 레버리지)</option>
+                        <option value="QLD">QLD (나스닥 2X 레버리지)</option>
+                        <option value="SOXL">SOXL (반도체 3X 레버리지)</option>
+                        <option value="UPRO">UPRO (S&P500 3X 레버리지)</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">초기 원금:</span>
+                    <input type="number" id="comp_capital" value="50000" step="5000" style="width: 120px; background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-dim);">기간:</span>
+                    <input type="date" id="comp_start" value="2020-01-01" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
+                    <span>~</span>
+                    <input type="date" id="comp_end" value="2025-01-01" style="background: rgba(15,23,42,0.8); border: 1px solid var(--card-border); color: #fff; padding: 0.45rem 0.6rem; border-radius: 8px; font-size: 0.8rem;">
+                </div>
+                <button type="button" class="btn-run" id="btnRunComp" onclick="runComparisonSimulation()" style="width: auto; padding: 0.55rem 1.4rem; margin: 0; font-size: 0.9rem;">
+                    <span>⚔️ 4대 전략 동시 대결 실행</span>
+                </button>
+            </div>
+
+            <!-- 4 Strategy Overview Cards -->
+            <div class="comp-cards-grid" id="compCardsGrid">
+                <!-- Will be dynamically populated -->
+            </div>
+
+            <!-- Comparison Chart -->
+            <div class="glass-card">
+                <h3 style="font-size: 1rem; font-weight: 800; margin-top: 0; margin-bottom: 1rem; color: #fff;">
+                    4대 전략 누적 자산 성장 궤적 비교
+                </h3>
+                <div class="chart-box" style="height: 420px;">
+                    <canvas id="compChartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Comprehensive Quant Matrix Table -->
+            <div class="glass-card">
+                <h3 style="font-size: 1rem; font-weight: 800; margin-top: 0; margin-bottom: 1rem; color: #fff;">
+                    전략별 퀀트 성과 매트릭스 비교표
+                </h3>
+                <div class="cycle-table-wrap">
+                    <table class="cycle-table">
+                        <thead>
+                            <tr>
+                                <th>전략명</th>
+                                <th>총 수익률 (%)</th>
+                                <th>연평균 복리 (CAGR)</th>
+                                <th>최대 낙폭 (MDD)</th>
+                                <th>샤프 지수 (Sharpe)</th>
+                                <th>연간 변동성 (%)</th>
+                                <th>최종 자산 ($)</th>
+                                <th>순수익 ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compMatrixBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let equityChart = null;
+        let compChart = null;
+
+        function switchSimMode(mode) {
+            const isSim1 = (mode === 'sim1');
+            document.getElementById('viewSim1').classList.toggle('hidden', !isSim1);
+            document.getElementById('viewSim2').classList.toggle('hidden', isSim1);
+
+            document.getElementById('tabBtn1').className = isSim1 ? 'mode-btn active-sim1' : 'mode-btn';
+            document.getElementById('tabBtn2').className = !isSim1 ? 'mode-btn active-sim2' : 'mode-btn';
+
+            if (!isSim1 && !compChart) {
+                runComparisonSimulation();
+            }
+        }
+
+        function selectTicker(el, ticker) {
+            document.querySelectorAll('.ticker-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('sim1_ticker').value = ticker;
+        }
+
+        function applyPreset(start, end, btn) {
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('sim1_start').value = start;
+            document.getElementById('sim1_end').value = end;
+        }
+
+        async function runSingleSimulation() {
+            const btn = document.getElementById('btnRunSim1');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> <span>시뮬레이션 연산 중...</span>';
+
+            const payload = {
+                ticker: document.getElementById('sim1_ticker').value,
+                strategy_type: document.getElementById('sim1_strategy').value,
+                initial_capital: parseFloat(document.getElementById('sim1_capital').value),
+                total_splits: parseInt(document.getElementById('sim1_splits').value),
+                target_profit_rate: parseFloat(document.getElementById('sim1_target').value),
+                compounding: document.getElementById('sim1_compounding').checked,
+                start_date: document.getElementById('sim1_start').value,
+                end_date: document.getElementById('sim1_end').value
+            };
+
+            try {
+                const res = await fetch('/simulation/api/run_single', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert('시뮬레이션 오류: ' + data.error);
+                    return;
+                }
+
+                // 1. KPI Update
+                const kpi = data.kpi;
+                document.getElementById('kpi_final').innerText = `$${kpi.final_balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                const sign = kpi.total_return >= 0 ? '+' : '';
+                document.getElementById('kpi_total_return').innerText = `${sign}${kpi.total_return}%`;
+                document.getElementById('kpi_total_return').className = kpi.total_return >= 0 ? 'kpi-sub up' : 'kpi-sub down';
+
+                document.getElementById('kpi_cagr').innerText = `${kpi.cagr >= 0 ? '+' : ''}${kpi.cagr}%`;
+                document.getElementById('kpi_bench_cagr').innerText = `QQQ 보유: ${kpi.benchmark_return >= 0 ? '+' : ''}${kpi.benchmark_return}%`;
+
+                document.getElementById('kpi_mdd').innerText = `${kpi.mdd}%`;
+                document.getElementById('kpi_bench_mdd').innerText = `QQQ 보유: ${kpi.benchmark_mdd}%`;
+
+                document.getElementById('kpi_cycles').innerText = `${kpi.total_cycles}회 완료`;
+                document.getElementById('kpi_winrate').innerText = `승률 ${kpi.win_rate}% (평균 ${kpi.avg_cycle_days}일)`;
+
+                // 2. Chart Render
+                renderSingleChart(data.daily_equity, data.trade_markers);
+
+                // 3. Cycle History Table
+                renderCycleTable(data.cycle_history);
+
+            } catch(e) {
+                console.error(e);
+                alert('네트워크 오류가 발생했습니다.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
+
+        function renderSingleChart(dailyEquity, tradeMarkers) {
+            const ctx = document.getElementById('equityChartCanvas').getContext('2d');
+            const labels = dailyEquity.map(d => d.date);
+            const stratValues = dailyEquity.map(d => d.total_value);
+            const benchValues = dailyEquity.map(d => d.benchmark_value);
+
+            if (equityChart) equityChart.destroy();
+
+            equityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '무한매수 전략 자산 ($)',
+                            data: stratValues,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'QQQ 단순보유 벤치마크 ($)',
+                            data: benchValues,
+                            borderColor: '#64748b',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 11 },
+                                callback: val => `$${val.toLocaleString()}`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCycleTable(cycles) {
+            const tbody = document.getElementById('cycleTableBody');
+            if (!cycles || cycles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:1.5rem;">완료된 사이클이 없습니다.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            cycles.forEach(c => {
+                const gainClass = c.gain_pct >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                const sign = c.gain_pct >= 0 ? '+' : '';
+                html += `
+                    <tr>
+                        <td style="font-weight:700; color:#38bdf8;">#${c.cycle}</td>
+                        <td>${c.start_date} ~ ${c.end_date}</td>
+                        <td>${c.duration_days}일</td>
+                        <td>${c.max_round}회차</td>
+                        <td style="font-weight:700;" class="${gainClass}">${sign}${c.gain_pct}%</td>
+                        <td style="font-weight:700; color:#fff;">${sign}$${c.net_profit.toLocaleString()}</td>
+                        <td>$${c.final_capital.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function runComparisonSimulation() {
+            const btn = document.getElementById('btnRunComp');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> <span>대결 연산 중...</span>';
+
+            const payload = {
+                ticker: document.getElementById('comp_ticker').value,
+                initial_capital: parseFloat(document.getElementById('comp_capital').value),
+                start_date: document.getElementById('comp_start').value,
+                end_date: document.getElementById('comp_end').value
+            };
+
+            try {
+                const res = await fetch('/simulation/api/run_comparison', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert('비교 시뮬레이션 오류: ' + data.error);
+                    return;
+                }
+
+                // 1. Cards Populate
+                const cardsContainer = document.getElementById('compCardsGrid');
+                let cardsHtml = '';
+                const cardClasses = ['inf', 'vr', 'dca', 'qqq'];
+                data.matrix.forEach((m, idx) => {
+                    const cClass = cardClasses[idx] || 'inf';
+                    cardsHtml += `
+                        <div class="strategy-stat-card ${cClass}">
+                            <div style="font-size:0.85rem; font-weight:800; color:${m.color}; margin-bottom:4px;">${m.strategy}</div>
+                            <div style="font-size:1.4rem; font-weight:800; color:#fff; margin-bottom:6px;">$${m.final_balance.toLocaleString()}</div>
+                            <div style="font-size:0.75rem; color:#94a3b8; display:flex; justify-content:space-between;">
+                                <span>총 수익률: <b style="color:${m.total_return >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">${m.total_return >= 0 ? '+' : ''}${m.total_return}%</b></span>
+                                <span>MDD: <b style="color:var(--accent-red);">${m.mdd}%</b></span>
+                            </div>
+                        </div>
+                    `;
+                });
+                cardsContainer.innerHTML = cardsHtml;
+
+                // 2. Multi-Line Comparison Chart
+                renderComparisonChart(data.comparison_chart);
+
+                // 3. Matrix Table Populate
+                const matrixBody = document.getElementById('compMatrixBody');
+                let tableHtml = '';
+                data.matrix.forEach(m => {
+                    const retColor = m.total_return >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+                    const sign = m.total_return >= 0 ? '+' : '';
+                    tableHtml += `
+                        <tr>
+                            <td style="font-weight:800; color:${m.color};">${m.strategy}</td>
+                            <td style="font-weight:700; color:${retColor};">${sign}${m.total_return}%</td>
+                            <td style="font-weight:700;">${m.cagr >= 0 ? '+' : ''}${m.cagr}%</td>
+                            <td style="color:var(--accent-red); font-weight:700;">${m.mdd}%</td>
+                            <td>${m.sharpe}</td>
+                            <td>${m.volatility}%</td>
+                            <td style="font-weight:700; color:#fff;">$${m.final_balance.toLocaleString()}</td>
+                            <td style="font-weight:700; color:${retColor};">${sign}$${m.net_profit.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                matrixBody.innerHTML = tableHtml;
+
+            } catch(e) {
+                console.error(e);
+                alert('비교 분석 중 오류가 발생했습니다.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
+
+        function renderComparisonChart(compData) {
+            const ctx = document.getElementById('compChartCanvas').getContext('2d');
+            const labels = compData.map(d => d.date);
+
+            if (compChart) compChart.destroy();
+
+            compChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '무한매수법 v2.2',
+                            data: compData.map(d => d.infinite),
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            borderWidth: 2.5,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '밸류 리밸런싱 (VR)',
+                            data: compData.map(d => d.vr),
+                            borderColor: '#c084fc',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: '정기 적립식 (DCA)',
+                            data: compData.map(d => d.dca),
+                            borderColor: '#fbbf24',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'QQQ 단순 보유 (Buy & Hold)',
+                            data: compData.map(d => d.qqq),
+                            borderColor: '#94a3b8',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 11 }, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 11 },
+                                callback: val => `$${val.toLocaleString()}`
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#e2e8f0', font: { size: 12, weight: 600 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#fff',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: $${Number(ctx.parsed.y).toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 초기 로딩 시 단일 시뮬레이션 1회 자동 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            runSingleSimulation();
+        });
+    </script>
+</body>
+</html>

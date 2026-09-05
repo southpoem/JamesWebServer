@@ -1503,6 +1503,49 @@ def infinite_help():
     return render_template("infinite_help.html")
 
 
+@infinite_bp.route('/simulation', methods=['GET'])
+def simulation_page():
+    return render_template("simulation.html")
+
+
+@infinite_bp.route('/simulation/api/run_single', methods=['POST'])
+def api_run_single():
+    from infinite.BacktestEngine import BacktestEngine
+    data = request.get_json() or {}
+    ticker = data.get("ticker", "TQQQ").upper().strip()
+    start_date = data.get("start_date", "2020-01-01")
+    end_date = data.get("end_date", datetime.now().strftime("%Y-%m-%d"))
+    initial_capital = float(data.get("initial_capital", 50000))
+    total_splits = int(data.get("total_splits", 40))
+    target_profit_rate = float(data.get("target_profit_rate", 12.0))
+    compounding = bool(data.get("compounding", True))
+    strategy_type = data.get("strategy_type", "v2.2")
+
+    result = BacktestEngine.simulate_infinite_buying(
+        ticker=ticker, start_date=start_date, end_date=end_date,
+        initial_capital=initial_capital, total_splits=total_splits,
+        target_profit_rate=target_profit_rate, compounding=compounding,
+        strategy_type=strategy_type
+    )
+    return jsonify(result)
+
+
+@infinite_bp.route('/simulation/api/run_comparison', methods=['POST'])
+def api_run_comparison():
+    from infinite.BacktestEngine import BacktestEngine
+    data = request.get_json() or {}
+    ticker = data.get("ticker", "TQQQ").upper().strip()
+    start_date = data.get("start_date", "2020-01-01")
+    end_date = data.get("end_date", datetime.now().strftime("%Y-%m-%d"))
+    initial_capital = float(data.get("initial_capital", 50000))
+
+    result = BacktestEngine.run_comparison(
+        ticker=ticker, start_date=start_date, end_date=end_date,
+        initial_capital=initial_capital
+    )
+    return jsonify(result)
+
+
 @infinite_bp.route('/run_infinite_buying', methods=['POST'])
 @login_required
 def run_infinite_buying():
